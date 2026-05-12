@@ -1,0 +1,3863 @@
+[{
+  "_id": {
+    "$oid": "69fb4171bd3631fb8e790fcc"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمــرالــديــن  وفـــيـــــــــــــــــر",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fc8c64b52800d389cbfb41"
+      },
+      "itemCode": "3",
+      "itemName": "قمر الدين سوري الوفير 8ك",
+      "_id": {
+        "$oid": "69fd080ea108e31c7ad14126"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1450,
+      "_id": {
+        "$oid": "69fd080ea108e31c7ad14125"
+      }
+    }
+  ],
+  "defaultPrice": 1450,
+  "itemDisplayOrder": 0,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:26:09.501Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:45:50.325Z"
+  },
+  "__v": 4
+},
+{
+  "_id": {
+    "$oid": "69fb41d2bd3631fb8e790fce"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالـديــن  الـعــالــمـيـــــــة",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fc8c87b52800d389cbfb42"
+      },
+      "itemCode": "4",
+      "itemName": "قمر الدين سوري العالمية 8ك",
+      "_id": {
+        "$oid": "69fd081aa108e31c7ad14129"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1350,
+      "_id": {
+        "$oid": "69fd081aa108e31c7ad14128"
+      }
+    }
+  ],
+  "defaultPrice": 1350,
+  "itemDisplayOrder": 1,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:27:46.189Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:46:02.586Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb41ecbd3631fb8e790fd0"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالـديــن الــعـــــــــــروبـة",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fcad36b52800d389cbfbdb"
+      },
+      "itemCode": "145",
+      "itemName": "قمر الدين سوري العروبة 8ك",
+      "_id": {
+        "$oid": "69fd0824a108e31c7ad1412c"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1350,
+      "_id": {
+        "$oid": "69fd0824a108e31c7ad1412b"
+      }
+    }
+  ],
+  "defaultPrice": 1350,
+  "itemDisplayOrder": 2,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:28:12.355Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:46:12.259Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb4209bd3631fb8e790fd2"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالـديــن  الـــشـــــــــــلال",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fcbdfeb52800d389cbfc11"
+      },
+      "itemCode": "199",
+      "itemName": "قمر الدين سوري الشلال 8ك",
+      "_id": {
+        "$oid": "69fd082ea108e31c7ad1412f"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1250,
+      "_id": {
+        "$oid": "69fd082ea108e31c7ad1412e"
+      }
+    }
+  ],
+  "defaultPrice": 1250,
+  "itemDisplayOrder": 3,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:28:41.642Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:46:22.245Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb423ebd3631fb8e790fd4"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالـديــن  الأســــــطـــورة",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fc8c3eb52800d389cbfb40"
+      },
+      "itemCode": "2",
+      "itemName": "قمر الدين سوري الاسطورة 8ك",
+      "_id": {
+        "$oid": "69fd083ca108e31c7ad14132"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fd083ca108e31c7ad14131"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 4,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:29:34.058Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:46:36.360Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb4260bd3631fb8e790fd6"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالـديـن  مـراســـــــــــــي",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fc8bfcb52800d389cbfb3f"
+      },
+      "itemCode": "1",
+      "itemName": "قمر الدين سورى مراسى 8ك",
+      "_id": {
+        "$oid": "69fd0844a108e31c7ad14135"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fd0844a108e31c7ad14134"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 5,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:30:08.480Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:46:44.143Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb4282bd3631fb8e790fd8"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالـديــن الأصــــــــــــــلي",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fca761b52800d389cbfbb4"
+      },
+      "itemCode": "106",
+      "itemName": "قمر الدين سوري الاصلي 8ك",
+      "_id": {
+        "$oid": "69fd084ba108e31c7ad14138"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fd084ba108e31c7ad14137"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 6,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:30:42.736Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:46:51.587Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb429ebd3631fb8e790fda"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالـديــن الأحـــــــــــــــلام",
+  "origin": "سوريا",
+  "unit": "20 لفه",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fcbe69b52800d389cbfc15"
+      },
+      "itemCode": "203",
+      "itemName": "قمر الدين سوري الاحلام 8ك",
+      "_id": {
+        "$oid": "69fd085ca108e31c7ad1413b"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 2100,
+      "_id": {
+        "$oid": "69fd085ca108e31c7ad1413a"
+      }
+    }
+  ],
+  "defaultPrice": 2100,
+  "itemDisplayOrder": 7,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:31:10.815Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:47:08.598Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb42c0bd3631fb8e790fdc"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالديـن وفـيــــــر كبـريـت",
+  "origin": "سوريا",
+  "unit": "8 ك",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fc8cceb52800d389cbfb44"
+      },
+      "itemCode": "6",
+      "itemName": "قمر الدين وفير كبريت سايب 8ك",
+      "_id": {
+        "$oid": "69fd088fa108e31c7ad14142"
+      }
+    },
+    {
+      "item": {
+        "$oid": "69fc8cf1b52800d389cbfb45"
+      },
+      "itemCode": "7",
+      "itemName": "قمر الدين وفير قطع معبا علب 8ك",
+      "_id": {
+        "$oid": "69fd088fa108e31c7ad14143"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1750,
+      "_id": {
+        "$oid": "69fd088fa108e31c7ad14141"
+      }
+    }
+  ],
+  "defaultPrice": 1750,
+  "itemDisplayOrder": 8,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:31:44.455Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:47:59.560Z"
+  },
+  "__v": 2
+},
+{
+  "_id": {
+    "$oid": "69fb42e5bd3631fb8e790fde"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالديـن الأمـــل معبــأعلب",
+  "origin": "سوريا",
+  "unit": "8 ك",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fcc070b52800d389cbfc25"
+      },
+      "itemCode": "219",
+      "itemName": "قمر الدين سيجار الامل علب 8ك",
+      "_id": {
+        "$oid": "69fd08a1a108e31c7ad14146"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fd08a1a108e31c7ad14145"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 9,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:32:21.934Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:48:17.084Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb4301bd3631fb8e790fe0"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالديـن العـالميــة كبـريـت",
+  "origin": "سوريا",
+  "unit": "8 ك",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fcbe7fb52800d389cbfc16"
+      },
+      "itemCode": "204",
+      "itemName": "قمر الدين العالمية كبريت 8ك",
+      "_id": {
+        "$oid": "69fd08b4a108e31c7ad14149"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1750,
+      "_id": {
+        "$oid": "69fd08b4a108e31c7ad14148"
+      }
+    }
+  ],
+  "defaultPrice": 1750,
+  "itemDisplayOrder": 10,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:32:49.246Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:48:36.015Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb4324bd3631fb8e790fe2"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـمـرالديـن العـالميــة تويست",
+  "origin": "سوريا",
+  "unit": "6 ك",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fcbe58b52800d389cbfc14"
+      },
+      "itemCode": "202",
+      "itemName": "قمر الدين العالمية تويست -6ك",
+      "_id": {
+        "$oid": "69fd08bea108e31c7ad1414c"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1400,
+      "_id": {
+        "$oid": "69fd08bea108e31c7ad1414b"
+      }
+    }
+  ],
+  "defaultPrice": 1400,
+  "itemDisplayOrder": 11,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:33:24.805Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:48:46.389Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb434cbd3631fb8e790fe4"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جوزهـنـد فيتنامي نصف دسم",
+  "origin": "فيتنام",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [
+    {
+      "item": {
+        "$oid": "69fc8eb8b52800d389cbfb4f"
+      },
+      "itemCode": "15",
+      "itemName": "جوز هند فيتنامي منزوع (نصف دسم) 25ك",
+      "_id": {
+        "$oid": "69fd08d1a108e31c7ad1414f"
+      }
+    }
+  ],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 3200,
+      "_id": {
+        "$oid": "69fd08d1a108e31c7ad1414e"
+      }
+    }
+  ],
+  "defaultPrice": 3200,
+  "itemDisplayOrder": 12,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:34:04.635Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T21:49:05.430Z"
+  },
+  "__v": 2
+},
+{
+  "_id": {
+    "$oid": "69fb4381bd3631fb8e790fe6"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جوزهـنـد خـشـن قلـيـل الدسم",
+  "origin": "سيرلانكي",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 4200,
+      "_id": {
+        "$oid": "69fb4381bd3631fb8e790fe7"
+      }
+    }
+  ],
+  "defaultPrice": 4200,
+  "itemDisplayOrder": 13,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:34:57.732Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb439cbd3631fb8e790fe8"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جوزهـند نـاعـــم كامل الدسـم",
+  "origin": "فيتنام",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 4500,
+      "_id": {
+        "$oid": "69fb439cbd3631fb8e790fe9"
+      }
+    }
+  ],
+  "defaultPrice": 4500,
+  "itemDisplayOrder": 14,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:35:24.371Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb43c5bd3631fb8e790fea"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جوزهـند خـشــن كـامل وسـط",
+  "origin": "فيتنام",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 4800,
+      "_id": {
+        "$oid": "69fb43c5bd3631fb8e790feb"
+      }
+    }
+  ],
+  "defaultPrice": 4800,
+  "itemDisplayOrder": 15,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:36:05.115Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb43e6bd3631fb8e790fec"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جوزهـند خـشــن كامل الدسـم",
+  "origin": "فيتنام",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 5000,
+      "_id": {
+        "$oid": "69fb43e6bd3631fb8e790fed"
+      }
+    }
+  ],
+  "defaultPrice": 5000,
+  "itemDisplayOrder": 16,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:36:38.211Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4418bd3631fb8e790fee"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جوزهـنـد خـشــن أندونيـسـي",
+  "origin": "اندونيسيا",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 5250,
+      "_id": {
+        "$oid": "69fb4418bd3631fb8e790fef"
+      }
+    }
+  ],
+  "defaultPrice": 5250,
+  "itemDisplayOrder": 17,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:37:28.452Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4438bd3631fb8e790ff0"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جوزهند خشن/ ناعم سيرلانكي",
+  "origin": "سيرلانكا",
+  "unit": "50 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 12750,
+      "_id": {
+        "$oid": "69fb4438bd3631fb8e790ff1"
+      }
+    }
+  ],
+  "defaultPrice": 12750,
+  "itemDisplayOrder": 18,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:38:00.041Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb445fbd3631fb8e790ff2"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جـوزهـنـد ظــفــــر فـيـتـنـامي",
+  "origin": "فيتنام",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 7500,
+      "_id": {
+        "$oid": "69fb445fbd3631fb8e790ff3"
+      }
+    }
+  ],
+  "defaultPrice": 7500,
+  "itemDisplayOrder": 19,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:38:40.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb447ebd3631fb8e790ff4"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "جـوزهـنـد ظــفــــر سيرلانكي",
+  "origin": "سيرلانكا",
+  "unit": "35 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 10500,
+      "_id": {
+        "$oid": "69fb447ebd3631fb8e790ff5"
+      }
+    }
+  ],
+  "defaultPrice": 10500,
+  "itemDisplayOrder": 20,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:39:10.904Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb449fbd3631fb8e790ff6"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تيـن مـدور الأمـــــراء300ج",
+  "origin": "سوريا",
+  "unit": "12 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 400,
+      "_id": {
+        "$oid": "69fb449fbd3631fb8e790ff7"
+      }
+    }
+  ],
+  "defaultPrice": 400,
+  "itemDisplayOrder": 21,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:39:43.447Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb44cbbd3631fb8e790ff8"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تيـن مـدور الســـــلام 250ج",
+  "origin": "سوريا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 425,
+      "_id": {
+        "$oid": "69fb44cbbd3631fb8e790ff9"
+      }
+    }
+  ],
+  "defaultPrice": 425,
+  "itemDisplayOrder": 22,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:40:27.271Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4518bd3631fb8e790ffa"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تـيـن مـدور السعـيـــد 300ج",
+  "origin": "سوريا",
+  "unit": "12 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 450,
+      "_id": {
+        "$oid": "69fb4518bd3631fb8e790ffb"
+      }
+    }
+  ],
+  "defaultPrice": 450,
+  "itemDisplayOrder": 23,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:41:44.087Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4536bd3631fb8e790ffe"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تيـن مـدور الـعالـميـة 250ج",
+  "origin": "سوريا",
+  "unit": "12 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb4536bd3631fb8e790fff"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 24,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:42:14.517Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4556bd3631fb8e791000"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تـيــن حـبـــــــل السعـيــــــــــد",
+  "origin": "سوريا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 575,
+      "_id": {
+        "$oid": "69fb4556bd3631fb8e791001"
+      }
+    }
+  ],
+  "defaultPrice": 575,
+  "itemDisplayOrder": 25,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:42:46.580Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb456fbd3631fb8e791002"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تـيــن حـبـــــــل الأمــــــــــراء",
+  "origin": "سوريا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb456fbd3631fb8e791003"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 26,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:43:11.628Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb45c9bd3631fb8e791004"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تين تركي معرض إكسترا 2.5ك",
+  "origin": "تركيا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb45c9bd3631fb8e791005"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 27,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:44:41.396Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb45e9bd3631fb8e791006"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تين سوري معـرض السعيـــد",
+  "origin": "سوريا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 575,
+      "_id": {
+        "$oid": "69fb45e9bd3631fb8e791007"
+      }
+    }
+  ],
+  "defaultPrice": 575,
+  "itemDisplayOrder": 28,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:45:13.755Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb464abd3631fb8e791008"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشمشيـة سـوري أكــرام (5)",
+  "origin": "سوريا",
+  "unit": "5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 575,
+      "_id": {
+        "$oid": "69fb464abd3631fb8e791009"
+      }
+    }
+  ],
+  "defaultPrice": 575,
+  "itemDisplayOrder": 29,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:46:50.208Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb466bbd3631fb8e79100a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشمشيـة سوري مـقـاس(4)",
+  "origin": "سوريا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 625,
+      "_id": {
+        "$oid": "69fb466bbd3631fb8e79100b"
+      }
+    }
+  ],
+  "defaultPrice": 625,
+  "itemDisplayOrder": 30,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:47:23.208Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb469ebd3631fb8e79100c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشمشيـة سوري مـقـاس(8)",
+  "origin": "سوريا",
+  "unit": "5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 475,
+      "_id": {
+        "$oid": "69fb469ebd3631fb8e79100d"
+      }
+    }
+  ],
+  "defaultPrice": 475,
+  "itemDisplayOrder": 31,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:48:14.775Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb46c7bd3631fb8e79100e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشمشيـة تركي مقاس جامبو",
+  "origin": "تركيا",
+  "unit": "5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb46c7bd3631fb8e79100f"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 32,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:48:55.495Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb46f4bd3631fb8e791010"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشمشيـة تـركـي مـقــاس(1)",
+  "origin": "تركيا",
+  "unit": "5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 850,
+      "_id": {
+        "$oid": "69fb46f4bd3631fb8e791011"
+      }
+    }
+  ],
+  "defaultPrice": 850,
+  "itemDisplayOrder": 33,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:49:40.494Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb473cbd3631fb8e791012"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشمشيـة تـركـي مـقــاس(2)",
+  "origin": "تريكيا",
+  "unit": "5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 825,
+      "_id": {
+        "$oid": "69fb473cbd3631fb8e791013"
+      }
+    }
+  ],
+  "defaultPrice": 825,
+  "itemDisplayOrder": 34,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:50:52.678Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb47c7bd3631fb8e791014"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشـمشيـة تـركــي مقـاس(4)",
+  "origin": "تركيا",
+  "unit": "5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 575,
+      "_id": {
+        "$oid": "69fb47c7bd3631fb8e791015"
+      }
+    }
+  ],
+  "defaultPrice": 575,
+  "itemDisplayOrder": 35,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:53:11.573Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb480dbd3631fb8e791016"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قراصـيــا أرجنـتـيـني10/20",
+  "origin": "الارجنتين",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 375,
+      "_id": {
+        "$oid": "69fb480dbd3631fb8e791017"
+      }
+    }
+  ],
+  "defaultPrice": 375,
+  "itemDisplayOrder": 37,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:54:21.554Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4828bd3631fb8e791018"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـراصـيــا أرجنـتـيـني20/30",
+  "origin": "الارجنتين",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 350,
+      "_id": {
+        "$oid": "69fb4828bd3631fb8e791019"
+      }
+    }
+  ],
+  "defaultPrice": 350,
+  "itemDisplayOrder": 38,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:54:48.531Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb484dbd3631fb8e79101a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـراصـيــا أرجنـتـيـني30/40",
+  "origin": "الارجنتين",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 325,
+      "_id": {
+        "$oid": "69fb484dbd3631fb8e79101b"
+      }
+    }
+  ],
+  "defaultPrice": 325,
+  "itemDisplayOrder": 39,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:55:25.772Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4868bd3631fb8e79101c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـراصـيــا أسبــــــاني30/40",
+  "origin": "اسبانيا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 300,
+      "_id": {
+        "$oid": "69fb4868bd3631fb8e79101d"
+      }
+    }
+  ],
+  "defaultPrice": 300,
+  "itemDisplayOrder": 40,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:55:52.412Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb48a0bd3631fb8e79101e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قـراصـيــا أرجنـتـيـني40/50",
+  "origin": "الارجنتين",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 275,
+      "_id": {
+        "$oid": "69fb48a0bd3631fb8e79101f"
+      }
+    }
+  ],
+  "defaultPrice": 275,
+  "itemDisplayOrder": 41,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:56:48.168Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb48b6bd3631fb8e791020"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "قراصـيـــا أرجنتتيني مخلـيــة",
+  "origin": "الارجنتين",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 325,
+      "_id": {
+        "$oid": "69fb48b6bd3631fb8e791021"
+      }
+    }
+  ],
+  "defaultPrice": 325,
+  "itemDisplayOrder": 42,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:57:10.919Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb48d6bd3631fb8e791022"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "بــنـــدق قـلــــب تـركي أكــرام",
+  "origin": "تركيا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 840,
+      "_id": {
+        "$oid": "69fb48d6bd3631fb8e791023"
+      }
+    }
+  ],
+  "defaultPrice": 840,
+  "itemDisplayOrder": 43,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:57:42.023Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb48f6bd3631fb8e791024"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "بــنــدق قـلــب تـركي  نـاربـــا",
+  "origin": "تركيا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 840,
+      "_id": {
+        "$oid": "69fb48f6bd3631fb8e791025"
+      }
+    }
+  ],
+  "defaultPrice": 840,
+  "itemDisplayOrder": 44,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:58:14.822Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb4912bd3631fb8e791026"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "بـنـدق قـلـب محمص فرز أول",
+  "origin": "تركيا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1050,
+      "_id": {
+        "$oid": "69fb4912bd3631fb8e791027"
+      }
+    }
+  ],
+  "defaultPrice": 1050,
+  "itemDisplayOrder": 45,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:58:42.518Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb494cbd3631fb8e791028"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لــــــــوز قـلــب قياس36/40",
+  "origin": "امريكا",
+  "unit": "22.680 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 475,
+      "_id": {
+        "$oid": "69fb494cbd3631fb8e791029"
+      }
+    }
+  ],
+  "defaultPrice": 475,
+  "itemDisplayOrder": 46,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T13:59:40.109Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb496cbd3631fb8e79102a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لــــــــوز قـلــب قياس27/30",
+  "origin": "اسبانيا",
+  "unit": "10ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 485,
+      "_id": {
+        "$oid": "69fb496cbd3631fb8e79102b"
+      }
+    }
+  ],
+  "defaultPrice": 485,
+  "itemDisplayOrder": 47,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:00:12.420Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb498abd3631fb8e79102c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لــــــــوز قـلــب قياس27/30",
+  "origin": "امريكا",
+  "unit": "22.680 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 500,
+      "_id": {
+        "$oid": "69fb7553bd3631fb8e7910a3"
+      }
+    }
+  ],
+  "defaultPrice": 500,
+  "itemDisplayOrder": 48,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:00:42.164Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T17:07:31.981Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb49a4bd3631fb8e79102e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لــــــــوز قـلــب قياس23/25",
+  "origin": "اسبانيا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 510,
+      "_id": {
+        "$oid": "69fb49a4bd3631fb8e79102f"
+      }
+    }
+  ],
+  "defaultPrice": 510,
+  "itemDisplayOrder": 49,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:01:08.053Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb49bcbd3631fb8e791030"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لــــــــوز قـلــب قياس22/24",
+  "origin": "اسبانيا",
+  "unit": "10ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 520,
+      "_id": {
+        "$oid": "69fb49bcbd3631fb8e791031"
+      }
+    }
+  ],
+  "defaultPrice": 520,
+  "itemDisplayOrder": 50,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:01:32.323Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb49d5bd3631fb8e791032"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لــــــــوز قـلــب قياس20/22",
+  "origin": "اسبانيا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 550,
+      "_id": {
+        "$oid": "69fb49d5bd3631fb8e791033"
+      }
+    }
+  ],
+  "defaultPrice": 550,
+  "itemDisplayOrder": 51,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:01:57.786Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb49eebd3631fb8e791034"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لــــــــوز قـلــب قياس20/22",
+  "origin": "امريكا",
+  "unit": "22.680 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 570,
+      "_id": {
+        "$oid": "69fb49eebd3631fb8e791035"
+      }
+    }
+  ],
+  "defaultPrice": 570,
+  "itemDisplayOrder": 52,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:02:22.707Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb56d7bd3631fb8e791036"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عـيـن جــمـــل قـــلــب أربــــاع",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 480,
+      "_id": {
+        "$oid": "69fb56d7bd3631fb8e791037"
+      }
+    }
+  ],
+  "defaultPrice": 480,
+  "itemDisplayOrder": 53,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:57:27.217Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5709bd3631fb8e791038"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عين جمل قلب أنصـاف إكسترا",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 450,
+      "_id": {
+        "$oid": "69fb5709bd3631fb8e791039"
+      }
+    }
+  ],
+  "defaultPrice": 450,
+  "itemDisplayOrder": 54,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:58:17.303Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5728bd3631fb8e79103a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عين جمل قلب أنصاف ريـنـــو",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 520,
+      "_id": {
+        "$oid": "69fb5728bd3631fb8e79103b"
+      }
+    }
+  ],
+  "defaultPrice": 520,
+  "itemDisplayOrder": 55,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:58:48.535Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb573fbd3631fb8e79103c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عين جمل قلب أنصاف أخـضـر",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 550,
+      "_id": {
+        "$oid": "69fb573fbd3631fb8e79103d"
+      }
+    }
+  ],
+  "defaultPrice": 550,
+  "itemDisplayOrder": 56,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:59:11.607Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5755bd3631fb8e79103e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عين جمل قـلب أنصاف أيـديـن",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 580,
+      "_id": {
+        "$oid": "69fb5755bd3631fb8e79103f"
+      }
+    }
+  ],
+  "defaultPrice": 580,
+  "itemDisplayOrder": 57,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:59:33.791Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb576dbd3631fb8e791040"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عيـن جـمــل قـــلب صن رايــز",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 600,
+      "_id": {
+        "$oid": "69fb576dbd3631fb8e791041"
+      }
+    }
+  ],
+  "defaultPrice": 600,
+  "itemDisplayOrder": 58,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T14:59:57.374Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5786bd3631fb8e791042"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "بــنـــدق حـصـى جـامبــو جديـد",
+  "origin": "امريكا",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 375,
+      "_id": {
+        "$oid": "69fb5786bd3631fb8e791043"
+      }
+    }
+  ],
+  "defaultPrice": 375,
+  "itemDisplayOrder": 59,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:00:22.878Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb57c2bd3631fb8e791044"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لـــــــوز حـصـى جـامبــو جديـد",
+  "origin": "امريكا",
+  "unit": "22.680 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 260,
+      "_id": {
+        "$oid": "69fb57c2bd3631fb8e791045"
+      }
+    }
+  ],
+  "defaultPrice": 260,
+  "itemDisplayOrder": 60,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:01:22.324Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb57f5bd3631fb8e791046"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عين جمل حصـى جامبـو جديـد",
+  "origin": "امريكا",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 275,
+      "_id": {
+        "$oid": "69fb57f5bd3631fb8e791047"
+      }
+    }
+  ],
+  "defaultPrice": 275,
+  "itemDisplayOrder": 61,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:02:13.347Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5815bd3631fb8e791048"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فسـدق حصى ني وزة تجــاري",
+  "origin": "ايران",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 610,
+      "_id": {
+        "$oid": "69fb5815bd3631fb8e791049"
+      }
+    }
+  ],
+  "defaultPrice": 610,
+  "itemDisplayOrder": 62,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:02:45.428Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb582cbd3631fb8e79104a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فـسدق حصى ني وزة 20/22",
+  "origin": "ايران",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 710,
+      "_id": {
+        "$oid": "69fb582cbd3631fb8e79104b"
+      }
+    }
+  ],
+  "defaultPrice": 710,
+  "itemDisplayOrder": 63,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:03:08.288Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb58cebd3631fb8e79104c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فسدق حصى ني أكابري 18/20",
+  "origin": "ايران",
+  "unit": "50 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 730,
+      "_id": {
+        "$oid": "69fb58cebd3631fb8e79104d"
+      }
+    }
+  ],
+  "defaultPrice": 730,
+  "itemDisplayOrder": 64,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:05:50.722Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb58f1bd3631fb8e79104e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فسدق حصى ني وندرفـل 21/25",
+  "origin": "امريكا",
+  "unit": "11.340 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 660,
+      "_id": {
+        "$oid": "69fb58f1bd3631fb8e79104f"
+      }
+    }
+  ],
+  "defaultPrice": 660,
+  "itemDisplayOrder": 65,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:06:25.744Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5912bd3631fb8e791050"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فسدق حصى ني وندرفـل 18/20",
+  "origin": "امريكا",
+  "unit": "11.340 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 690,
+      "_id": {
+        "$oid": "69fb75a3bd3631fb8e7910a7"
+      }
+    }
+  ],
+  "defaultPrice": 690,
+  "itemDisplayOrder": 66,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:06:58.721Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T17:08:51.724Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb5945bd3631fb8e791052"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فسـدق حصى ني أنس 18/20",
+  "origin": "امريكا",
+  "unit": "11.340 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 700,
+      "_id": {
+        "$oid": "69fb75abbd3631fb8e7910a9"
+      }
+    }
+  ],
+  "defaultPrice": 700,
+  "itemDisplayOrder": 67,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:07:49.503Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T17:08:59.426Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb597cbd3631fb8e791054"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فســدق حصى ني بريمكس 18/20",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 700,
+      "_id": {
+        "$oid": "69fb597cbd3631fb8e791055"
+      }
+    }
+  ],
+  "defaultPrice": 700,
+  "itemDisplayOrder": 68,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:08:44.422Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb59b7bd3631fb8e791056"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فــســـــدق قـــلـــــب أمــريــكي",
+  "origin": "امريكا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1400,
+      "_id": {
+        "$oid": "69fb59b7bd3631fb8e791057"
+      }
+    }
+  ],
+  "defaultPrice": 1400,
+  "itemDisplayOrder": 69,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:09:43.677Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb59d4bd3631fb8e791058"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فــســـــدق قـــلـــــب حـــلــبــي",
+  "origin": "سوريا",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1600,
+      "_id": {
+        "$oid": "69fb59d4bd3631fb8e791059"
+      }
+    }
+  ],
+  "defaultPrice": 1600,
+  "itemDisplayOrder": 70,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:10:12.549Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5a1bbd3631fb8e79105a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "كـاجـــــو فـيـتــنـامي 320 نــي",
+  "origin": "صفايح",
+  "unit": "20 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 520,
+      "_id": {
+        "$oid": "69fb5a1bbd3631fb8e79105b"
+      }
+    }
+  ],
+  "defaultPrice": 520,
+  "itemDisplayOrder": 71,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:11:23.203Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5a45bd3631fb8e79105c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "كـاجـــــو فـيـتــنـامي  240نــي",
+  "origin": "صفايح",
+  "unit": "20 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 580,
+      "_id": {
+        "$oid": "69fb5a45bd3631fb8e79105d"
+      }
+    }
+  ],
+  "defaultPrice": 580,
+  "itemDisplayOrder": 72,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:12:05.844Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5a65bd3631fb8e79105e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "كاجو فيتنامي 180 ني Haivet",
+  "origin": "صفايح",
+  "unit": "20 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 720,
+      "_id": {
+        "$oid": "69fb5a65bd3631fb8e79105f"
+      }
+    }
+  ],
+  "defaultPrice": 720,
+  "itemDisplayOrder": 73,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:12:37.451Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5a86bd3631fb8e791060"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "كاجـو فيتنامي 160 ني جامبـو",
+  "origin": "صفايح",
+  "unit": "20 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 760,
+      "_id": {
+        "$oid": "69fb5a86bd3631fb8e791061"
+      }
+    }
+  ],
+  "defaultPrice": 760,
+  "itemDisplayOrder": 74,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:13:10.793Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5aa8bd3631fb8e791062"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فــواكـــــة طـبـيـعـيــة مجـفــفـــة",
+  "origin": "سوريا",
+  "unit": "3 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 400,
+      "_id": {
+        "$oid": "69fb5aa8bd3631fb8e791063"
+      }
+    }
+  ],
+  "defaultPrice": 400,
+  "itemDisplayOrder": 75,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:13:44.165Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5ae2bd3631fb8e791064"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "زبـيـب جـولـدن إيـراني إكسترا",
+  "origin": "ايراني",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 2400,
+      "_id": {
+        "$oid": "69fb5ae2bd3631fb8e791065"
+      }
+    }
+  ],
+  "defaultPrice": 2400,
+  "itemDisplayOrder": 76,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:14:42.928Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5afbbd3631fb8e791066"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "زبـيــب جـولدن العالـمية أزرق",
+  "origin": "مصري",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 2200,
+      "_id": {
+        "$oid": "69fb5afbbd3631fb8e791067"
+      }
+    }
+  ],
+  "defaultPrice": 2200,
+  "itemDisplayOrder": 77,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:15:07.248Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5b16bd3631fb8e791068"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "زبـيــب جـولدن العالـميـة بـنـي",
+  "origin": "مصري",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 2000,
+      "_id": {
+        "$oid": "69fb5b16bd3631fb8e791069"
+      }
+    }
+  ],
+  "defaultPrice": 2000,
+  "itemDisplayOrder": 78,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:15:34.343Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5b2abd3631fb8e79106a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "زبـيــب مصري بـنــــاتي مــكـة",
+  "origin": "مصري",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1500,
+      "_id": {
+        "$oid": "69fb5b2abd3631fb8e79106b"
+      }
+    }
+  ],
+  "defaultPrice": 1500,
+  "itemDisplayOrder": 79,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:15:54.155Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5b50bd3631fb8e79106c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "زبيـب مصري سبيريـو الطاووس",
+  "origin": "مصري",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb5b50bd3631fb8e79106d"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 80,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:16:32.574Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5b7abd3631fb8e79106e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "زبـيــب مصري سبيريو الــوادي",
+  "origin": "مصري",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1200,
+      "_id": {
+        "$oid": "69fb5b7abd3631fb8e79106f"
+      }
+    }
+  ],
+  "defaultPrice": 1200,
+  "itemDisplayOrder": 81,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:17:14.874Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5ba0bd3631fb8e791070"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تـمرهـنــدي الـســـلام/الوفيــــر",
+  "origin": "الهند",
+  "unit": "30ق",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1300,
+      "_id": {
+        "$oid": "69fb5ba0bd3631fb8e791071"
+      }
+    }
+  ],
+  "defaultPrice": 1300,
+  "itemDisplayOrder": 82,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:17:52.045Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5bbbbd3631fb8e791072"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "تـمرهـنــدي خـــــــــــان300ج",
+  "origin": "الهند",
+  "unit": "24ق",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 850,
+      "_id": {
+        "$oid": "69fb5bbbbd3631fb8e791073"
+      }
+    }
+  ],
+  "defaultPrice": 850,
+  "itemDisplayOrder": 83,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:18:19.541Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5bebbd3631fb8e791074"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "كــركــــديـــة العـــالـمـيــــــــــة",
+  "origin": "مصري",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1750,
+      "_id": {
+        "$oid": "69fb5bebbd3631fb8e791075"
+      }
+    }
+  ],
+  "defaultPrice": 1750,
+  "itemDisplayOrder": 84,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:19:07.765Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5c0cbd3631fb8e791076"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "كـركــديـة نـيـجـيــري لــــــوزة",
+  "origin": "نيجيريا",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 165,
+      "_id": {
+        "$oid": "69fb5c0cbd3631fb8e791077"
+      }
+    }
+  ],
+  "defaultPrice": 165,
+  "itemDisplayOrder": 85,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:19:40.259Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5c35bd3631fb8e791078"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "خــروب تـركـي قـــرون أكسترا",
+  "origin": "تركيا",
+  "unit": "12.5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb756bbd3631fb8e7910a5"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 86,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:20:21.035Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T17:07:55.978Z"
+  },
+  "__v": 1
+},
+{
+  "_id": {
+    "$oid": "69fb5c4ebd3631fb8e79107a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "خروب قبرصي قـــرون أكسترا",
+  "origin": "قبرص",
+  "unit": "12.5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 3500,
+      "_id": {
+        "$oid": "69fb5c4ebd3631fb8e79107b"
+      }
+    }
+  ],
+  "defaultPrice": 3500,
+  "itemDisplayOrder": 87,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:20:46.651Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5c6ebd3631fb8e79107c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "خــــروب قـبـــرصي مجــروش",
+  "origin": "قبرص",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 60,
+      "_id": {
+        "$oid": "69fb5c6ebd3631fb8e79107d"
+      }
+    }
+  ],
+  "defaultPrice": 60,
+  "itemDisplayOrder": 88,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:21:18.924Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5ca0bd3631fb8e79107e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "خروب مجروش معبأ 400جرام",
+  "origin": "قبرص",
+  "unit": "4.8 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 550,
+      "_id": {
+        "$oid": "69fb5ca0bd3631fb8e79107f"
+      }
+    }
+  ],
+  "defaultPrice": 550,
+  "itemDisplayOrder": 89,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:22:08.625Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5ccebd3631fb8e791080"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عـرقـســـوس معبــأ 400جرام",
+  "origin": "مصري",
+  "unit": "4.8 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 575,
+      "_id": {
+        "$oid": "69fb5ccebd3631fb8e791081"
+      }
+    }
+  ],
+  "defaultPrice": 575,
+  "itemDisplayOrder": 90,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:22:54.944Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5cf5bd3631fb8e791082"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "دووم مجروش معبأ 400جرام",
+  "origin": "مصري",
+  "unit": "4.8 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 620,
+      "_id": {
+        "$oid": "69fb5cf5bd3631fb8e791083"
+      }
+    }
+  ],
+  "defaultPrice": 620,
+  "itemDisplayOrder": 91,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:23:33.088Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5d18bd3631fb8e791084"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عرقـســوس النخـيـــــــــل أجولة",
+  "origin": "سوريا",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1650,
+      "_id": {
+        "$oid": "69fb5d18bd3631fb8e791085"
+      }
+    }
+  ],
+  "defaultPrice": 1650,
+  "itemDisplayOrder": 92,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:24:08.704Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5d33bd3631fb8e791086"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "عرقسوس شيـخ العـرب الحـوت",
+  "origin": "سوريا",
+  "unit": "70 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 4850,
+      "_id": {
+        "$oid": "69fb5d33bd3631fb8e791087"
+      }
+    }
+  ],
+  "defaultPrice": 4850,
+  "itemDisplayOrder": 93,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:24:35.735Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5d60bd3631fb8e791088"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فـول سـوداني الأسراء نمرة 2",
+  "origin": "ابيض",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 80,
+      "_id": {
+        "$oid": "69fb5d60bd3631fb8e791089"
+      }
+    }
+  ],
+  "defaultPrice": 80,
+  "itemDisplayOrder": 94,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:25:20.095Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5d7abd3631fb8e79108a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فــول ســوداني الأيـمـــان 1/2",
+  "origin": "ابيض",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 90,
+      "_id": {
+        "$oid": "69fb5d7abd3631fb8e79108b"
+      }
+    }
+  ],
+  "defaultPrice": 90,
+  "itemDisplayOrder": 95,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:25:46.422Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5d9cbd3631fb8e79108c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فــول سـوداني أفريقيـا نمرة 1",
+  "origin": "ابيض",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 95,
+      "_id": {
+        "$oid": "69fb5d9cbd3631fb8e79108d"
+      }
+    }
+  ],
+  "defaultPrice": 95,
+  "itemDisplayOrder": 96,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:26:20.598Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5ddebd3631fb8e79108e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فــول سـوداني فيرجيـنـيـا 1/2",
+  "origin": "اصفر",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb5ddebd3631fb8e79108f"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 97,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:27:26.749Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5dfabd3631fb8e791090"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فـول سـوداني فيرجينيا نمرة 1",
+  "origin": "ابيض",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 0,
+      "_id": {
+        "$oid": "69fb5dfabd3631fb8e791091"
+      }
+    }
+  ],
+  "defaultPrice": 0,
+  "itemDisplayOrder": 98,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:27:54.699Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5e13bd3631fb8e791092"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "فــول ســوداني الأتحـاد فاكيـوم",
+  "origin": "كرتونه",
+  "unit": "10 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 100,
+      "_id": {
+        "$oid": "69fb5e13bd3631fb8e791093"
+      }
+    }
+  ],
+  "defaultPrice": 100,
+  "itemDisplayOrder": 99,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:28:19.100Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5e30bd3631fb8e791094"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "نـشــــــــا الـنــيـــــــل الأهـــرام",
+  "origin": "مصري",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 750,
+      "_id": {
+        "$oid": "69fb5e30bd3631fb8e791095"
+      }
+    }
+  ],
+  "defaultPrice": 750,
+  "itemDisplayOrder": 100,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:28:48.595Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5e49bd3631fb8e791096"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "نــشـــــــا مـعـبــــــــأ400جرام",
+  "origin": "مصري",
+  "unit": "8 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 425,
+      "_id": {
+        "$oid": "69fb5e49bd3631fb8e791097"
+      }
+    }
+  ],
+  "defaultPrice": 425,
+  "itemDisplayOrder": 101,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:29:13.107Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5e65bd3631fb8e791098"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "سمـسـم أحمر محمص التوفيق",
+  "origin": "مصري",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 2500,
+      "_id": {
+        "$oid": "69fb5e65bd3631fb8e791099"
+      }
+    }
+  ],
+  "defaultPrice": 2500,
+  "itemDisplayOrder": 102,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:29:41.930Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5e7fbd3631fb8e79109a"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "ســمــســــم أبـيــض هــنـــــدي",
+  "origin": "الهند",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 2500,
+      "_id": {
+        "$oid": "69fb5e7fbd3631fb8e79109b"
+      }
+    }
+  ],
+  "defaultPrice": 2500,
+  "itemDisplayOrder": 103,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:30:07.602Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5e95bd3631fb8e79109c"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مـــلــــــــح لـيـمــــــــون مـائـي",
+  "origin": "الصين",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 1750,
+      "_id": {
+        "$oid": "69fb5e95bd3631fb8e79109d"
+      }
+    }
+  ],
+  "defaultPrice": 1750,
+  "itemDisplayOrder": 104,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:30:29.641Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5eb3bd3631fb8e79109e"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "لـبـن كـامـــل الدسـم فـونـتـيـرة",
+  "origin": "نيوزلاندي",
+  "unit": "25 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 6700,
+      "_id": {
+        "$oid": "69fb5eb3bd3631fb8e79109f"
+      }
+    }
+  ],
+  "defaultPrice": 6700,
+  "itemDisplayOrder": 105,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:30:59.041Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fb5fc7bd3631fb8e7910a0"
+  },
+  "priceListName": "ياميش 2026",
+  "priceListDescription": "",
+  "displayOrder": 0,
+  "displayName": "مشمشيـة تـركـي مـقــاس(8)",
+  "origin": "تركيا",
+  "unit": "5 ك",
+  "notes": "",
+  "linkedItems": [],
+  "prices": [
+    {
+      "label": "سعر البيع",
+      "price": 575,
+      "_id": {
+        "$oid": "69fb5fc7bd3631fb8e7910a1"
+      }
+    }
+  ],
+  "defaultPrice": 575,
+  "itemDisplayOrder": 36,
+  "isActive": true,
+  "updatedBy": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "createdAt": {
+    "$date": "2026-05-06T15:35:35.054Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-06T15:36:20.593Z"
+  },
+  "__v": 0
+}]

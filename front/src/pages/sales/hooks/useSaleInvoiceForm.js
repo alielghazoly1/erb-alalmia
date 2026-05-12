@@ -1,0 +1,430 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { createSaleInvoice } from '../../../store/slices/saleSlice';
+import api from '../../../services/api';
+import toast from 'react-hot-toast';
+
+const newRow = () => ({
+  id: Date.now() + Math.random(),
+  item: null,
+  itemCode: '',
+  itemName: '',
+  unit: '',
+  unitWeight: 0,
+  quantity: '',
+  weight: '',
+  price: '',
+  availableQty: undefined,
+  availableWeight: undefined,
+  saved: false,
+  editing: false,
+});
+
+export const calcTotal = (q, w, p) =>
+  (parseFloat(q) || 0) * (parseFloat(w) || 0) * (parseFloat(p) || 0);
+
+export const calcTotalWeight = (q, w) =>
+  (parseFloat(q) || 0) * (parseFloat(w) || 0);
+
+export const PAYMENT_METHODS = [
+  { value: 'cash',      label: 'نقدي' },
+  { value: 'instapay',  label: 'انستاباي' },
+  { value: 'transfer',  label: 'تحويل بنكي' },
+  { value: 'check',     label: 'شيك' },
+  { value: 'mixed',     label: 'نقدي + انستاباي' },
+];
+
+export function useSaleInvoiceForm() {
+  const reduxDispatch   = useDispatch();
+  const { user }        = useSelector(s => s.auth);
+  const { activeSeason } = useSelector(s => s.season);
+  const isAdmin         = user?.role === 'admin';
+
+  // البيع بالسالب:
+  //   - الأدمن: مفعّل دايماً تلقائياً (لا يحتاج toggle)
+  //   - اليوزر العادي: يُحدَّد من صلاحيات الأدمن فقط في إعدادات المستخدمين
+  //     لو allowNegativeSale = true → يبيع بدون toggle (تلقائي)
+  //     لو allowNegativeSale = false → ما ينفعش يبيع بالسالب خالص
+  // allowNegativeSale: بتُقرأ من الـ permissions دايماً (سواء أدمن أو يوزر)
+  // الأدمن قيمتها بتيجي من DB عبر serializeUser — مش مفترض true دايماً
+  const userHasNegativePerm = user?.permissions?.allowNegativeSale === true;
+  const canNegativeSale     = userHasNegativePerm;   // الأدمن وغيره سواء هنا
+  // canEditInvoice: الأدمن دايماً يقدر، اليوزر لو الأدمن فعّلها له
+  const canEditInvoice      = isAdmin || user?.permissions?.canEditInvoice === true;
+
+  // ── header state ──────────────────────────────────────────────────────────
+  const [customer,        setCustomer]        = useState(null);
+  const [customerError,   setCustomerError]   = useState(false);
+  const [docNumber,       setDocNumber]       = useState('');
+  const [docError,        setDocError]        = useState('');
+  const [docChecking,     setDocChecking]     = useState(false);
+  const [date,            setDate]            = useState(new Date().toISOString().split('T')[0]);
+  const [warehouse,       setWarehouse]       = useState(
+    user?.warehouse === 'october' ? 'october' : 'ramses',
+  );
+  const [notes,           setNotes]           = useState('');
+  const [paymentMethod,   setPaymentMethod]   = useState('credit');
+  const [cashAmount,      setCashAmount]      = useState('');
+  const [instapayAmount,  setInstapayAmount]  = useState('');
+  const [rows,            setRows]            = useState([newRow()]);
+  const [saving,          setSaving]          = useState(false);
+  const [customerBalance, setCustomerBalance] = useState(null);
+  const [totalWeightInput,setTotalWeightInput]= useState({});
+
+  // ── edit mode state ───────────────────────────────────────────────────────
+  const [editingInvoice,  setEditingInvoice]  = useState(null);
+  const [editNotes,       setEditNotes]       = useState('');
+  const [showAdminSearch, setShowAdminSearch] = useState(false);
+  const [searchQuery,     setSearchQuery]     = useState('');
+  const [searchResults,   setSearchResults]   = useState([]);
+  const [searchLoading,   setSearchLoading]   = useState(false);
+
+  // ── show print ────────────────────────────────────────────────────────────
+  const [showPrint, setShowPrint] = useState(false);
+
+  // ── refs ──────────────────────────────────────────────────────────────────
+  const docRef      = useRef(null);
+  const customerRef = useRef(null);
+  const itemRefs    = useRef({});
+  const qtyRefs     = useRef({});
+  const wtRefs      = useRef({});
+  const prRefs      = useRef({});
+  const docTimer    = useRef(null);
+  const srchTimer   = useRef(null);
+  const customerKey = useRef(0);
+
+  // ── computed ──────────────────────────────────────────────────────────────
+  const savedRows      = rows.filter(r => r.saved);
+  const activeRowId    = rows.find(r => !r.saved)?.id;
+  const totalAmount    = savedRows.reduce((s, r) => s + calcTotal(r.quantity, r.weight, r.price), 0);
+  const totalWeightAll = savedRows.reduce((s, r) => s + calcTotalWeight(r.quantity, r.weight), 0);
+  const isCash         = customer?.type === 'cash';
+  const isMixed        = paymentMethod === 'mixed';
+  const paidAmount     = isMixed
+    ? (parseFloat(cashAmount) || 0) + (parseFloat(instapayAmount) || 0)
+    : paymentMethod !== 'credit' ? (parseFloat(cashAmount) || 0) : 0;
+  const remaining      = totalAmount - paidAmount;
+
+  // ── auto-focus doc on mount ───────────────────────────────────────────────
+  useEffect(() => {
+    setTimeout(() => docRef.current?.focus(), 100);
+  }, []);
+
+  // ── رصيد العميل ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!customer || customer.type === 'cash') { setCustomerBalance(null); return; }
+    api.get(`/customers/${customer._id}/statement`)
+      .then(({ data }) => setCustomerBalance(data))
+      .catch(() => {});
+  }, [customer]);
+
+  // ── نوع الدفع حسب نوع العميل ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!customer) return;
+    setPaymentMethod(customer.type === 'cash' ? 'cash' : 'credit');
+    setCashAmount('');
+    setInstapayAmount('');
+  }, [customer]);
+
+  // ── auto-fill cashAmount بالـ total ──────────────────────────────────────
+  useEffect(() => {
+    if (!isCash || isMixed) return;
+    if (paymentMethod !== 'credit') {
+      setCashAmount(totalAmount > 0 ? totalAmount.toFixed(2) : '');
+    }
+  }, [totalAmount, isCash, isMixed, paymentMethod]);
+
+  // ── checkDocNumber ────────────────────────────────────────────────────────
+  const checkDocNumber = useCallback(async (val, excludeId = null) => {
+    if (!val.trim()) { setDocError(''); return; }
+    setDocChecking(true);
+    try {
+      const params = { docNumber: val, seasonId: activeSeason?._id };
+      if (excludeId) params.excludeId = excludeId;
+      const { data } = await api.get('/sales/check-doc', { params });
+      setDocError(data.exists ? `⚠️ رقم المستند "${val}" موجود في هذا الموسم` : '');
+    } catch {
+      setDocError('');
+    } finally {
+      setDocChecking(false);
+    }
+  }, [activeSeason]);
+
+  const handleDocChange = (val) => {
+    setDocNumber(val);
+    setDocError('');
+    clearTimeout(docTimer.current);
+    docTimer.current = setTimeout(() => checkDocNumber(val, editingInvoice?._id), 600);
+  };
+
+  const handleDocKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); customerRef.current?.focus(); }
+  };
+
+  const handleCustomerSelect = (c) => {
+    setCustomer(c);
+    setCustomerError(false);
+    setTimeout(() => focusItemSearch(), 80);
+  };
+
+  const focusItemSearch = () => {
+    if (activeRowId && itemRefs.current[activeRowId]) itemRefs.current[activeRowId]();
+  };
+
+  // ── admin search ──────────────────────────────────────────────────────────
+  const doSearch = useCallback(async (q) => {
+    if (!q.trim()) { setSearchResults([]); return; }
+    setSearchLoading(true);
+    try {
+      const { data } = await api.get('/sales/search', { params: { q } });
+      setSearchResults(data);
+    } catch {
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  const handleSearchChange = (val) => {
+    setSearchQuery(val);
+    clearTimeout(srchTimer.current);
+    srchTimer.current = setTimeout(() => doSearch(val), 400);
+  };
+
+  // ── load invoice for edit ─────────────────────────────────────────────────
+  const loadForEdit = async (inv) => {
+    const { data } = await api.get(`/sales/${inv._id}`);
+    setEditingInvoice(data);
+    setSearchResults([]);
+    setSearchQuery('');
+    setShowAdminSearch(false);
+    setDocNumber(data.docNumber);
+    setDate(data.date?.split('T')[0] || new Date().toISOString().split('T')[0]);
+    setWarehouse(data.warehouse);
+    setPaymentMethod(data.paymentMethod || 'credit');
+    setCashAmount(String(data.cashAmount || ''));
+    setInstapayAmount(String(data.instapayAmount || ''));
+    setEditNotes('');
+    const c = data.customer || {
+      _id: data.customerId, code: data.customerCode,
+      name: data.customerName, type: data.paymentMethod === 'credit' ? 'credit' : 'cash',
+    };
+    setCustomer(c);
+    setCustomerError(false);
+    const loaded = data.items.map(item => ({
+      id: Date.now() + Math.random(),
+      item: item.item?._id || item.item,
+      itemCode: item.itemCode, itemName: item.itemName,
+      unit: item.unit || '', unitWeight: item.weight,
+      quantity: String(item.quantity), weight: String(item.weight),
+      price: String(item.price), saved: true, editing: false,
+    }));
+    setRows([...loaded, newRow()]);
+    setTotalWeightInput({});
+    customerKey.current += 1;
+    toast.success(`تم تحميل ${data.invoiceNumber} للتعديل`);
+  };
+
+  const cancelEdit = () => {
+    setEditingInvoice(null);
+    setEditNotes('');
+    setCustomer(null);
+    setDocNumber('');
+    setDate(new Date().toISOString().split('T')[0]);
+    setRows([newRow()]);
+    setCashAmount('');
+    setInstapayAmount('');
+    setDocError('');
+    setCustomerBalance(null);
+    setTotalWeightInput({});
+    customerKey.current += 1;
+    setTimeout(() => docRef.current?.focus(), 80);
+  };
+
+  // ── item handlers ─────────────────────────────────────────────────────────
+  const handleItemSelect = async (rowId, item) => {
+    if (!item) return;
+    let defaultPrice = '';
+    const unitWeight = item.defaultWeight || 0;
+    const stockQty   = item.stock?.[warehouse]?.quantity || 0;
+    const stockWt    = item.stock?.[warehouse]?.weight   || 0;
+    try {
+      const { data } = await api.get(`/price-list/item/${item._id}`);
+      if (data?.defaultPrice) defaultPrice = String(data.defaultPrice);
+    } catch {}
+    setRows(prev => prev.map(r =>
+      r.id === rowId ? {
+        ...r, item: item._id, itemCode: item.code, itemName: item.name,
+        unit: item.unit, unitWeight,
+        weight: unitWeight ? String(unitWeight) : r.weight,
+        price: defaultPrice || r.price,
+        availableQty: stockQty, availableWeight: stockWt,
+      } : r,
+    ));
+    setTimeout(() => qtyRefs.current[rowId]?.focus(), 50);
+  };
+
+  const updateRow = (rowId, field, value) =>
+    setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r));
+
+  const handleTotalWeightChange = (rowId, totalWt) => {
+    setTotalWeightInput(prev => ({ ...prev, [rowId]: totalWt }));
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const uw = parseFloat(r.weight) || r.unitWeight;
+      if (!uw) return r;
+      const qty = (parseFloat(totalWt) || 0) / uw;
+      return { ...r, quantity: qty > 0 ? String(parseFloat(qty.toFixed(4))) : '' };
+    }));
+  };
+
+  const handleKeyDown = (e, rowId, field) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (field === 'quantity') { wtRefs.current[rowId]?.focus(); return; }
+    if (field === 'weight')   { prRefs.current[rowId]?.focus(); return; }
+    if (field === 'price')    { handleSaveRow(rowId); }
+  };
+
+  const handleSaveRow = (rowId) => {
+    const row = rows.find(r => r.id === rowId);
+    if (!row?.item)                         return toast.error('اختار الصنف أولاً');
+    if (!row.quantity || !row.weight || !row.price) return toast.error('اكمل بيانات الصنف');
+    const duplicate = rows.find(r => r.id !== rowId && r.saved && r.item === row.item);
+    if (duplicate) return toast.error(`الصنف "${row.itemName}" موجود بالفعل في الفاتورة`);
+
+    if (row.editing) {
+      setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r));
+    } else {
+      const newR = newRow();
+      setRows(prev => [
+        ...prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r),
+        newR,
+      ]);
+      setTotalWeightInput(prev => { const n = { ...prev }; delete n[rowId]; return n; });
+      setTimeout(() => { if (itemRefs.current[newR.id]) itemRefs.current[newR.id](); }, 80);
+    }
+  };
+
+  const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true }  : r));
+  const handleCancelRow = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true,  editing: false } : r));
+  const handleDeleteRow = (rowId) => setRows(prev => prev.filter(r => r.id !== rowId));
+
+  // ── reset form ────────────────────────────────────────────────────────────
+  const resetForm = () => {
+    setCustomer(null);
+    setDocNumber('');
+    setDate(new Date().toISOString().split('T')[0]);
+    setCashAmount('');
+    setInstapayAmount('');
+    setRows([newRow()]);
+    setDocError('');
+    setCustomerBalance(null);
+    setTotalWeightInput({});
+    customerKey.current += 1;
+    setTimeout(() => docRef.current?.focus(), 80);
+  };
+
+  // ── submit ────────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!customer)          { setCustomerError(true); toast.error('اختار العميل'); return; }
+    if (!docNumber.trim())  { toast.error('أدخل رقم المستند'); return; }
+    if (docError)           { toast.error(docError); return; }
+    if (savedRows.length === 0) { toast.error('أضف صنف واحد على الأقل'); return; }
+
+    setSaving(true);
+
+    const itemsPayload = savedRows.map(r => ({
+      item: r.item, itemCode: r.itemCode, itemName: r.itemName,
+      quantity: Number(r.quantity), weight: Number(r.weight),
+      price: Number(r.price), total: calcTotal(r.quantity, r.weight, r.price),
+    }));
+
+    const finalPaymentMethod = customer.type === 'cash' ? paymentMethod : 'credit';
+    let finalCashAmount = 0, finalInstapayAmount = 0, finalPaidAmount = 0;
+
+    if (finalPaymentMethod === 'mixed') {
+      finalCashAmount     = parseFloat(cashAmount)     || 0;
+      finalInstapayAmount = parseFloat(instapayAmount) || 0;
+      finalPaidAmount     = finalCashAmount + finalInstapayAmount;
+    } else if (finalPaymentMethod === 'instapay') {
+      finalInstapayAmount = parseFloat(cashAmount) || 0;
+      finalPaidAmount     = finalInstapayAmount;
+    } else if (finalPaymentMethod !== 'credit') {
+      finalCashAmount = parseFloat(cashAmount) || 0;
+      finalPaidAmount = finalCashAmount;
+    }
+
+    // البيع بالسالب:
+    // الأدمن: دايماً مفعّل
+    // اليوزر: تلقائي لو الأدمن فعّلها له من إعدادات المستخدمين
+    // البيع بالسالب: نقرأ القيمة الفعلية من permissions (الأدمن قيمتها من DB)
+    const shouldAllowNegative = userHasNegativePerm;
+
+    const base = {
+      docNumber: docNumber.trim(), date,
+      customerId: customer._id || customer,
+      customerCode: customer.code, customerName: customer.name,
+      warehouse, notes: notes.trim(),
+      paymentMethod: finalPaymentMethod,
+      paidAmount: finalPaidAmount, cashAmount: finalCashAmount,
+      instapayAmount: finalInstapayAmount, items: itemsPayload,
+      ...(shouldAllowNegative ? { allowNegativeSale: true } : {}),
+    };
+
+    try {
+      if (editingInvoice) {
+        // الأدمن → force-edit (يعدّل حتى الـ approved) | اليوزر → PUT عادي
+        const endpoint = isAdmin
+          ? `/sales/${editingInvoice._id}/force-edit`
+          : `/sales/${editingInvoice._id}`;
+        const { data } = await api.put(endpoint, { ...base, editNotes });
+        const invoice  = data.invoice || data;
+        toast.success(`تم تعديل ${invoice.invoiceNumber} ✅`);
+        cancelEdit();
+      } else {
+        const res = await reduxDispatch(createSaleInvoice(base));
+        if (!res.error) {
+          toast.success(`تم حفظ الفاتورة ${res.payload.invoiceNumber} ✅`);
+          resetForm();
+        } else {
+          toast.error(res.payload || 'خطأ في الحفظ');
+        }
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'خطأ');
+    }
+    setSaving(false);
+  };
+
+  return {
+    // state
+    user, isAdmin, canNegativeSale, userHasNegativePerm, canEditInvoice,
+    customer, customerError, setCustomerError,
+    docNumber, docError, docChecking,
+    date, setDate,
+    warehouse, setWarehouse,
+    notes, setNotes,
+    paymentMethod, setPaymentMethod,
+    cashAmount, setCashAmount,
+    instapayAmount, setInstapayAmount,
+    rows, setRows, savedRows, activeRowId,
+    saving, showPrint, setShowPrint,
+    customerBalance,
+    totalWeightInput,
+    editingInvoice, editNotes, setEditNotes,
+    showAdminSearch, setShowAdminSearch,
+    searchQuery, searchResults, searchLoading,
+    // computed
+    totalAmount, totalWeightAll, isCash, isMixed, paidAmount, remaining,
+    // refs
+    docRef, customerRef, itemRefs, qtyRefs, wtRefs, prRefs, customerKey,
+    // handlers
+    handleDocChange, handleDocKeyDown,
+    handleCustomerSelect, focusItemSearch,
+    handleSearchChange, loadForEdit, cancelEdit,
+    handleItemSelect, updateRow, handleTotalWeightChange,
+    handleKeyDown, handleSaveRow,
+    handleEditRow, handleCancelRow, handleDeleteRow,
+    handleSubmit,
+  };
+}

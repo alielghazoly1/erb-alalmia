@@ -1,0 +1,227 @@
+// ─── components/UnifiedSupplierStatementTable.jsx ────────────────────────────
+// جدول كشف الحساب الموحد للمورد — كل الحركات في جدول واحد مرتب بالتاريخ
+// أعمدة: التاريخ | رقم المستند | نوع الحركة | مسحوبات | مدفوعات | له | عليه
+// تذييل: إجمالي كل عمود + الرصيد النهائي
+// ─────────────────────────────────────────────────────────────────────────────
+import { Link } from 'react-router-dom';
+
+const fmt  = (n)    => (n ? Number(n).toFixed(2) : '');
+const fmtD = (date) => new Date(date).toLocaleDateString('ar-EG');
+
+function buildRows(invoices = [], returns = [], payments = [], backToStatement) {
+  const rows = [];
+
+  for (const inv of invoices) {
+    rows.push({
+      key:       inv._id || inv.id,
+      date:      inv.date,
+      docNum:    inv.docNumber || inv.invoiceNumber || '—',
+      type:      'invoice',
+      typeLabel: 'فاتورة شراء',
+      debit:     inv.totalAmount || 0,  // مسحوبات — على الشركة (مستحق للمورد)
+      credit:    0,
+      link:      inv._id ? `/purchase/${inv._id}` : null,
+      state:     backToStatement,
+    });
+  }
+
+  for (const ret of returns) {
+    rows.push({
+      key:       ret._id || ret.id,
+      date:      ret.date,
+      docNum:    ret.invoiceNumber || ret.docNumber || '—',
+      type:      'return',
+      typeLabel: 'مرتجع',
+      debit:     0,
+      credit:    ret.totalAmount || 0,  // له — مرتجع يُقلّل المستحق
+      link:      ret._id ? `/returns/${ret._id}` : null,
+    });
+  }
+
+  for (const pay of payments) {
+    rows.push({
+      key:       pay._id || pay.id,
+      date:      pay.date,
+      docNum:    pay.receiptNumber || '—',
+      type:      'payment',
+      typeLabel: 'دفعة',
+      debit:     0,
+      credit:    pay.amount || 0,       // له — سداد للمورد يُقلّل المستحق
+      link:      null,
+      rawPay:    pay,
+    });
+  }
+
+  rows.sort((a, b) => new Date(a.date) - new Date(b.date));
+  return rows;
+}
+
+const TYPE_STYLE = {
+  invoice: { bg: '#eff6ff', badge: '#2563eb', text: '#1e40af' },
+  return:  { bg: '#fff7ed', badge: '#ea580c', text: '#9a3412' },
+  payment: { bg: '#f0fdf4', badge: '#16a34a', text: '#14532d' },
+};
+
+export default function UnifiedSupplierStatementTable({
+  invoices       = [],
+  returns        = [],
+  payments       = [],
+  initialBalance = 0,
+  backToStatement,
+  onEditPayment,
+}) {
+  const rows = buildRows(invoices, returns, payments, backToStatement);
+
+  const totalDebit  = rows.reduce((s, r) => s + r.debit,  0);
+  const totalCredit = rows.reduce((s, r) => s + r.credit, 0);
+
+  let running = initialBalance;
+  const rowsWithBalance = rows.map((r) => {
+    running += r.debit - r.credit;
+    return { ...r, balance: running };
+  });
+
+  const finalBalance = running;
+  const isDebt       = finalBalance > 0; // مستحق للمورد
+
+  if (rows.length === 0) {
+    return (
+      <div className="card text-center py-12 text-gray-400">
+        لا يوجد حركات في هذا الموسم
+      </div>
+    );
+  }
+
+  return (
+    <div className="card mb-4 print:shadow-none print:border">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 className="text-base font-bold text-gray-800">📋 حركات الحساب</h3>
+        <span className="text-xs text-gray-400">{rows.length} حركة</span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderTop: '2px solid #1e293b', borderBottom: '2px solid #1e293b', background: '#f1f5f9' }}>
+              {[
+                { label: '#',           align: 'center', w: '3%'  },
+                { label: 'التاريخ',     align: 'right',  w: '10%' },
+                { label: 'رقم المستند', align: 'right',  w: '13%' },
+                { label: 'نوع الحركة', align: 'center', w: '12%' },
+                { label: 'مسحوبات',    align: 'center', w: '13%' },
+                { label: 'مدفوعات',    align: 'center', w: '13%' },
+                { label: 'له',          align: 'center', w: '13%' },
+                { label: 'عليه',        align: 'center', w: '13%' },
+                { label: '',            align: 'center', w: '6%', printHide: true },
+              ].map((col, i) => (
+                <th
+                  key={i}
+                  style={{ width: col.w, padding: '8px 6px', textAlign: col.align, fontSize: '11px', fontWeight: 700, color: '#1e293b' }}
+                  className={col.printHide ? 'print:hidden' : ''}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {rowsWithBalance.map((row, idx) => {
+              const st    = TYPE_STYLE[row.type];
+              const isNeg = row.balance < 0;
+              return (
+                <tr
+                  key={row.key}
+                  style={{ background: idx % 2 === 0 ? st.bg : 'white', borderBottom: '1px solid #e2e8f0' }}
+                >
+                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#94a3b8' }}>{idx + 1}</td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'right', color: '#475569' }}>{fmtD(row.date)}</td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'right', fontFamily: 'monospace', color: '#374151' }}>
+                    {row.link ? (
+                      <Link
+                        to={row.link}
+                        state={row.state ? { backTo: row.state, backLabel: 'كشف المورد' } : undefined}
+                        className="hover:underline"
+                        style={{ color: st.text }}
+                      >
+                        {row.docNum}
+                      </Link>
+                    ) : row.docNum}
+                  </td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'center' }}>
+                    <span style={{ background: st.badge, color: 'white', borderRadius: '4px', padding: '2px 7px', fontSize: '10px', fontWeight: 600 }}>
+                      {row.typeLabel}
+                    </span>
+                  </td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#1d4ed8', fontWeight: row.debit ? 600 : 400 }}>
+                    {row.debit ? fmt(row.debit) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                  </td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#15803d', fontWeight: row.credit ? 600 : 400 }}>
+                    {row.credit ? fmt(row.credit) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                  </td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#15803d', fontWeight: isNeg ? 600 : 400 }}>
+                    {isNeg ? fmt(Math.abs(row.balance)) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                  </td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#dc2626', fontWeight: !isNeg ? 600 : 400 }}>
+                    {!isNeg ? fmt(row.balance) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                  </td>
+
+                  <td style={{ padding: '7px 6px', textAlign: 'center' }} className="print:hidden">
+                    {row.type === 'payment' && onEditPayment ? (
+                      <button
+                        onClick={() => onEditPayment(row.rawPay)}
+                        style={{ color: '#3b82f6', fontSize: '11px', cursor: 'pointer', background: 'none', border: 'none' }}
+                      >
+                        ✏️
+                      </button>
+                    ) : row.link ? (
+                      <Link
+                        to={row.link}
+                        state={row.state ? { backTo: row.state, backLabel: 'كشف المورد' } : undefined}
+                        style={{ color: '#64748b', fontSize: '13px' }}
+                      >
+                        ←
+                      </Link>
+                    ) : null}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+
+          <tfoot>
+            <tr style={{ borderTop: '2px solid #1e293b', background: '#f8fafc', fontWeight: 700 }}>
+              <td colSpan={4} style={{ padding: '9px 6px', textAlign: 'right', fontSize: '12px', color: '#1e293b' }}>الإجمالي</td>
+              <td style={{ padding: '9px 6px', textAlign: 'center', color: '#1d4ed8', fontSize: '12px' }}>{fmt(totalDebit)}</td>
+              <td style={{ padding: '9px 6px', textAlign: 'center', color: '#15803d', fontSize: '12px' }}>{fmt(totalCredit)}</td>
+              <td style={{ padding: '9px 6px', textAlign: 'center', color: '#15803d', fontSize: '12px' }}>
+                {finalBalance < 0 ? fmt(Math.abs(finalBalance)) : '—'}
+              </td>
+              <td style={{ padding: '9px 6px', textAlign: 'center', color: '#dc2626', fontSize: '12px' }}>
+                {finalBalance >= 0 ? fmt(finalBalance) : '—'}
+              </td>
+              <td className="print:hidden" />
+            </tr>
+
+            <tr style={{ borderTop: '1px solid #e2e8f0', background: isDebt ? '#fef2f2' : '#f0fdf4' }}>
+              <td colSpan={6} style={{ padding: '10px 6px', textAlign: 'right', fontWeight: 700, fontSize: '13px', color: '#1e293b' }}>
+                {isDebt ? '⚠️ الرصيد المستحق للمورد (عليه)' : '✅ الرصيد (له)'}
+              </td>
+              <td colSpan={2} style={{ padding: '10px 6px', textAlign: 'center', fontWeight: 800, fontSize: '16px', color: isDebt ? '#dc2626' : '#15803d' }}>
+                {fmt(Math.abs(finalBalance))} ج.م
+              </td>
+              <td className="print:hidden" />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,4085 @@
+[{
+  "_id": {
+    "$oid": "69e3883f553813c7e631a0cd"
+  },
+  "code": "1",
+  "name": "استيراد ومخازن وثلاجات العالمية",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:33:51.413Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:33:51.413Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38923553813c7e631a0d1"
+  },
+  "code": "2",
+  "name": "احمد على عيسى",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:37:39.479Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:37:39.479Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3893a553813c7e631a0d2"
+  },
+  "code": "3",
+  "name": "ابراهيم العوام",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:38:02.604Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:38:02.604Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38959553813c7e631a0d3"
+  },
+  "code": "4",
+  "name": "جرين لاند",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:38:33.829Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:38:33.829Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38d77553813c7e631a0f7"
+  },
+  "code": "5",
+  "name": "مصنح حلويات انوار مكة",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:56:07.111Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:56:07.111Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38d8a553813c7e631a0f9"
+  },
+  "code": "6",
+  "name": "شريف الأبيض",
+  "phone": "",
+  "address": "الأسكندرية",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:56:26.055Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:56:26.055Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38d97553813c7e631a0fb"
+  },
+  "code": "7",
+  "name": "بدر الدين للاستيراد والتصدير",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:56:39.207Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:56:39.207Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38dae553813c7e631a0fe"
+  },
+  "code": "8",
+  "name": "شعبان عبده",
+  "phone": "",
+  "address": "الأسكندرية",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:57:02.720Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:57:02.720Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38dbd553813c7e631a100"
+  },
+  "code": "9",
+  "name": "محمود الشوربجي - بلح",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:57:17.600Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:57:17.600Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38dcc553813c7e631a101"
+  },
+  "code": "10",
+  "name": "حمودة الاسكندراني",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:57:32.544Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:57:32.544Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38e06553813c7e631a106"
+  },
+  "code": "11",
+  "name": "مكة للاستيراد والتصدير",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:58:30.017Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:58:30.017Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38e18553813c7e631a10a"
+  },
+  "code": "12",
+  "name": "علاء عیسی",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:58:48.234Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:58:48.234Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38e25553813c7e631a10c"
+  },
+  "code": "13",
+  "name": "ربيع ابو برين",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:59:01.177Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:59:01.177Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38e3d553813c7e631a110"
+  },
+  "code": "14",
+  "name": "الاميرة للصناعات الغذائية",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T13:59:25.490Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T13:59:25.490Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38e8b553813c7e631a117"
+  },
+  "code": "15",
+  "name": "اشرف الزعويلي - بلح",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T14:00:43.508Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T14:00:43.508Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38e97553813c7e631a118"
+  },
+  "code": "16",
+  "name": "احمد هنوه كركديه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T14:00:55.852Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T14:00:55.852Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38ea3553813c7e631a119"
+  },
+  "code": "17",
+  "name": "سنع يوسي - قمر الدين - محسن فرحا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T14:01:07.639Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T14:01:07.639Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38eb2553813c7e631a11e"
+  },
+  "code": "18",
+  "name": "عادل فواز",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T14:01:22.340Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T14:01:22.340Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38ecf553813c7e631a120"
+  },
+  "code": "19",
+  "name": "مصطفى قناوی",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T14:01:51.165Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T14:01:51.165Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38ef0553813c7e631a123"
+  },
+  "code": "20",
+  "name": "نزيه العطار",
+  "phone": "",
+  "address": "باب البحر",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T14:02:24.927Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T14:02:24.927Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e38f07553813c7e631a127"
+  },
+  "code": "21",
+  "name": "الشيخ / سعد - بلح",
+  "phone": "",
+  "address": "كفر الشيخ",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T14:02:47.242Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T14:02:47.242Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39d25553813c7e631a198"
+  },
+  "code": "22",
+  "name": "سال الشافعي ( التوفيق للفول السوداني",
+  "phone": "٠١٠٠٦٢٤٣٤٨٠",
+  "address": "ش الجمهورية - الخانكة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:03:01.053Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:03:01.053Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39d3b553813c7e631a19a"
+  },
+  "code": "23",
+  "name": "طه علام",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:03:23.243Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:03:23.243Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39d4f553813c7e631a19d"
+  },
+  "code": "24",
+  "name": "ایمن جاز",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:03:43.556Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:03:43.556Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39d69553813c7e631a19e"
+  },
+  "code": "25",
+  "name": "اريك ويل للتجارة والتوزيع",
+  "phone": "",
+  "address": "العبور",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:04:09.908Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:04:09.908Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39d8b553813c7e631a1a1"
+  },
+  "code": "26",
+  "name": "الحبيب للتصدير",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:04:43.056Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:04:43.056Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39d96553813c7e631a1a2"
+  },
+  "code": "27",
+  "name": "اسامة العشري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:04:54.780Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:04:54.780Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39daa553813c7e631a1a4"
+  },
+  "code": "28",
+  "name": "محمود عیسی",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:05:14.513Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:05:14.513Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39dfd553813c7e631a1a9"
+  },
+  "code": "29",
+  "name": "عرفه باريس - قمر الدين مصرى",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:06:37.867Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:06:37.867Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39e14553813c7e631a1ab"
+  },
+  "code": "30",
+  "name": "نقدی",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:07:00.460Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:07:00.460Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39e29553813c7e631a1ac"
+  },
+  "code": "31",
+  "name": "جنوب الوادي",
+  "phone": "",
+  "address": "الخارجة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:07:21.099Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:07:21.099Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39e40553813c7e631a1b2"
+  },
+  "code": "32",
+  "name": "محمد الزعويلي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:07:44.484Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:07:44.484Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39e4e553813c7e631a1b3"
+  },
+  "code": "33",
+  "name": "جرد ياميش",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:07:58.892Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:07:58.892Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39e64553813c7e631a1b6"
+  },
+  "code": "34",
+  "name": "انس الوجود للاستيراد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:08:20.924Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:11:45.840Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39e8f553813c7e631a1bc"
+  },
+  "code": "35",
+  "name": "الاخلاص للاستيراد والتصدير",
+  "phone": "٠٤٥٢٤٠٠٤٢٠",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:09:03.037Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:09:03.037Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39e9b553813c7e631a1bd"
+  },
+  "code": "36",
+  "name": "رضا التلب حمص وسمسم الدلتا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:09:15.141Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:09:15.141Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39ea5553813c7e631a1be"
+  },
+  "code": "37",
+  "name": "شافعی",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:09:25.717Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:09:25.717Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39eb0553813c7e631a1bf"
+  },
+  "code": "38",
+  "name": "محمد سامبو - كيزان",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:09:36.934Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:09:36.934Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39ebd553813c7e631a1c0"
+  },
+  "code": "39",
+  "name": "احمد بلبول - مشبك",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:09:49.590Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:09:49.590Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39eca553813c7e631a1c1"
+  },
+  "code": "40",
+  "name": "الطابية للصناعات الغذائية المتطورة",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:10:02.838Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:10:02.838Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39eed553813c7e631a1c4"
+  },
+  "code": "41",
+  "name": "الوطنية للاستيراد والتصدير",
+  "phone": "٠١٢٢٢١٣٦٥٦٩",
+  "address": "المعادي",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:10:37.638Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:10:37.638Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e39ef8553813c7e631a1c5"
+  },
+  "code": "42",
+  "name": "مكرم عبور",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:10:48.783Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:10:48.783Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a01d553813c7e631a1c9"
+  },
+  "code": "43",
+  "name": "التوفيق للصناعات الغذائية",
+  "phone": "٠١٢٢٧٣٩٤٢٩٣",
+  "address": "ش الوالي ميدان المحكمة مصر الجديدة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:15:41.549Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:15:41.549Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a04c553813c7e631a1cc"
+  },
+  "code": "44",
+  "name": "مجدى شكرى - النجمة الذهبية",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:16:28.918Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:16:28.918Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a05c553813c7e631a1cd"
+  },
+  "code": "45",
+  "name": "حمدى على - كرتون",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:16:44.102Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:16:44.102Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a086553813c7e631a1ce"
+  },
+  "code": "46",
+  "name": "عدنان نبراوي",
+  "phone": "",
+  "address": "٢٣٦٥ جنية",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:17:26.950Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:17:26.950Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a09e553813c7e631a1d2"
+  },
+  "code": "47",
+  "name": "شادی",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:17:50.198Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:17:50.198Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a0ab553813c7e631a1d3"
+  },
+  "code": "48",
+  "name": "محسن فاروق - فرحانة",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:18:03.552Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:18:03.552Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a0b4553813c7e631a1d4"
+  },
+  "code": "49",
+  "name": "نوجا لبناني",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:18:12.518Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:18:12.518Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a0c2553813c7e631a1d5"
+  },
+  "code": "50",
+  "name": "بليل الاسكندراني",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:18:26.751Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:18:26.751Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a0cf553813c7e631a1d6"
+  },
+  "code": "51",
+  "name": "شریف نوجا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:18:39.167Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:18:39.167Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a0de553813c7e631a1d7"
+  },
+  "code": "52",
+  "name": "وجيه المتوكل",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:18:54.656Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:18:54.656Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a0f0553813c7e631a1d8"
+  },
+  "code": "53",
+  "name": "محمود الجزار",
+  "phone": "",
+  "address": "طنطا",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:19:12.960Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:19:12.960Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a102553813c7e631a1d9"
+  },
+  "code": "54",
+  "name": "الابداع للطباعة و الكرتون",
+  "phone": "",
+  "address": "علب كرتون",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:19:30.280Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:19:30.280Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a10b553813c7e631a1da"
+  },
+  "code": "55",
+  "name": "احمد عباس - علب كرتون",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:19:39.616Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:19:39.616Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3a11c553813c7e631a1db"
+  },
+  "code": "56",
+  "name": "محمد کمال جویده",
+  "phone": "",
+  "address": "الفيوم",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T15:19:56.569Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T15:19:56.569Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bbb1f7a2cabcd66e9dfd"
+  },
+  "code": "57",
+  "name": "فتح الله محمود",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:13:21.319Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:13:21.319Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bbc6f7a2cabcd66e9dfe"
+  },
+  "code": "58",
+  "name": "مدام / سناء",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:13:42.474Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:13:42.474Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bbd1f7a2cabcd66e9dff"
+  },
+  "code": "59",
+  "name": "محمد السيسي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:13:53.346Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:13:53.346Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bbdaf7a2cabcd66e9e00"
+  },
+  "code": "60",
+  "name": "على الفكهاني",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:14:02.394Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:14:02.394Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bc67f7a2cabcd66e9edb"
+  },
+  "code": "61",
+  "name": "فضل الابراهيمي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:16:23.798Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:16:23.798Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bc70f7a2cabcd66e9edc"
+  },
+  "code": "62",
+  "name": "عوض ناجي مسعد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:16:32.292Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:16:32.292Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bc78f7a2cabcd66e9edd"
+  },
+  "code": "63",
+  "name": "محمد ابراهيم - مقلة الجهاد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:16:40.742Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:16:40.742Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bcb7f7a2cabcd66e9ede"
+  },
+  "code": "64",
+  "name": "استلام من مخزن :",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:17:43.094Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:17:43.094Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bcbdf7a2cabcd66e9edf"
+  },
+  "code": "65",
+  "name": "مصنع كليوباترا سويت",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:17:49.982Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:17:49.982Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bcc6f7a2cabcd66e9ee0"
+  },
+  "code": "66",
+  "name": "محمد عمارة",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:17:58.774Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:17:58.774Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bccef7a2cabcd66e9ee1"
+  },
+  "code": "67",
+  "name": "مصطفى البسيط - بلح جنة الوادي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:18:06.230Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:18:06.230Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bcdaf7a2cabcd66e9ee2"
+  },
+  "code": "68",
+  "name": "نعمة الله للتجارة والتوزيع",
+  "phone": "",
+  "address": "سراى القية",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:18:18.390Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:18:18.390Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bce2f7a2cabcd66e9ee3"
+  },
+  "code": "69",
+  "name": "مؤسسة صفى الدين",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:18:26.886Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:18:26.886Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bdcbf7a2cabcd66e9ee4"
+  },
+  "code": "70",
+  "name": "ابو مازن",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:22:19.963Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:22:19.963Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bdd4f7a2cabcd66e9ee5"
+  },
+  "code": "71",
+  "name": "ابو ربيع",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:22:28.315Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:22:28.315Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bde9f7a2cabcd66e9ee6"
+  },
+  "code": "72",
+  "name": "رضا عبد الغني",
+  "phone": "",
+  "address": "اشمون",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:22:49.072Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:22:49.072Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be00f7a2cabcd66e9ee7"
+  },
+  "code": "73",
+  "name": "اشرف بدير - زبيب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:23:12.763Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:23:12.763Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be1af7a2cabcd66e9ee8"
+  },
+  "code": "74",
+  "name": "زكريا عبد اللطيف",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:23:38.849Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:23:38.849Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be28f7a2cabcd66e9eec"
+  },
+  "code": "75",
+  "name": "رضا الشعب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:23:52.404Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:23:52.404Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be2ff7a2cabcd66e9eed"
+  },
+  "code": "76",
+  "name": "مزارع حمودة",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:23:59.845Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:23:59.845Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be37f7a2cabcd66e9eee"
+  },
+  "code": "77",
+  "name": "ماجد بدوى",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:24:07.685Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:24:07.685Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be42f7a2cabcd66e9eef"
+  },
+  "code": "78",
+  "name": "تريد وان",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:24:18.005Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:24:18.005Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be60f7a2cabcd66e9ef0"
+  },
+  "code": "79",
+  "name": "ميرتكس للاستيراد",
+  "phone": "",
+  "address": "دمياط",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:24:48.541Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:24:58.641Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be77f7a2cabcd66e9ef1"
+  },
+  "code": "80",
+  "name": "استلام مخزن (۲)",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:25:11.382Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:25:11.382Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be7ff7a2cabcd66e9ef2"
+  },
+  "code": "81",
+  "name": "صلاح خروب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:25:19.926Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:25:19.926Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3be8cf7a2cabcd66e9ef3"
+  },
+  "code": "82",
+  "name": "رزق ياسين الحشاش",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:25:32.494Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:25:32.494Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bea6f7a2cabcd66e9ef4"
+  },
+  "code": "83",
+  "name": "وائل الدمياطي سكر الدلتا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:25:58.950Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:25:58.950Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3beb1f7a2cabcd66e9ef8"
+  },
+  "code": "84",
+  "name": "برنت هوم - سلوفان",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:26:09.695Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:26:09.695Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf32f7a2cabcd66e9eff"
+  },
+  "code": "85",
+  "name": "محمد فهمي - الأخوة جروب",
+  "phone": "٠١٢٤٤٥٦٦۷۷",
+  "address": "الفجالة - القاهرة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:28:18.217Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:28:18.217Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf3df7a2cabcd66e9f00"
+  },
+  "code": "86",
+  "name": "افريقيا جرين للتنمية - احمد منسى",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:28:29.625Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:28:29.625Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf50f7a2cabcd66e9f02"
+  },
+  "code": "87",
+  "name": "رویال فوود - عيد محمد حسن",
+  "phone": "٤٤٦٣٠٠٠١",
+  "address": "سرياقوس - الخانكة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:28:48.746Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:28:48.746Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf5bf7a2cabcd66e9f03"
+  },
+  "code": "88",
+  "name": "احمد فؤاد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:28:59.706Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:28:59.706Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf65f7a2cabcd66e9f04"
+  },
+  "code": "89",
+  "name": "الغربية للكيماويات",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:29:09.377Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:29:09.377Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf73f7a2cabcd66e9f05"
+  },
+  "code": "90",
+  "name": "استلام مخزن ؟",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:29:23.074Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:29:23.074Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf88f7a2cabcd66e9f06"
+  },
+  "code": "91",
+  "name": "كاريكا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:29:44.707Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:29:44.707Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf90f7a2cabcd66e9f07"
+  },
+  "code": "92",
+  "name": "حماد بورمه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:29:52.346Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:29:52.346Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bf97f7a2cabcd66e9f08"
+  },
+  "code": "93",
+  "name": "طارق الحلواني",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:29:59.507Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:29:59.507Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bfa7f7a2cabcd66e9f09"
+  },
+  "code": "94",
+  "name": "طارق نعمة الله كركديه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:30:15.267Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:30:15.267Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bfb2f7a2cabcd66e9f0a"
+  },
+  "code": "95",
+  "name": "شركة الأمل",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:30:26.059Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:30:26.059Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bfb8f7a2cabcd66e9f0b"
+  },
+  "code": "96",
+  "name": "الشيخ علي رمضان",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:30:32.675Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:30:32.675Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3bfc0f7a2cabcd66e9f0c"
+  },
+  "code": "97",
+  "name": "محمد السيد - الإسراء",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:30:40.563Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:30:40.563Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c457f7a2cabcd66e9f0d"
+  },
+  "code": "98",
+  "name": "جودة - نشا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:50:15.985Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:50:15.985Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c460f7a2cabcd66e9f0e"
+  },
+  "code": "99",
+  "name": "على موسى - تين",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:50:24.169Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:50:24.169Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c468f7a2cabcd66e9f0f"
+  },
+  "code": "100",
+  "name": "محمد على - عين جمل اوكراني",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:50:32.337Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:50:32.337Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c46ff7a2cabcd66e9f10"
+  },
+  "code": "101",
+  "name": "نامر فضالی",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:50:39.529Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:50:39.529Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c477f7a2cabcd66e9f11"
+  },
+  "code": "102",
+  "name": "احمد منصور الضبع",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:50:47.601Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:50:47.601Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c484f7a2cabcd66e9f12"
+  },
+  "code": "103",
+  "name": "عشوش للتجارة - جمال عشوش",
+  "phone": "",
+  "address": "ميدان السيد البدوي",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:51:00.385Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:51:00.385Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c49ff7a2cabcd66e9f15"
+  },
+  "code": "104",
+  "name": "مصنع النسمة - عادل القرعلي",
+  "phone": "",
+  "address": "القليوبية",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:51:27.758Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:51:27.758Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c4aff7a2cabcd66e9f16"
+  },
+  "code": "105",
+  "name": "مجدي محمد عبد العزيز",
+  "phone": "",
+  "address": "منشأة القناطر - جيزة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:51:43.794Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:51:43.794Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c4e9f7a2cabcd66e9f19"
+  },
+  "code": "106",
+  "name": "سيد بلبول - مشيك",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:52:41.851Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:52:41.851Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c4f2f7a2cabcd66e9f1b"
+  },
+  "code": "107",
+  "name": "طلعت نشا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:52:50.147Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:52:50.147Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c4fbf7a2cabcd66e9f1c"
+  },
+  "code": "108",
+  "name": "احمد مصطفي قنصوه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:52:59.764Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:52:59.764Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c503f7a2cabcd66e9f1d"
+  },
+  "code": "109",
+  "name": "طارق أبو الخير - زبيب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:53:07.563Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:53:07.563Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c50bf7a2cabcd66e9f1f"
+  },
+  "code": "110",
+  "name": "احمد شومان کرکدیه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:53:15.364Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:53:15.364Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c514f7a2cabcd66e9f20"
+  },
+  "code": "111",
+  "name": "عبد القادر بدير - زبيب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:53:24.308Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:53:24.308Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c51bf7a2cabcd66e9f22"
+  },
+  "code": "112",
+  "name": "محمود رزه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:53:31.868Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:53:31.868Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c522f7a2cabcd66e9f23"
+  },
+  "code": "113",
+  "name": "محمد الشندويلي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:53:38.308Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:53:38.308Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c529f7a2cabcd66e9f24"
+  },
+  "code": "114",
+  "name": "عمر مشمش",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:53:45.132Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:53:45.132Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c536f7a2cabcd66e9f26"
+  },
+  "code": "115",
+  "name": "غباشي للكرتون",
+  "phone": "",
+  "address": "المطبعة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:53:58.896Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:53:58.896Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c542f7a2cabcd66e9f27"
+  },
+  "code": "116",
+  "name": "المصرية لمنتجات البيض الميستر",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:54:10.828Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:54:10.828Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c553f7a2cabcd66e9f28"
+  },
+  "code": "117",
+  "name": "محمود شيرنج",
+  "phone": "٠١٢٢٤٠۷۷۰۸۷",
+  "address": "نوى - قليوبية",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:54:27.701Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:54:27.701Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c55ef7a2cabcd66e9f2a"
+  },
+  "code": "118",
+  "name": "فرج قنديل ( قشطة )",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:54:38.527Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:54:38.527Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c567f7a2cabcd66e9f2b"
+  },
+  "code": "119",
+  "name": "الحسين للإستيراد والتصدير",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:54:47.213Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:54:47.213Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c56ff7a2cabcd66e9f2c"
+  },
+  "code": "120",
+  "name": "محمد قاسم - زبيب مصري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:54:55.413Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:54:55.413Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c578f7a2cabcd66e9f2e"
+  },
+  "code": "121",
+  "name": "سلامة السهواجي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:55:04.853Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:55:04.853Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c581f7a2cabcd66e9f2f"
+  },
+  "code": "122",
+  "name": "سامي العطار",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:55:13.085Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:55:13.085Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c588f7a2cabcd66e9f31"
+  },
+  "code": "123",
+  "name": "ابراهيم خطاب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:55:20.976Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:55:20.976Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c591f7a2cabcd66e9f32"
+  },
+  "code": "124",
+  "name": "جنة الوادى للتجارة",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:55:29.862Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:55:29.862Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c599f7a2cabcd66e9f33"
+  },
+  "code": "125",
+  "name": "حمد - خروب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:55:37.734Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:55:37.734Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c5b2f7a2cabcd66e9f36"
+  },
+  "code": "126",
+  "name": "حمد عبد العزيز - فرست - ورق شيرنج",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:56:02.286Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:56:02.286Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c5daf7a2cabcd66e9f38"
+  },
+  "code": "127",
+  "name": "المصرية للكرتون",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:56:42.353Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:56:42.353Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c5e1f7a2cabcd66e9f39"
+  },
+  "code": "128",
+  "name": "اسلام حموده",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:56:49.215Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:56:49.215Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c5eef7a2cabcd66e9f3a"
+  },
+  "code": "129",
+  "name": "عبيد للحاصلات الزراعية",
+  "phone": "",
+  "address": "ابو حماد - الشرقية",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:57:02.103Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:57:02.103Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c604f7a2cabcd66e9f3b"
+  },
+  "code": "130",
+  "name": "سید دراهم - شركة ميرتكس",
+  "phone": "",
+  "address": "للإستيراد والتصدير",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:57:24.241Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:57:24.241Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c618f7a2cabcd66e9f3c"
+  },
+  "code": "131",
+  "name": "النخيل للصناعات الغذائيه",
+  "phone": "٠٥٥٤٤١٠٨۸۰",
+  "address": "الشرقيه",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:57:44.856Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:57:44.856Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c66af7a2cabcd66e9f3d"
+  },
+  "code": "132",
+  "name": "هاني صبري - الفريد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:59:06.106Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:59:06.106Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c675f7a2cabcd66e9f3e"
+  },
+  "code": "133",
+  "name": "عمری صلاح - لبن فرنساوي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:59:17.346Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:59:17.346Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c67ff7a2cabcd66e9f3f"
+  },
+  "code": "134",
+  "name": "محمد علي فراج",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:59:27.210Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:59:27.210Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c686f7a2cabcd66e9f40"
+  },
+  "code": "135",
+  "name": "مصطفى السكرية",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:59:34.442Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:59:34.442Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c68ef7a2cabcd66e9f41"
+  },
+  "code": "136",
+  "name": "خالد حسن",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:59:42.939Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:59:42.939Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c69df7a2cabcd66e9f42"
+  },
+  "code": "137",
+  "name": "اسامه عبد العليم - دره بيبيتو",
+  "phone": "",
+  "address": "مساكن شيراتون",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T17:59:57.411Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T17:59:57.411Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c6abf7a2cabcd66e9f43"
+  },
+  "code": "138",
+  "name": "حديقة السوري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:00:11.411Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:00:11.411Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c6b5f7a2cabcd66e9f44"
+  },
+  "code": "139",
+  "name": "عاطف - للكرتون",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:00:21.091Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:00:21.091Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c6bdf7a2cabcd66e9f45"
+  },
+  "code": "140",
+  "name": "حسام عوارة - حمص",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:00:29.851Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:00:29.851Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c6ccf7a2cabcd66e9f46"
+  },
+  "code": "141",
+  "name": "جمال السيد بلبول",
+  "phone": "۰۱۰۰۱۰٢٨٥٨٥",
+  "address": "دمياط",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:00:44.579Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:00:44.579Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c810f7a2cabcd66e9f47"
+  },
+  "code": "142",
+  "name": "محمد كامل",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:06:08.282Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:06:08.282Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c81af7a2cabcd66e9f48"
+  },
+  "code": "143",
+  "name": "ایمن قدوره",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:06:18.059Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:06:18.059Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c822f7a2cabcd66e9f49"
+  },
+  "code": "144",
+  "name": "عزت عمر / الفريد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:06:26.666Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:06:26.666Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c895f7a2cabcd66e9f4a"
+  },
+  "code": "145",
+  "name": "مسعد فوزي / حروب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:08:21.844Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:08:21.844Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e3c8def7a2cabcd66e9f4b"
+  },
+  "code": "146",
+  "name": "عمان فودز",
+  "phone": "۰۱۰۰۱۰۷۰٥٢٨",
+  "address": "نبروه - دقهليه",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-18T18:09:34.486Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T18:09:34.486Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e609f0727f3f9593d15942"
+  },
+  "code": "147",
+  "name": "ميسر الزبيبي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:11:44.697Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:11:44.697Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e609fe727f3f9593d15944"
+  },
+  "code": "148",
+  "name": "جمال الشرقاوي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:11:58.838Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:11:58.838Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a09727f3f9593d15946"
+  },
+  "code": "149",
+  "name": "عبد الناصر صاروخ - بلح",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:12:09.517Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:12:09.517Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a19727f3f9593d15948"
+  },
+  "code": "150",
+  "name": "حمدی عوض - زبيب",
+  "phone": "٠١٢٠٦٨٥٨٣٥٩",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:12:25.389Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:12:25.389Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a23727f3f9593d1594a"
+  },
+  "code": "151",
+  "name": "ايمن الشافعي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:12:35.277Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:12:35.277Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a2b727f3f9593d1594c"
+  },
+  "code": "152",
+  "name": "حسن فريد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:12:43.421Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:12:43.421Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a34727f3f9593d1594e"
+  },
+  "code": "153",
+  "name": "شعبان التقوى",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:12:52.046Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:12:52.046Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a42727f3f9593d15950"
+  },
+  "code": "154",
+  "name": "عمر هلال شركة الاهرام)",
+  "phone": "",
+  "address": "شركة الاهرام",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:13:06.222Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:13:06.222Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a4a727f3f9593d15952"
+  },
+  "code": "155",
+  "name": "مصنع اكتوبر",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:13:14.733Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:13:14.733Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a5e727f3f9593d15954"
+  },
+  "code": "156",
+  "name": "سامح الورداني",
+  "phone": "",
+  "address": "أبو رواش",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:13:34.238Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:13:34.238Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a67727f3f9593d15956"
+  },
+  "code": "157",
+  "name": "احمد الصعيدي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:13:43.694Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:13:43.694Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60a82727f3f9593d15958"
+  },
+  "code": "158",
+  "name": "الحرمين للتجارة - سيد سالم",
+  "phone": "٠١٠١٠٥٤١٩٦٤",
+  "address": "شبرا الخيمة",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:14:10.520Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:14:10.520Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60aa3727f3f9593d1595a"
+  },
+  "code": "159",
+  "name": "روتو غرافيا مصر",
+  "phone": "",
+  "address": "6 اکتوبر",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:14:43.535Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:14:43.535Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60aac727f3f9593d1595c"
+  },
+  "code": "160",
+  "name": "ابو سعيد طوكو",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:14:52.111Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:14:52.111Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ab6727f3f9593d1595e"
+  },
+  "code": "161",
+  "name": "ابراهیم حموده",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:15:02.720Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:15:02.720Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ac5727f3f9593d15960"
+  },
+  "code": "162",
+  "name": "مينا فوزي - خروب",
+  "phone": "٠١٠٠٩٩٥٢٥٩٣",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:15:17.944Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:15:17.944Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ad1727f3f9593d15962"
+  },
+  "code": "163",
+  "name": "مؤسسة الصفا ناتس",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:15:29.783Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:15:29.783Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60adb727f3f9593d15964"
+  },
+  "code": "166",
+  "name": "علي حسن - مقلة الدقي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:15:39.495Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:15:39.495Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ae3727f3f9593d15966"
+  },
+  "code": "167",
+  "name": "ادة الخولي - احمد عواض - عسل وط",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:15:47.352Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:15:47.352Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60af6727f3f9593d15968"
+  },
+  "code": "168",
+  "name": "حامد السوري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:16:06.353Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:16:06.353Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60b41727f3f9593d1596a"
+  },
+  "code": "169",
+  "name": "شركة النور - اكياس شيرنج - ١ بلال",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:17:21.745Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:17:21.745Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60b53727f3f9593d1596e"
+  },
+  "code": "171",
+  "name": "أشرف الكفراوي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:17:39.874Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:17:39.874Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60c46727f3f9593d15970"
+  },
+  "code": "170",
+  "name": "جنرال برنت",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:21:42.119Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:21:42.119Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60c52727f3f9593d15975"
+  },
+  "code": "172",
+  "name": "عرفة الحلواني جيلي قلوب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:21:54.671Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:21:54.671Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60c78727f3f9593d15978"
+  },
+  "code": "173",
+  "name": "اياد المرجى السوري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:22:32.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:22:32.000Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60c84727f3f9593d1597d"
+  },
+  "code": "174",
+  "name": "خالد حماد",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:22:44.064Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:22:44.064Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60c8e727f3f9593d1597f"
+  },
+  "code": "175",
+  "name": "يحيى الصعيدي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:22:54.144Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:22:54.144Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60c96727f3f9593d15981"
+  },
+  "code": "176",
+  "name": "حماده كابري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:23:02.760Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:23:02.760Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60cb9727f3f9593d15983"
+  },
+  "code": "177",
+  "name": "فؤاد فريد السوري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:23:37.409Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:23:37.409Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60cc2727f3f9593d15988"
+  },
+  "code": "178",
+  "name": "ابراهيم سعده",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:23:46.784Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:23:46.784Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ccb727f3f9593d1598a"
+  },
+  "code": "179",
+  "name": "اشرف عادل زغلول",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:23:55.465Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:23:55.465Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60cd2727f3f9593d1598c"
+  },
+  "code": "180",
+  "name": "شوقي العوام",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:24:02.523Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:24:02.523Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60cd9727f3f9593d1598e"
+  },
+  "code": "181",
+  "name": "الفارس للاستيراد والتصدير",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:24:09.939Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:24:09.939Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ce9727f3f9593d15990"
+  },
+  "code": "182",
+  "name": "محمود الصعيدي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:24:25.009Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:24:25.009Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60cf1727f3f9593d15992"
+  },
+  "code": "183",
+  "name": "بارون للاستيراد والتصدير - محمد اسحا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:24:33.561Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:24:33.561Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60cf9727f3f9593d15994"
+  },
+  "code": "184",
+  "name": "احمد عطية للكرتون",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:24:41.346Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:24:41.346Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d01727f3f9593d15996"
+  },
+  "code": "185",
+  "name": "حسام زينهم",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:24:49.962Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:24:49.962Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d0a727f3f9593d15998"
+  },
+  "code": "186",
+  "name": "امير - جيلاتينا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:24:58.082Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:24:58.082Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d46727f3f9593d1599b"
+  },
+  "code": "187",
+  "name": "ايمن الشرقاوى التمساح",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:25:58.027Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:25:58.027Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d4e727f3f9593d1599d"
+  },
+  "code": "188",
+  "name": "الامين للجيلاتينا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:26:06.739Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:26:06.739Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d56727f3f9593d1599f"
+  },
+  "code": "189",
+  "name": "اسماعيل منصور - جیلی ترکی",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:26:14.763Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:26:14.763Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d5e727f3f9593d159a1"
+  },
+  "code": "190",
+  "name": "احمد ابو جاموس",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:26:22.355Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:26:22.355Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d66727f3f9593d159a3"
+  },
+  "code": "191",
+  "name": "منعم قمر الدين",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:26:30.139Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:26:30.139Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d6c727f3f9593d159a5"
+  },
+  "code": "192",
+  "name": "سيد حمودة زبيب",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:26:36.563Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:26:36.563Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d75727f3f9593d159ae"
+  },
+  "code": "193",
+  "name": "ام رحمة تلضيم عين جمل",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:26:45.611Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:26:45.611Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d80727f3f9593d159b3"
+  },
+  "code": "194",
+  "name": "شركة الرحاب للتعبئة وتغليف التمور",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:26:56.220Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:26:56.220Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d87727f3f9593d159b5"
+  },
+  "code": "195",
+  "name": "حموده المرشدي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:27:03.844Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:27:03.844Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d93727f3f9593d159c1"
+  },
+  "code": "196",
+  "name": "غسان الزبيبي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:27:15.132Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:27:15.132Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60d9d727f3f9593d159c3"
+  },
+  "code": "197",
+  "name": "علاء منصور",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:27:25.404Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:27:25.404Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60daa727f3f9593d159c5"
+  },
+  "code": "198",
+  "name": "ام اسلام کرکدیه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:27:38.860Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:27:38.860Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60db2727f3f9593d159c9"
+  },
+  "code": "199",
+  "name": "ابراهیم رمضان جوزهند",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:27:46.436Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:27:46.436Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60dba727f3f9593d159d3"
+  },
+  "code": "200",
+  "name": "حسام بحر",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:27:54.925Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:27:54.925Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60dc3727f3f9593d159da"
+  },
+  "code": "201",
+  "name": "مصطفي عرقسوس الحوت",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:28:03.433Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:28:03.433Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60dca727f3f9593d159e4"
+  },
+  "code": "202",
+  "name": "أحمد حبيب قول سوداني)",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:28:10.765Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:28:10.765Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60dd1727f3f9593d159e6"
+  },
+  "code": "203",
+  "name": "فارس أبو محمود السوري",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:28:17.965Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:28:17.965Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60e02727f3f9593d159f0"
+  },
+  "code": "204",
+  "name": "معرض اميركو مصر",
+  "phone": "",
+  "address": "بين الحارات",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:29:06.470Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:29:06.470Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60e12727f3f9593d159fa"
+  },
+  "code": "205",
+  "name": "عيد الشرقاوي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:29:22.158Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:29:22.158Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60e64727f3f9593d159fc"
+  },
+  "code": "206",
+  "name": "زعتر الشرقاوي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:30:44.736Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:30:44.736Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60e6e727f3f9593d159fe"
+  },
+  "code": "207",
+  "name": "محمد الفكهاني",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:30:54.280Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:30:54.280Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60e7d727f3f9593d15a0c"
+  },
+  "code": "208",
+  "name": "سلمان زبيب حصادنا",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:31:09.336Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:31:09.336Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60e9e727f3f9593d15a12"
+  },
+  "code": "209",
+  "name": "محمد عامر - ايجيبت باك للكرتون",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:31:42.465Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:31:42.465Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ebd727f3f9593d15a21"
+  },
+  "code": "210",
+  "name": "هشام - مطبعه امبابه",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:32:13.953Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:32:13.953Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ed3727f3f9593d15a23"
+  },
+  "code": "211",
+  "name": "مبشر البرجاوي",
+  "phone": "",
+  "address": "أكتوبر",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:32:35.554Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:32:35.554Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60edd727f3f9593d15a25"
+  },
+  "code": "212",
+  "name": "الراية الملكية",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:32:45.130Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:32:45.130Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60eef727f3f9593d15a27"
+  },
+  "code": "213",
+  "name": "حماده رویی / مصنع حورس الفيوم",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:33:03.034Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:33:03.034Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60ef9727f3f9593d15a2c"
+  },
+  "code": "214",
+  "name": "نجمة سيوة للتمور - الحاج / بلال",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:33:13.059Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:33:13.059Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60f00727f3f9593d15a2e"
+  },
+  "code": "215",
+  "name": "شركة الشرقية للبلاستيك",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:33:20.995Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:33:20.995Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60f0f727f3f9593d15a30"
+  },
+  "code": "216",
+  "name": "احمد العطار بين الحارات",
+  "phone": "",
+  "address": "رمسيس",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:33:35.235Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:33:35.235Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69e60f20727f3f9593d15a32"
+  },
+  "code": "217",
+  "name": "ياسر السباعي",
+  "phone": "",
+  "address": "",
+  "notes": "",
+  "isActive": true,
+  "isCustomer": false,
+  "createdAt": {
+    "$date": "2026-04-20T11:33:52.163Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-20T11:33:52.163Z"
+  },
+  "__v": 0
+}]

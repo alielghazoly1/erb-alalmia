@@ -1,0 +1,7264 @@
+[{
+  "_id": {
+    "$oid": "69fc8bfcb52800d389cbfb3f"
+  },
+  "code": "1",
+  "name": "قمر الدين سورى مراسى 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": -10,
+      "weight": -10
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 1200,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T12:56:28.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T18:01:40.765Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8c3eb52800d389cbfb40"
+  },
+  "code": "2",
+  "name": "قمر الدين سوري الاسطورة 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T12:57:34.261Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T12:57:34.261Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8c64b52800d389cbfb41"
+  },
+  "code": "3",
+  "name": "قمر الدين سوري الوفير 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T12:58:12.458Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T12:58:12.458Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8c87b52800d389cbfb42"
+  },
+  "code": "4",
+  "name": "قمر الدين سوري العالمية 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T12:58:47.811Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T12:58:47.811Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8ca4b52800d389cbfb43"
+  },
+  "code": "5",
+  "name": "قمر الدين سوري الاحلام 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T12:59:16.330Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T12:59:16.330Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8cceb52800d389cbfb44"
+  },
+  "code": "6",
+  "name": "قمر الدين وفير كبريت سايب 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T12:59:58.966Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T12:59:58.966Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8cf1b52800d389cbfb45"
+  },
+  "code": "7",
+  "name": "قمر الدين وفير قطع معبا علب 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:00:33.922Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:00:33.922Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8d16b52800d389cbfb46"
+  },
+  "code": "8",
+  "name": "مشمشية سوري مقاس 1- 5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:01:10.603Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:01:10.603Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8d44b52800d389cbfb47"
+  },
+  "code": "9",
+  "name": "مشمشية سوري مقاس 4 رستم- 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:01:56.572Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:01:56.572Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8de9b52800d389cbfb49"
+  },
+  "code": "10",
+  "name": "جوز هند فيتنامي خشن كامل الدسم -25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:04:41.915Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:05:17.642Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8e06b52800d389cbfb4a"
+  },
+  "code": "11",
+  "name": "جوز هند سيرلانكي خشن -50ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:05:10.027Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:05:10.027Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8e39b52800d389cbfb4b"
+  },
+  "code": "12",
+  "name": "جوز هند سيرلانكي ناعم - 50ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:06:01.987Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:06:01.987Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8e5eb52800d389cbfb4d"
+  },
+  "code": "13",
+  "name": "جوز هند اندونيسي خشن -25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:06:38.387Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:06:38.387Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8e87b52800d389cbfb4e"
+  },
+  "code": "14",
+  "name": "جوز هند فيتنامي ناعم كامل الدسم -50ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:07:19.707Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:08:13.833Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8eb8b52800d389cbfb4f"
+  },
+  "code": "15",
+  "name": "جوز هند فيتنامي منزوع (نصف دسم) 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:08:08.219Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:08:08.219Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8ee5b52800d389cbfb50"
+  },
+  "code": "16",
+  "name": "جوز هند قطاعي",
+  "category": "ياميش",
+  "unit": "كيلو",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:08:53.603Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:08:53.603Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8f0fb52800d389cbfb51"
+  },
+  "code": "17",
+  "name": "جوز هند فيتنامي خشن كريمي - 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:09:35.795Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:09:44.011Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc8f3fb52800d389cbfb52"
+  },
+  "code": "18",
+  "name": "جوز هند سيلانكي ضفر 35ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:10:23.339Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:10:23.339Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9007b52800d389cbfb54"
+  },
+  "code": "19",
+  "name": "جوز هند فيتنامي متوسط الخشانة -25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:13:43.612Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:13:43.612Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc902fb52800d389cbfb56"
+  },
+  "code": "20",
+  "name": "تين مدور العالمية 250 جرام * 12ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:14:23.140Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:14:23.140Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9042b52800d389cbfb57"
+  },
+  "code": "21",
+  "name": "تين حبل السعيد 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:14:42.989Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:14:42.989Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc905ab52800d389cbfb58"
+  },
+  "code": "22",
+  "name": "تين مدور السعيد 12ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:15:06.860Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:15:06.860Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc90ecb52800d389cbfb5a"
+  },
+  "code": "23",
+  "name": "تين حبل الامراء 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:17:32.669Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:17:32.669Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc910ab52800d389cbfb5b"
+  },
+  "code": "24",
+  "name": "مشمشية تركي مقاس 2 -5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:18:02.557Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:18:02.557Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc913fb52800d389cbfb5c"
+  },
+  "code": "25",
+  "name": "مشمشية تركي مقاس 1 -5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:18:55.468Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:18:55.468Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9164b52800d389cbfb5d"
+  },
+  "code": "26",
+  "name": "مشمشية تركي مقاس 8 -5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:19:32.103Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:19:32.103Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9186b52800d389cbfb5f"
+  },
+  "code": "27",
+  "name": "مشمشية تركي مقاس 8 *10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:20:06.365Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:20:06.365Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc91a1b52800d389cbfb60"
+  },
+  "code": "28",
+  "name": "قراصيا ارجنتيني مخلية 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:20:33.493Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:20:33.493Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc91ceb52800d389cbfb63"
+  },
+  "code": "29",
+  "name": "قراصيا ارجنتيني 40/30 * 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:21:18.267Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:21:18.267Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc91efb52800d389cbfb64"
+  },
+  "code": "30",
+  "name": "قراصيا ارجنيتني 50/40 *10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:21:51.413Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:21:51.413Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc921fb52800d389cbfb66"
+  },
+  "code": "31",
+  "name": "بندق حصي امريكي جامبو 25ك",
+  "category": "مكسرات",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:22:39.310Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:22:39.310Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9251b52800d389cbfb69"
+  },
+  "code": "32",
+  "name": "بندق قلب مقاس 15/13 ني* 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:23:29.269Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:23:29.269Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc926eb52800d389cbfb6a"
+  },
+  "code": "33",
+  "name": "بندق محمص سليم فاكيوم 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:23:58.725Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:23:58.725Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9287b52800d389cbfb6b"
+  },
+  "code": "34",
+  "name": "بندق ملضم 9.5ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:24:23.245Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:24:23.245Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc93c6b52800d389cbfb6c"
+  },
+  "code": "35",
+  "name": "لوز قلب اسباني 30/27 ني - محمص 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:29:42.303Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:29:42.303Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc93f9b52800d389cbfb6d"
+  },
+  "code": "36",
+  "name": "لوز قلب امريكي 22/20 ني -محمص 22.680ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:30:33.278Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:30:33.278Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9462b52800d389cbfb6e"
+  },
+  "code": "37",
+  "name": "لوز قلب امريكي 30/27 ني-محمص 22.680ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:32:18.703Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:32:18.703Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9488b52800d389cbfb6f"
+  },
+  "code": "38",
+  "name": "لوز حصي امريكي جامبو 22.680",
+  "category": "مكسرات",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:32:56.127Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:32:56.127Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc94b8b52800d389cbfb70"
+  },
+  "code": "39",
+  "name": "لوز قلب اسباني 22/20 ني-محمص 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:33:44.927Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:33:44.927Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9513b52800d389cbfb71"
+  },
+  "code": "40",
+  "name": "كاجو فيتنامي 180ني- محمص العالمية",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:35:15.868Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:35:15.868Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9533b52800d389cbfb72"
+  },
+  "code": "41",
+  "name": "كاجو فيتنامي 240 ني- محمص",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:35:47.838Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:36:01.030Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9567b52800d389cbfb73"
+  },
+  "code": "42",
+  "name": "كاجو فيتنامي 320 ني-محمص",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:36:39.991Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:36:39.991Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc957eb52800d389cbfb75"
+  },
+  "code": "43",
+  "name": "عين جمل امريكي حصي جامبو 25ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:37:02.999Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:37:02.999Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc959fb52800d389cbfb76"
+  },
+  "code": "44",
+  "name": "عين جمل امريكي انصاف اكسترا 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:37:35.289Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:37:35.289Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc95c4b52800d389cbfb77"
+  },
+  "code": "45",
+  "name": "عين جمل امريكي كسر 9.5ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:38:12.175Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:38:12.175Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc95e5b52800d389cbfb78"
+  },
+  "code": "46",
+  "name": "عين جمل صن رايز انصاف 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:38:45.688Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:38:45.688Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9606b52800d389cbfb79"
+  },
+  "code": "47",
+  "name": "عين جمل انصاف امريكي ايدين 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:39:18.088Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:39:18.088Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9627b52800d389cbfb7a"
+  },
+  "code": "48",
+  "name": "عين جمل ارياع سايلون امريكي 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:39:51.600Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:39:51.600Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc965db52800d389cbfb7b"
+  },
+  "code": "49",
+  "name": "فسدق امريكي 25/21 ني-مملح 11.340ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:40:45.608Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:40:45.608Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9690b52800d389cbfb7c"
+  },
+  "code": "50",
+  "name": "فسدق امريكي 20/18بريمكس ني-مملح 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T13:41:36.169Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T13:41:51.376Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9dfbb52800d389cbfb7d"
+  },
+  "code": "51",
+  "name": "فسدق حصي وزه ايراني 22/20 ني-مملح 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:13:15.683Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:13:15.683Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9e18b52800d389cbfb7e"
+  },
+  "code": "52",
+  "name": "فسدق قلب حلبي 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:13:44.523Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:13:44.523Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9e3db52800d389cbfb7f"
+  },
+  "code": "53",
+  "name": "فسدق ايراني 30/28 ني-مملح 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:14:21.924Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:14:21.924Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9e53b52800d389cbfb80"
+  },
+  "code": "54",
+  "name": "فسدق قلب امريكي 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:14:43.795Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:14:43.795Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9e78b52800d389cbfb81"
+  },
+  "code": "55",
+  "name": "فسدق حصي وندرفل 22/21 ني-محمص 11.340ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:15:20.204Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:15:20.204Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9e97b52800d389cbfb82"
+  },
+  "code": "56",
+  "name": "زبيب جولدن ايراني اكسترا 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:15:51.603Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:15:51.603Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9ec9b52800d389cbfb83"
+  },
+  "code": "57",
+  "name": "زبيب مصري العالمية جولدن ازرق 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:16:41.812Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:16:41.812Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9eedb52800d389cbfb84"
+  },
+  "code": "58",
+  "name": "تمر هندي السلام 300جرام *9ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:17:17.428Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:17:17.428Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9f07b52800d389cbfb85"
+  },
+  "code": "59",
+  "name": "تمر هندي الوفير 300 جرام *9ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:17:43.004Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:17:43.004Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9f1eb52800d389cbfb86"
+  },
+  "code": "60",
+  "name": "خروب قبرصي مجروش 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:18:06.620Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:18:06.620Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9f3fb52800d389cbfb87"
+  },
+  "code": "61",
+  "name": "خروب قبرصي قرون 12.5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:18:39.932Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:18:39.932Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9f59b52800d389cbfb88"
+  },
+  "code": "62",
+  "name": "كركدية نيجيري 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:19:05.836Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:19:05.836Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9f70b52800d389cbfb89"
+  },
+  "code": "63",
+  "name": "كركدية سايب اجولة 10ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:19:28.191Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:19:28.191Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fc9f92b52800d389cbfb8a"
+  },
+  "code": "64",
+  "name": "كركدية العالمية 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:20:02.692Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:20:02.692Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca04db52800d389cbfb8b"
+  },
+  "code": "65",
+  "name": "نشا النيل/ لويس الاهرام 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:23:09.256Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:23:09.256Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca159b52800d389cbfb8c"
+  },
+  "code": "66",
+  "name": "نشا معبا 8ك*20كيس",
+  "category": "ياميش",
+  "unit": "باكيت",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:27:37.871Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:27:37.871Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca182b52800d389cbfb8d"
+  },
+  "code": "67",
+  "name": "سكر ناعم بودره 50ك",
+  "category": "مولد",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:28:18.264Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:28:18.264Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca196b52800d389cbfb8e"
+  },
+  "code": "68",
+  "name": "سكر ناعم خشن 50ك",
+  "category": "مولد",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:28:38.223Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:28:38.223Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca1bcb52800d389cbfb8f"
+  },
+  "code": "69",
+  "name": "عسل جلوكوز 300ك",
+  "category": "مولد",
+  "unit": "برميل",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:29:16.934Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:29:16.934Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca1d9b52800d389cbfb90"
+  },
+  "code": "70",
+  "name": "عرقسوس معبا 400جرام *12كيس",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:29:45.983Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:29:45.983Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca1f0b52800d389cbfb91"
+  },
+  "code": "71",
+  "name": "دوم مجروش",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:30:08.447Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:30:08.447Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca205b52800d389cbfb92"
+  },
+  "code": "72",
+  "name": "ملح ليمون مائي 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:30:29.296Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:30:29.296Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca21ab52800d389cbfb93"
+  },
+  "code": "73",
+  "name": "كريز احمر 5ك",
+  "category": "مولد",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:30:50.567Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:30:50.567Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca245b52800d389cbfb94"
+  },
+  "code": "74",
+  "name": "جيلاتينا 25ك",
+  "category": "مولد",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:31:33.896Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:31:33.896Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca25ab52800d389cbfb95"
+  },
+  "code": "75",
+  "name": "سمسم ابض هندي 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:31:54.712Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:31:54.712Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca275b52800d389cbfb96"
+  },
+  "code": "76",
+  "name": "تحميص فسدق",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:32:21.847Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:32:21.847Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca29eb52800d389cbfb97"
+  },
+  "code": "77",
+  "name": "كوكو ناتس جوز هند مغطس بالشيكولاتة 4ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:33:02.832Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:33:02.832Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca2beb52800d389cbfb98"
+  },
+  "code": "78",
+  "name": "شيكوناتس فولية مغطسة بالشيكولاتة 4ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:33:34.568Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:33:34.568Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca337b52800d389cbfb99"
+  },
+  "code": "79",
+  "name": "نوجاناس نوجا مغطسة بالشيكولاتة 4ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:35:35.055Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:35:35.055Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca35bb52800d389cbfb9a"
+  },
+  "code": "80",
+  "name": "بلح نجمة سيوة 800 ج*12ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:36:11.833Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:37:07.824Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca380b52800d389cbfb9b"
+  },
+  "code": "81",
+  "name": "بلح نجمة سيوة 1600ج* 10ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:36:48.120Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:37:17.984Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca3beb52800d389cbfb9c"
+  },
+  "code": "82",
+  "name": "بلح نجمة سيوة 2400ج *8ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:37:50.249Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:37:50.249Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca3d2b52800d389cbfb9d"
+  },
+  "code": "83",
+  "name": "بلح نجمة سيوة 5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:38:10.585Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:38:10.585Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca3e1b52800d389cbfb9e"
+  },
+  "code": "84",
+  "name": "بلح نجمة سيوة 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:38:25.480Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:38:25.480Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca3f9b52800d389cbfb9f"
+  },
+  "code": "85",
+  "name": "بلح نجمة سيوة 700ج *12ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:38:49.224Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:38:49.224Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca423b52800d389cbfba0"
+  },
+  "code": "86",
+  "name": "فول سوداني فيرجينا 2/1 اصفر 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:39:31.001Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:39:31.001Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca448b52800d389cbfba1"
+  },
+  "code": "87",
+  "name": "فول سوداني فيرجينا نمره 2 ازرق 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:40:08.873Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:40:08.873Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca474b52800d389cbfba2"
+  },
+  "code": "88",
+  "name": "فول سوداني فيرجينيا نمره 1- 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:40:52.633Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:40:52.633Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca4a1b52800d389cbfba3"
+  },
+  "code": "89",
+  "name": "عصير عمان مشكل 600ج /10كيس",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:41:37.202Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:41:37.202Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca4bdb52800d389cbfba4"
+  },
+  "code": "90",
+  "name": "عصير عمان مشكل ظرف -6علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:42:05.241Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:42:05.241Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca4dcb52800d389cbfba5"
+  },
+  "code": "91",
+  "name": "عصير عمان مشكل برطمان /12ب",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:42:36.602Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:42:43.368Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca500b52800d389cbfba6"
+  },
+  "code": "92",
+  "name": "سوبيا عمان ظرف -6علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:43:12.626Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:43:12.626Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca518b52800d389cbfba7"
+  },
+  "code": "93",
+  "name": "سوبيا عمان برطمان /12ب",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:43:36.930Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:43:36.930Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca5d3b52800d389cbfba8"
+  },
+  "code": "94",
+  "name": "بستلة عصير عمان مشكل 10ك",
+  "category": "ياميش",
+  "unit": "بستلة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:46:43.986Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:46:43.986Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca5ebb52800d389cbfba9"
+  },
+  "code": "95",
+  "name": "بستلة سوبيا عمان 10ك",
+  "category": "ياميش",
+  "unit": "بستلة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:47:07.506Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:47:07.506Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca60eb52800d389cbfbaa"
+  },
+  "code": "96",
+  "name": "سوبيا عمان 750جرام /10علب",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:47:42.202Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:47:42.202Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca63cb52800d389cbfbab"
+  },
+  "code": "97",
+  "name": "تمر هندي العالمية شراب 400ج *12ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:48:28.098Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:48:28.098Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca65bb52800d389cbfbac"
+  },
+  "code": "98",
+  "name": "شيكاره سوبيا عمان 10ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:48:59.907Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:48:59.907Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca67eb52800d389cbfbad"
+  },
+  "code": "99",
+  "name": "سوبيا العالمية شراب 400ج*12ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:49:34.586Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:49:34.586Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca69db52800d389cbfbae"
+  },
+  "code": "100",
+  "name": "بستلة سوبيا العالمية 10ك",
+  "category": "ياميش",
+  "unit": "بستلة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:50:05.850Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:50:05.850Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca6b1b52800d389cbfbaf"
+  },
+  "code": "101",
+  "name": "بستلة تمر هندي العالمية 10ك",
+  "category": "ياميش",
+  "unit": "بستلة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:50:25.042Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:50:25.042Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca6c8b52800d389cbfbb0"
+  },
+  "code": "102",
+  "name": "زيت جوز هند 18ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:50:48.611Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:50:48.611Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca6e7b52800d389cbfbb1"
+  },
+  "code": "103",
+  "name": "كرتونة رمضان الخير وسط",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:51:19.099Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:51:19.099Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca724b52800d389cbfbb2"
+  },
+  "code": "104",
+  "name": "لبن بودره كامل الدسم فونتيره",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:52:20.043Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:52:20.043Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca743b52800d389cbfbb3"
+  },
+  "code": "105",
+  "name": "قيمة تحميص بندق",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:52:51.356Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:52:51.356Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca761b52800d389cbfbb4"
+  },
+  "code": "106",
+  "name": "قمر الدين سوري الاصلي 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:53:21.371Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:53:21.371Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca77bb52800d389cbfbb5"
+  },
+  "code": "107",
+  "name": "قمر الدين الصافي مغلف 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:53:47.212Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:53:47.212Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca793b52800d389cbfbb6"
+  },
+  "code": "108",
+  "name": "قمر الدين روعى الشام مغلف 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:54:11.079Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:54:11.079Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca7a9b52800d389cbfbb7"
+  },
+  "code": "109",
+  "name": "قمر الدين كيان الشام مغلف 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:54:33.052Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:54:33.052Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca7ceb52800d389cbfbb8"
+  },
+  "code": "110",
+  "name": "كركدية معبا 250جرام *12كيس",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:55:10.099Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:55:10.099Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca807b52800d389cbfbb9"
+  },
+  "code": "111",
+  "name": "قراصيا ارجنتيني بالبذر 20/10 -10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:56:07.492Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:56:07.492Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca82bb52800d389cbfbba"
+  },
+  "code": "112",
+  "name": "فول سوداني افريقيا نمره 1 -25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:56:43.892Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:56:43.892Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca854b52800d389cbfbbb"
+  },
+  "code": "113",
+  "name": "فول سوداني الاسراء نمره 2 -25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:57:24.364Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:57:24.364Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca878b52800d389cbfbbc"
+  },
+  "code": "114",
+  "name": "فول سوداني الايمان 2/1 -25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:58:00.172Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:58:00.172Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca899b52800d389cbfbbd"
+  },
+  "code": "115",
+  "name": "فول سوداني الاتحاد فاكيوم -10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:58:33.340Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:58:33.340Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca8bdb52800d389cbfbbe"
+  },
+  "code": "116",
+  "name": "بلح الامل 1400ج *8ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:59:09.588Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:59:09.588Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca8ceb52800d389cbfbbf"
+  },
+  "code": "117",
+  "name": "بلح الامل 3ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:59:26.964Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:59:26.964Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca8e4b52800d389cbfbc0"
+  },
+  "code": "118",
+  "name": "بلح الامل 5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T14:59:48.956Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T14:59:48.956Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca8f8b52800d389cbfbc1"
+  },
+  "code": "119",
+  "name": "بلح الامل 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:00:08.509Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:00:08.509Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca93eb52800d389cbfbc2"
+  },
+  "code": "120",
+  "name": "بلح سعودي رطب ملكي 3ك*6علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:01:18.973Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:01:18.973Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca97ab52800d389cbfbc3"
+  },
+  "code": "121",
+  "name": "بلح سعودي رطب نمره 1 3ك* 6ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:02:18.373Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:02:18.373Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca99bb52800d389cbfbc4"
+  },
+  "code": "122",
+  "name": "بلح سعودي مفتل ملكي 3ك*6ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:02:51.205Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:02:51.205Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca9b7b52800d389cbfbc5"
+  },
+  "code": "123",
+  "name": "بلح سعودي مفتل نمره 1 3ك*6ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:03:19.909Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:03:19.909Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fca9cfb52800d389cbfbc6"
+  },
+  "code": "124",
+  "name": "عرقسوس شيخ العرب 70ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:03:43.460Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:03:43.460Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcaa2db52800d389cbfbc7"
+  },
+  "code": "125",
+  "name": "كاجو فيتنامي 160 ني -محمص",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:05:17.723Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:05:17.723Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcaa61b52800d389cbfbc8"
+  },
+  "code": "126",
+  "name": "زبيب بناتي مصري الوادي 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:06:09.367Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:06:09.367Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcaa8bb52800d389cbfbc9"
+  },
+  "code": "127",
+  "name": "قراصيا ارجنتيني بالبذر 30/20 - 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:06:51.932Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:06:51.932Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcaaaeb52800d389cbfbca"
+  },
+  "code": "128",
+  "name": "فول سوداني الدلتا نمره 1 -25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:07:26.684Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:07:26.684Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcaad5b52800d389cbfbcb"
+  },
+  "code": "129",
+  "name": "لوز قلب اسباني 24/22 ني-محمص - 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:08:05.460Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:08:05.460Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcaaefb52800d389cbfbcc"
+  },
+  "code": "130",
+  "name": "كرتونة رمضان الخير صغير",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:08:31.444Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:08:31.444Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcab30b52800d389cbfbcd"
+  },
+  "code": "131",
+  "name": "زبيب ايراني رستم 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:09:36.437Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:09:36.437Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcab5eb52800d389cbfbce"
+  },
+  "code": "132",
+  "name": "لوز قلب امريكي 40/36 -22.680ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:10:22.228Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:10:22.228Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcab8fb52800d389cbfbcf"
+  },
+  "code": "133",
+  "name": "تمر هندي سايب شيكاره -30ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:11:11.780Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:11:11.780Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcabceb52800d389cbfbd0"
+  },
+  "code": "134",
+  "name": "جوز هند سيرلانكي قليل الدسم 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:12:14.253Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:12:14.253Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcabefb52800d389cbfbd1"
+  },
+  "code": "135",
+  "name": "عين جمل قلب امريكي انصاف 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:12:47.701Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:12:47.701Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcac18b52800d389cbfbd2"
+  },
+  "code": "136",
+  "name": "سمنة فونتيره 210ك",
+  "category": "مولد",
+  "unit": "برميل",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:13:28.053Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:13:28.053Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcac39b52800d389cbfbd3"
+  },
+  "code": "137",
+  "name": "جوز هند فيتنامي ظفر 25ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:14:01.621Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:14:01.621Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcac56b52800d389cbfbd4"
+  },
+  "code": "138",
+  "name": "زبيب مصري العالمية جولدن بني 10ك",
+  "category": "",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:14:30.038Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:14:30.038Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcac73b52800d389cbfbd5"
+  },
+  "code": "139",
+  "name": "فواكة مجففة سورك 3ك",
+  "category": "ياميش",
+  "unit": "علبة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:14:59.917Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:14:59.917Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcac9cb52800d389cbfbd6"
+  },
+  "code": "140",
+  "name": "فسدق امريكي بنى 20/18 ني-مملح 11.340ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:15:40.917Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:15:40.917Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcacbfb52800d389cbfbd7"
+  },
+  "code": "141",
+  "name": "لوز قلب اسباني 25/23 -10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:16:15.141Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:16:15.141Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcacd7b52800d389cbfbd8"
+  },
+  "code": "142",
+  "name": "بلح الامل 700ج *12ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:16:39.109Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:16:39.109Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcacf4b52800d389cbfbd9"
+  },
+  "code": "143",
+  "name": "قمر الدين ريف الشام مغلف الي 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:17:08.861Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:17:40.693Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcad0ab52800d389cbfbda"
+  },
+  "code": "144",
+  "name": "قمر الدين ريف الشام سلوفان 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:17:30.533Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:17:30.533Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcad36b52800d389cbfbdb"
+  },
+  "code": "145",
+  "name": "قمر الدين سوري العروبة 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:18:14.085Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:18:14.085Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcad5cb52800d389cbfbdc"
+  },
+  "code": "146",
+  "name": "زبيب اوزبكستاني 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:18:52.141Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:18:52.141Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcad7bb52800d389cbfbdd"
+  },
+  "code": "147",
+  "name": "فسدق حصي ايراني تجاري 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:19:23.678Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:19:23.678Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcadd4b52800d389cbfbde"
+  },
+  "code": "148",
+  "name": "فسدق حصي اكبري شكاير 20/18 -50ك",
+  "category": "مكسرات",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:20:52.398Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:20:52.398Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcadf8b52800d389cbfbdf"
+  },
+  "code": "149",
+  "name": "تين تركي لاريدا 2.5ك * 4ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:21:28.758Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:21:28.758Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcae13b52800d389cbfbe0"
+  },
+  "code": "150",
+  "name": "تين تركي بكلمه 2.5ك *4ع",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T15:21:55.622Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T15:21:55.622Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb8abb52800d389cbfbe1"
+  },
+  "code": "151",
+  "name": "تمر هندي الامل 9ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:07:07.238Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:07:07.238Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb8c2b52800d389cbfbe2"
+  },
+  "code": "152",
+  "name": "زبيب سبريو الطاووس 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:07:30.821Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:07:30.821Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb8ddb52800d389cbfbe3"
+  },
+  "code": "153",
+  "name": "عرقسوس النخيل شكاره 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:07:57.181Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:07:57.181Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb8f7b52800d389cbfbe4"
+  },
+  "code": "154",
+  "name": "قمر الدين السيده زينب",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:08:23.637Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:08:23.637Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb904b52800d389cbfbe5"
+  },
+  "code": "155",
+  "name": "قمر الدين اهلا رمضان",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:08:36.789Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:08:36.789Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb920b52800d389cbfbe6"
+  },
+  "code": "156",
+  "name": "زبيب بناتي مكة 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:09:04.373Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:09:04.373Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb94db52800d389cbfbe7"
+  },
+  "code": "157",
+  "name": "حساب مرحل من ياميش 25 الي ياميش 26",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:09:49.510Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:09:49.510Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb972b52800d389cbfbe8"
+  },
+  "code": "158",
+  "name": "تمر كامينا 12علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:10:26.909Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:10:26.909Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb98ab52800d389cbfbe9"
+  },
+  "code": "159",
+  "name": "لون بني غامق كامينا",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:10:50.350Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:10:50.350Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb99eb52800d389cbfbea"
+  },
+  "code": "160",
+  "name": "لون ابيض كامينا",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:11:10.702Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:11:10.702Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb9b1b52800d389cbfbeb"
+  },
+  "code": "161",
+  "name": "لبن فرنساوي 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:11:29.334Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:11:29.334Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb9c9b52800d389cbfbec"
+  },
+  "code": "162",
+  "name": "فانيليا صيني 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:11:53.110Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:11:53.110Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb9d9b52800d389cbfbed"
+  },
+  "code": "163",
+  "name": "كريمة المتحدة 25ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:12:09.134Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:12:09.134Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcb9eeb52800d389cbfbee"
+  },
+  "code": "164",
+  "name": "قمر الدين قدوره 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:12:30.333Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:12:30.333Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcba05b52800d389cbfbef"
+  },
+  "code": "165",
+  "name": "زبيب سبريو ال عبد القادر 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:12:53.630Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:12:53.630Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcba17b52800d389cbfbf0"
+  },
+  "code": "166",
+  "name": "بلح الرحاب 5 ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:13:11.958Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:13:11.958Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcba2ab52800d389cbfbf1"
+  },
+  "code": "167",
+  "name": "بلح الرحاب 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:13:30.678Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:13:30.678Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcba4bb52800d389cbfbf2"
+  },
+  "code": "168",
+  "name": "بلح الرحاب 700جرام *15علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:14:03.383Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:14:03.383Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcba82b52800d389cbfbf3"
+  },
+  "code": "169",
+  "name": "بلح الرحاب 1200جرام *12علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:14:58.150Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:14:58.150Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbaa1b52800d389cbfbf4"
+  },
+  "code": "170",
+  "name": "بلح الرحاب 1800 جرام* 8علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:15:29.502Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:15:29.502Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbac7b52800d389cbfbf5"
+  },
+  "code": "171",
+  "name": "بلح الرحاب 2400جرام *8علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:16:07.358Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:16:07.358Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbafab52800d389cbfbf6"
+  },
+  "code": "172",
+  "name": "بلح البراءه 700 جرام *15علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:16:58.894Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:16:58.894Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbb18b52800d389cbfbf7"
+  },
+  "code": "173",
+  "name": "سمسم محمص التوفيق 25ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:17:28.211Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:17:28.211Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbb35b52800d389cbfbf8"
+  },
+  "code": "174",
+  "name": "بلح رطب نمره 2 -3ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:17:57.175Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:17:57.175Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbb4cb52800d389cbfbf9"
+  },
+  "code": "175",
+  "name": "تين الامراء مدور 12ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:18:20.487Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:18:20.487Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbb63b52800d389cbfbfa"
+  },
+  "code": "176",
+  "name": "تين تركي معرض اكسترا 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:18:43.119Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:18:43.119Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbb83b52800d389cbfbfb"
+  },
+  "code": "177",
+  "name": "دوم مجروش معبا 400جرام *12كيس",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:19:15.727Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:19:15.727Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbbc4b52800d389cbfbfc"
+  },
+  "code": "178",
+  "name": "بلح مجدول نمره 1 -1ك* 10علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:20:20.071Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:20:20.071Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbbd8b52800d389cbfbfd"
+  },
+  "code": "179",
+  "name": "بلح مجدول نمره 2- 1ك*10علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:20:40.503Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:20:40.503Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbbf2b52800d389cbfbfe"
+  },
+  "code": "180",
+  "name": "مشمشية تركي مقاس 4 -5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:21:06.840Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:21:21.087Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbc24b52800d389cbfbff"
+  },
+  "code": "181",
+  "name": "عين جمل انصاف سايلون 10ك",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:21:56.799Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:21:56.799Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbc3eb52800d389cbfc00"
+  },
+  "code": "182",
+  "name": "قمر الدين بدر الدين مانجا 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:22:22.999Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:22:22.999Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbc52b52800d389cbfc01"
+  },
+  "code": "183",
+  "name": "قمر الدين بدر الدين جوافة 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:22:42.320Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:22:42.320Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbc69b52800d389cbfc02"
+  },
+  "code": "184",
+  "name": "تين مدور ياسمين الشام 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:23:06.000Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:23:06.000Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbc87b52800d389cbfc03"
+  },
+  "code": "185",
+  "name": "تمر هندي خان 350 جرام",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:23:35.951Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:23:35.951Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbc99b52800d389cbfc04"
+  },
+  "code": "186",
+  "name": "كركدية اسواني 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:23:53.720Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:23:53.720Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbcafb52800d389cbfc05"
+  },
+  "code": "187",
+  "name": "قمر الدين اكسترا 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:24:15.992Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:24:15.992Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbccdb52800d389cbfc06"
+  },
+  "code": "188",
+  "name": "مشمشية سوري مقاس 5 -5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:24:45.080Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:24:45.080Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbce7b52800d389cbfc07"
+  },
+  "code": "189",
+  "name": "مشمشية سوري مقاس زيرو -5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:25:11.520Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:25:11.520Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbd04b52800d389cbfc08"
+  },
+  "code": "190",
+  "name": "كاجو 180 رستم",
+  "category": "مكسرات",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:25:40.096Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:25:40.096Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbd16b52800d389cbfc09"
+  },
+  "code": "191",
+  "name": "قراصيا اسباني 40/30",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:25:58.896Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:25:58.896Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbd30b52800d389cbfc0a"
+  },
+  "code": "192",
+  "name": "مشمشية سوري اكرم مقاس 4 -10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:26:24.680Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:26:24.680Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbd63b52800d389cbfc0b"
+  },
+  "code": "193",
+  "name": "قمر الدين الامل كبريت معبا علب",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:27:15.168Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:27:15.168Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbd7ab52800d389cbfc0c"
+  },
+  "code": "194",
+  "name": "تين مدور نور الصباح 12ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:27:38.165Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:27:38.165Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbd9bb52800d389cbfc0d"
+  },
+  "code": "195",
+  "name": "تين السلام مدور 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:28:11.248Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:28:11.248Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbdb5b52800d389cbfc0e"
+  },
+  "code": "196",
+  "name": "تين حبل السلطان 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:28:37.097Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:28:37.097Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbdcdb52800d389cbfc0f"
+  },
+  "code": "197",
+  "name": "عصير عمان مشكل 300جرام *12كيس",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:29:01.569Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:29:01.569Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbde6b52800d389cbfc10"
+  },
+  "code": "198",
+  "name": "زبيب الاقصي 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:29:26.841Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:29:26.841Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbdfeb52800d389cbfc11"
+  },
+  "code": "199",
+  "name": "قمر الدين سوري الشلال 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:29:50.009Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:29:50.009Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbe23b52800d389cbfc12"
+  },
+  "code": "200",
+  "name": "تين سوري معرض السعيد 2.5ك *4علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:30:27.825Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:30:27.825Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbe41b52800d389cbfc13"
+  },
+  "code": "201",
+  "name": "خروب مجروش معبا *12كيس",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:30:57.601Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:30:57.601Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbe58b52800d389cbfc14"
+  },
+  "code": "202",
+  "name": "قمر الدين العالمية تويست -6ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:31:20.209Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:31:20.209Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbe69b52800d389cbfc15"
+  },
+  "code": "203",
+  "name": "قمر الدين سوري الاحلام 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:31:37.449Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:31:37.449Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbe7fb52800d389cbfc16"
+  },
+  "code": "204",
+  "name": "قمر الدين العالمية كبريت 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:31:59.105Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:31:59.105Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbe9ab52800d389cbfc17"
+  },
+  "code": "205",
+  "name": "قمر الدين الاحلام سيجار 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:32:26.081Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:32:26.081Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbeafb52800d389cbfc18"
+  },
+  "code": "206",
+  "name": "تمر هندي الاحلام 12ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:32:47.794Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:32:47.794Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbed2b52800d389cbfc19"
+  },
+  "code": "207",
+  "name": "مشمشية سوري اكرم مقاس 8 -10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:33:22.497Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:33:22.497Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbef2b52800d389cbfc1a"
+  },
+  "code": "208",
+  "name": "دوم مجروش شيكارة 40ك",
+  "category": "ياميش",
+  "unit": "شكارة",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:33:54.425Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:33:54.425Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbf0eb52800d389cbfc1b"
+  },
+  "code": "209",
+  "name": "زبيب احمر مكة 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:34:22.362Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:34:22.362Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbf26b52800d389cbfc1c"
+  },
+  "code": "210",
+  "name": "عين جمل انصاف دركو 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:34:46.889Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:34:46.889Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbf4eb52800d389cbfc1d"
+  },
+  "code": "211",
+  "name": "خروب تركي قرون 12.5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:35:26.801Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:35:26.801Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbf64b52800d389cbfc1e"
+  },
+  "code": "212",
+  "name": "بلح الامل 700جرام *10علبة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:35:48.873Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:36:02.601Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbf97b52800d389cbfc1f"
+  },
+  "code": "213",
+  "name": "بندق تركي اكرم 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:36:39.426Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:36:39.426Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbfaeb52800d389cbfc20"
+  },
+  "code": "214",
+  "name": "زبيب بناتي البركة 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:37:02.234Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:37:02.234Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcbff5b52800d389cbfc21"
+  },
+  "code": "215",
+  "name": "شيكولاتة سما لبن 12قالب",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:38:13.727Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:38:13.727Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc00fb52800d389cbfc22"
+  },
+  "code": "216",
+  "name": "زبيب سبريو الوادي 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:38:39.010Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:38:45.114Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc032b52800d389cbfc23"
+  },
+  "code": "217",
+  "name": "شيكولاتة سما بني -12قالب",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:39:14.642Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:39:14.642Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc04fb52800d389cbfc24"
+  },
+  "code": "218",
+  "name": "قمر الدين سيجار سايب الامل 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:39:43.578Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:39:43.578Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc070b52800d389cbfc25"
+  },
+  "code": "219",
+  "name": "قمر الدين سيجار الامل علب 8ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:40:16.154Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:40:16.154Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc099b52800d389cbfc26"
+  },
+  "code": "220",
+  "name": "فسدق 20/18 امريكي انس 11.340ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:40:57.259Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:40:57.259Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc0b5b52800d389cbfc27"
+  },
+  "code": "221",
+  "name": "عين جمل امريكي اخضر 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:41:25.147Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:41:25.147Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc0ccb52800d389cbfc28"
+  },
+  "code": "222",
+  "name": "زبيب البلتاجي 10ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:41:48.386Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:41:48.386Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc0e5b52800d389cbfc29"
+  },
+  "code": "223",
+  "name": "مشمشية تركي جامبو -5ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:42:13.011Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:42:13.011Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc0ffb52800d389cbfc2a"
+  },
+  "code": "224",
+  "name": "فسدق امريكي شكاير رستم 25ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:42:39.347Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:42:39.347Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc115b52800d389cbfc2b"
+  },
+  "code": "225",
+  "name": "فسدق حصي شكاير 25 ك",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:43:01.235Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:43:01.235Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc127b52800d389cbfc2c"
+  },
+  "code": "226",
+  "name": "كرتونة فسدق فارغة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:43:19.796Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:43:19.796Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69fcc13bb52800d389cbfc2d"
+  },
+  "code": "227",
+  "name": "مديونية سابقة",
+  "category": "ياميش",
+  "unit": "كرتون",
+  "stock": {
+    "ramses": {
+      "quantity": 0,
+      "weight": 0
+    },
+    "october": {
+      "quantity": 0,
+      "weight": 0
+    }
+  },
+  "defaultWeight": 1,
+  "lastPurchasePrice": 0,
+  "lastSalePrice": 0,
+  "isRawMaterial": false,
+  "isActive": true,
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-07T16:43:39.659Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-07T16:43:39.659Z"
+  },
+  "__v": 0
+}]

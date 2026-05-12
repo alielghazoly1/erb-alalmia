@@ -1,0 +1,1224 @@
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║                         schema.prisma — v3.0                               ║
+// ║                   Inventory Management System (IMS)                        ║
+// ║                                                                            ║
+// ║  Stack : PostgreSQL 15+ · Prisma ORM 5.x                                  ║
+// ║  Design: Normalized · UUID PKs · Full Audit · Soft-Delete · JSONB         ║
+// ║                                                                            ║
+// ║  Warehouse Strategy                                                        ║
+// ║  ─────────────────                                                         ║
+// ║  المخزون مُخزَّن في جدول منفصل (ItemStock) بدل JSON داخل Item —           ║
+// ║  ده بيخلّي:                                                                ║
+// ║    • Queries أسرع (indexed rows بدل JSONB scan)                            ║
+// ║    • إضافة مخازن جديدة بدون migration                                      ║
+// ║    • Locking على مستوى صف واحد بدل lock على كل الـ item                   ║
+// ║                                                                            ║
+// ║  Permission Strategy                                                       ║
+// ║  ──────────────────                                                        ║
+// ║  Role-based (RBAC) مع granular permissions في جدول منفصل (UserPermission) ║
+// ║  بدل JSON داخل User — بيسمح بـ:                                            ║
+// ║    • Query "كل اليوزرز اللي عندهم صلاحية X"                               ║
+// ║    • Revoke / Grant صلاحية واحدة بدون update على كل الـ JSON              ║
+// ║    • Warehouse-scoped permissions                                          ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 1 — ENUMS
+//  كل Enum ليه تعليق بيوضح السياق والقيم المتوقعة
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// دور المستخدم في النظام — يُستخدم كـ coarse-grained access control
+/// التفاصيل الدقيقة في UserPermission
+enum Role {
+  super_admin  // كامل الصلاحيات — لمالك النظام فقط
+  admin        // إدارة كاملة داخل الموسم
+  supervisor   // يشوف ويعتمد — مش بيعدّل
+  user         // إدخال بيانات فقط
+  viewer       // قراءة فقط
+}
+
+/// المخازن المتاحة — قابل للتوسع بإضافة enum value
+enum Warehouse {
+  ramses
+  october
+}
+
+/// نطاق صلاحية المستخدم على المخازن
+enum WarehouseScope {
+  ramses
+  october
+  both
+}
+
+/// نوع العميل من حيث طريقة الدفع الافتراضية
+enum CustomerType {
+  credit  // آجل
+  cash    // نقدي
+}
+
+/// حالة أي فاتورة في دورة حياتها
+enum InvoiceStatus {
+  draft      // مسودة — مش مرسلة للاعتماد بعد
+  pending    // في انتظار الاعتماد
+  approved   // معتمدة — المخزن اتحدّث
+  suspended  // موقوفة مؤقتاً
+  cancelled  // ملغية نهائياً
+  returned   // مردودة كلياً
+}
+
+/// حالة أوامر الإرجاع والتحويل والتصنيع
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+/// طرق الدفع المتاحة
+enum PaymentMethod {
+  cash
+  credit
+  instapay
+  transfer
+  check
+  mixed
+}
+
+/// نوع الدفعة المالية — لمن تذهب
+enum PaymentType {
+  customer_payment  // دفعة من عميل
+  supplier_payment  // دفعة لمورد
+}
+
+/// طريقة استرداد المبلغ في المرتجعات
+enum RefundMethod {
+  cash
+  bank
+  credit_note  // قيد دائن على حساب العميل
+  none
+}
+
+/// نوع الخزينة
+enum TreasuryType {
+  cash  // خزينة نقدية
+  bank  // حساب بنكي
+}
+
+/// أنواع حركات الخزينة لتسهيل الاستعلامات والتقارير
+enum TreasuryEntryType {
+  sale_cash
+  sale_bank
+  purchase_cash
+  purchase_bank
+  payment_in_cash    // استلام دفعة نقدي
+  payment_in_bank    // استلام دفعة بنك
+  payment_out_cash   // صرف دفعة نقدي
+  payment_out_bank   // صرف دفعة بنك
+  return_in_cash
+  return_in_bank
+  return_out_cash
+  return_out_bank
+  expense            // مصروف عام
+  adjustment         // تسوية يدوية
+}
+
+/// أنواع حركات كشف الصندوق
+enum CashRegisterType {
+  sale_cash
+  payment_in
+  payment_out
+  return_in
+  return_out
+  expense
+  adjustment
+}
+
+/// أنواع حركات المخزون — كاملة ومنطقية
+enum StockMovementType {
+  purchase_in        // استلام من توريد
+  sale_out           // صرف ببيع
+  return_in          // استرداد من عميل
+  return_out         // إرجاع لمورد
+  transfer_in        // استلام من مخزن آخر
+  transfer_out       // إرسال لمخزن آخر
+  manufacturing_in   // مدخل للتصنيع
+  manufacturing_out  // ناتج من التصنيع
+  adjustment_add     // تسوية زيادة (جرد)
+  adjustment_sub     // تسوية نقص (جرد)
+  opening_stock      // رصيد أول المدة
+}
+
+/// اتجاه التحويل بين المخازن
+enum TransferDirection {
+  ramses_to_october // R2O
+  october_to_ramses // O2R
+}
+
+/// نوع المرتجع
+enum ReturnType {
+  customer_return  // من عميل — يزيد المخزن
+  supplier_return  // لمورد — ينقص المخزن
+}
+
+/// الصلاحيات الحبيبية (Granular Permissions)
+/// كل صلاحية هي flag مستقل يمكن منحه أو سحبه لأي user
+enum Permission {
+  // ── فواتير البيع ──────────────────────────────────────
+  sale_create
+  sale_approve
+  sale_edit
+  sale_cancel
+  sale_allow_negative   // يبيع حتى لو المخزن صفر
+
+  // ── فواتير التوريد ────────────────────────────────────
+  purchase_create
+  purchase_approve
+  purchase_edit
+  purchase_cancel
+
+  // ── المرتجعات ─────────────────────────────────────────
+  return_create
+  return_approve
+
+  // ── التحويلات ──────────────────────────────────────────
+  transfer_create
+  transfer_approve
+
+  // ── التصنيع ───────────────────────────────────────────
+  manufacturing_create
+  manufacturing_approve
+
+  // ── الدفعات ───────────────────────────────────────────
+  payment_create
+  payment_edit
+  payment_delete
+
+  // ── التقارير ──────────────────────────────────────────
+  report_sales
+  report_purchases
+  report_stock
+  report_treasury
+  report_customers
+
+  // ── الإعدادات ─────────────────────────────────────────
+  settings_users
+  settings_items
+  settings_suppliers
+  settings_customers
+  settings_seasons
+  settings_price_lists
+  settings_warehouses
+
+  // ── الجرد ─────────────────────────────────────────────
+  stock_adjustment
+
+  // ── الخزينة ───────────────────────────────────────────
+  treasury_view
+  treasury_manage
+}
+
+/// أنواع أحداث الـ Audit للبحث والفلترة السريعة
+enum AuditAction {
+  // فواتير
+  invoice_created
+  invoice_approved
+  invoice_cancelled
+  invoice_suspended
+  invoice_edited
+  invoice_restored   // استعادة بعد الإلغاء
+
+  // مرتجعات
+  return_created
+  return_approved
+  return_rejected
+
+  // دفعات
+  payment_created
+  payment_updated
+  payment_deleted
+
+  // عملاء وموردين
+  customer_created
+  customer_updated
+  customer_deleted
+  supplier_created
+  supplier_updated
+  supplier_deleted
+
+  // مخزون
+  stock_adjustment
+  stock_transfer
+  manufacturing_approved
+
+  // نظام
+  user_login
+  user_logout
+  user_created
+  user_updated
+  user_deactivated
+  season_created
+  season_activated
+  season_closed
+
+  // خزينة
+  treasury_entry_created
+  treasury_adjustment
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 2 — CORE SYSTEM MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// المستخدم — يخضع لـ RBAC مع granular permissions في UserPermission
+model User {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String          @db.VarChar(120)
+  username    String          @unique @db.VarChar(60)
+  password    String          // bcrypt hash — لا تُرجعه أبداً في الـ API
+  role        Role            @default(user)
+  scope       WarehouseScope  @default(both)
+  isActive    Boolean         @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?       // soft delete
+
+  // ── Relations ────────────────────────────────────────────────────────────
+  permissions              UserPermission[]
+  saleInvoicesCreated      SaleInvoice[]         @relation("SaleCreatedBy")
+  saleInvoicesApproved     SaleInvoice[]         @relation("SaleApprovedBy")
+  saleInvoicesEdited       SaleInvoice[]         @relation("SaleEditedBy")
+  purchasesCreated         PurchaseInvoice[]     @relation("PurchaseCreatedBy")
+  purchasesApproved        PurchaseInvoice[]     @relation("PurchaseApprovedBy")
+  purchasesEdited          PurchaseInvoice[]     @relation("PurchaseEditedBy")
+  returnsCreated           ReturnInvoice[]       @relation("ReturnCreatedBy")
+  returnsApproved          ReturnInvoice[]       @relation("ReturnApprovedBy")
+  paymentsCreated          Payment[]
+  stockMovements           StockMovement[]
+  stockAdjustments         StockAdjustment[]
+  cashRegisters            CashRegister[]        @relation("CashRegisterUser")
+  treasuryEntries          TreasuryEntry[]       @relation("TreasuryUser")
+  customersCreated         Customer[]            @relation("CustomerCreatedBy")
+  customersUpdated         Customer[]            @relation("CustomerUpdatedBy")
+  suppliersCreated         Supplier[]            @relation("SupplierCreatedBy")
+  manufacturingCreated     ManufacturingOrder[]  @relation("ManufacturingCreatedBy")
+  manufacturingApproved    ManufacturingOrder[]  @relation("ManufacturingApprovedBy")
+  transfersCreated         Transfer[]            @relation("TransferCreatedBy")
+  transfersApproved        Transfer[]            @relation("TransferApprovedBy")
+  priceListsUpdated        PriceList[]
+  seasonsCreated           Season[]              @relation("SeasonCreatedBy")
+  auditLogs                AuditLog[]
+  refreshTokens            RefreshToken[]
+
+  @@index([username])
+  @@index([role, isActive])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+/// صلاحيات حبيبية لكل مستخدم — مستقلة عن الـ Role
+/// الـ Role هو baseline والـ UserPermission هو override
+model UserPermission {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @db.Uuid
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission
+  granted    Boolean    @default(true)  // true=منح / false=سحب صريح
+  grantedAt  DateTime   @default(now())
+
+  @@unique([userId, permission])
+  @@index([userId])
+  @@index([permission])
+  @@map("user_permissions")
+}
+
+/// Refresh Tokens للـ JWT rotation
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  userAgent String?  @db.VarChar(300)
+  ipAddress String?  @db.VarChar(45)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+/// الموسم — وحدة العزل الأساسية لكل البيانات التشغيلية
+model Season {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @db.VarChar(100)
+  code             String    @unique @db.VarChar(20)  // e.g. "2025-S1"
+  startDate        DateTime
+  endDate          DateTime
+  isActive         Boolean   @default(false)
+  isClosed         Boolean   @default(false)          // لا يمكن فتحها بعد الإغلاق
+  isManufacturing  Boolean   @default(false)
+  notes            String?
+  closedAt         DateTime?
+  createdById      String?   @db.Uuid
+  createdBy        User?     @relation("SeasonCreatedBy", fields: [createdById], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // ── Relations ────────────────────────────────────────────────────────────
+  counters            SeasonCounter[]
+  saleInvoices        SaleInvoice[]
+  purchaseInvoices    PurchaseInvoice[]
+  returnInvoices      ReturnInvoice[]
+  payments            Payment[]
+  stockMovements      StockMovement[]
+  stockAdjustments    StockAdjustment[]
+  cashRegisters       CashRegister[]
+  treasuryEntries     TreasuryEntry[]
+  transfers           Transfer[]
+  manufacturingOrders ManufacturingOrder[]
+  openingStocks       ItemStock[]         // snapshot رصيد أول المدة
+
+  @@index([isActive])
+  @@index([isClosed, startDate(sort: Desc)])
+  @@map("seasons")
+}
+
+/// عدادات أرقام الفواتير — مستقلة لكل موسم ولكل نوع
+/// نمط: {prefix}-{seasonCode}-{value:05d}  مثال: PUR-2025S1-00142
+model SeasonCounter {
+  id        String @id @default(uuid()) @db.Uuid
+  seasonId  String @db.Uuid
+  season    Season @relation(fields: [seasonId], references: [id])
+  prefix    String @db.VarChar(10)  // PUR | SAL | RET | TRN | MFG
+  value     Int    @default(0)
+  startFrom Int    @default(1)
+
+  @@unique([seasonId, prefix])
+  @@map("season_counters")
+}
+
+/// عداد عام للتسلسلات التي لا ترتبط بموسم
+model GlobalCounter {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String @unique @db.VarChar(50)
+  value Int    @default(0)
+
+  @@map("global_counters")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 3 — MASTER DATA (بيانات رئيسية)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// العميل
+model Customer {
+  id             String       @id @default(uuid()) @db.Uuid
+  code           String       @unique @db.VarChar(30)
+  name           String       @db.VarChar(200)
+  phone          String?      @db.VarChar(20)
+  phone2         String?      @db.VarChar(20)
+  address        String?      @db.VarChar(300)
+  type           CustomerType @default(credit)
+  creditLimit    Float        @default(0)       // حد ائتمان — 0 = غير محدود
+  isActive       Boolean      @default(true)
+  notes          String?
+  // رصيد أول المدة — يُسجَّل مرة واحدة عند الإنشاء
+  openingBalance Float        @default(0)
+  createdById    String?      @db.Uuid
+  createdBy      User?        @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  updatedById    String?      @db.Uuid
+  updatedBy      User?        @relation("CustomerUpdatedBy", fields: [updatedById], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?    // soft delete
+
+  // ── Relations ────────────────────────────────────────────────────────────
+  saleInvoices    SaleInvoice[]
+  returnInvoices  ReturnInvoice[]
+  payments        Payment[]
+  cashRegisters   CashRegister[]
+  treasuryEntries TreasuryEntry[]
+
+  @@index([name])
+  @@index([isActive, type])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+/// المورد
+model Supplier {
+  id             String   @id @default(uuid()) @db.Uuid
+  code           String   @unique @db.VarChar(30)
+  name           String   @db.VarChar(200)
+  phone          String?  @db.VarChar(20)
+  phone2         String?  @db.VarChar(20)
+  address        String?  @db.VarChar(300)
+  taxNumber      String?  @db.VarChar(50)   // الرقم الضريبي
+  isActive       Boolean  @default(true)
+  notes          String?
+  openingBalance Float    @default(0)
+  createdById    String?  @db.Uuid
+  createdBy      User?    @relation("SupplierCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  // ── Relations ────────────────────────────────────────────────────────────
+  purchaseInvoices PurchaseInvoice[]
+  returnInvoices   ReturnInvoice[]
+  payments         Payment[]
+  treasuryEntries  TreasuryEntry[]
+
+  @@index([name])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("suppliers")
+}
+
+/// الصنف / المنتج
+model Item {
+  id                String   @id @default(uuid()) @db.Uuid
+  code              String   @unique @db.VarChar(50)
+  name              String   @db.VarChar(200)
+  category          String?  @db.VarChar(100)
+  subCategory       String?  @db.VarChar(100)
+  unit              String   @default("كرتون") @db.VarChar(30)
+  defaultWeight     Float    @default(0)
+  lastPurchasePrice Float    @default(0)
+  lastSalePrice     Float    @default(0)
+  minStockQty       Float    @default(0)  // حد أدنى للمخزون — للتنبيهات
+  isRawMaterial     Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  notes             String?
+  // بيانات إضافية مرنة — لا تُخزَّن كـ columns ثابتة
+  metadata          Json?    @default("{}")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+
+  // ── Relations ────────────────────────────────────────────────────────────
+  stocks           ItemStock[]
+  saleItems        SaleInvoiceItem[]
+  purchaseItems    PurchaseInvoiceItem[]
+  returnItems      ReturnInvoiceItem[]
+  stockMovements   StockMovement[]
+  stockAdjustments StockAdjustmentLine[]
+  transferItems    TransferItem[]
+  rawMaterials     ManufacturingRawMaterial[]
+  outputs          ManufacturingOutput[]
+  priceListLinks   PriceListItemLink[]
+
+  @@index([name])
+  @@index([category, isActive])
+  @@index([isActive, code])
+  @@index([deletedAt])
+  @@map("items")
+}
+
+/// مخزون الصنف لكل مخزن — normalized بدل JSON داخل Item
+/// ده الحل الأذكى لإدارة المخزون في أنظمة الإنتاج
+model ItemStock {
+  id        String    @id @default(uuid()) @db.Uuid
+  itemId    String    @db.Uuid
+  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  warehouse Warehouse
+  quantity  Float     @default(0)   // عدد الكراتين
+  weight    Float     @default(0)   // الوزن الإجمالي بالكيلو
+  // ربط بالموسم عشان نتتبع رصيد كل موسم بشكل مستقل
+  seasonId  String?   @db.Uuid
+  season    Season?   @relation(fields: [seasonId], references: [id])
+  updatedAt DateTime  @updatedAt
+
+  @@unique([itemId, warehouse, seasonId])
+  @@index([itemId, warehouse])
+  @@index([warehouse, quantity])
+  @@index([seasonId, warehouse])
+  @@map("item_stocks")
+}
+
+/// العامل في التصنيع
+model Worker {
+  id        String         @id @default(uuid()) @db.Uuid
+  name      String         @db.VarChar(120)
+  code      String         @unique @db.VarChar(30)
+  scope     WarehouseScope @default(ramses)
+  phone     String?        @db.VarChar(20)
+  notes     String?
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  manufacturingOrders ManufacturingOrder[]
+
+  @@index([scope, isActive])
+  @@map("workers")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 4 — TRANSACTION MODELS (فواتير وحركات)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── 4.1  فاتورة البيع ─────────────────────────────────────────────────────────
+
+model SaleInvoice {
+  id               String        @id @default(uuid()) @db.Uuid
+  invoiceNumber    String        @unique @db.VarChar(30)
+  docNumber        String        @db.VarChar(50)
+  date             DateTime      @default(now()) @db.Timestamptz
+  customerId       String        @db.Uuid
+  customer         Customer      @relation(fields: [customerId], references: [id])
+  /// denormalized للسرعة — لا تُحدَّث بعد الإنشاء
+  customerCode     String        @db.VarChar(30)
+  customerName     String        @db.VarChar(200)
+  warehouse        Warehouse
+  totalAmount      Float
+  totalWeight      Float         @default(0)
+  discountAmount   Float         @default(0)
+  netAmount        Float         // totalAmount - discountAmount
+  paidAmount       Float         @default(0)
+  remainingAmount  Float         // netAmount - paidAmount
+  paymentMethod    PaymentMethod @default(credit)
+  cashAmount       Float         @default(0)
+  instapayAmount   Float         @default(0)
+  transferAmount   Float         @default(0)
+  status           InvoiceStatus @default(pending)
+  allowNegative    Boolean       @default(false)
+  seasonId         String?       @db.Uuid
+  season           Season?       @relation(fields: [seasonId], references: [id])
+  notes            String?
+  suspendReason    String?
+  // Workflow fields
+  createdById      String        @db.Uuid
+  createdBy        User          @relation("SaleCreatedBy", fields: [createdById], references: [id])
+  approvedById     String?       @db.Uuid
+  approvedBy       User?         @relation("SaleApprovedBy", fields: [approvedById], references: [id])
+  approvedAt       DateTime?     @db.Timestamptz
+  editedById       String?       @db.Uuid
+  editedBy         User?         @relation("SaleEditedBy", fields: [editedById], references: [id])
+  editedAt         DateTime?     @db.Timestamptz
+  editNotes        String?
+  deletedAt        DateTime?     @db.Timestamptz
+
+  createdAt        DateTime      @default(now()) @db.Timestamptz
+  updatedAt        DateTime      @updatedAt      @db.Timestamptz
+
+  items            SaleInvoiceItem[]
+
+  @@unique([docNumber, seasonId])
+  @@index([customerId, status])
+  @@index([customerId, seasonId, status])
+  @@index([customerId, paymentMethod, status])
+  @@index([seasonId, status])
+  @@index([seasonId, date(sort: Desc)])
+  @@index([seasonId, createdAt(sort: Desc)])
+  @@index([warehouse, seasonId, status])
+  @@index([status, date(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@index([deletedAt])
+  @@map("sale_invoices")
+}
+
+model SaleInvoiceItem {
+  id          String      @id @default(uuid()) @db.Uuid
+  invoiceId   String      @db.Uuid
+  invoice     SaleInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  itemId      String      @db.Uuid
+  item        Item        @relation(fields: [itemId], references: [id])
+  itemCode    String      @db.VarChar(50)
+  itemName    String      @db.VarChar(200)
+  quantity    Float
+  weight      Float
+  price       Float
+  discount    Float       @default(0)
+  total       Float
+  sortOrder   Int         @default(0)  // ترتيب الأصناف داخل الفاتورة
+
+  @@index([invoiceId])
+  @@index([itemId])
+  @@map("sale_invoice_items")
+}
+
+// ── 4.2  فاتورة التوريد ───────────────────────────────────────────────────────
+
+model PurchaseInvoice {
+  id            String        @id @default(uuid()) @db.Uuid
+  invoiceNumber String        @unique @db.VarChar(30)
+  docNumber     String        @db.VarChar(50)
+  date          DateTime      @default(now()) @db.Timestamptz
+  supplierId    String        @db.Uuid
+  supplier      Supplier      @relation(fields: [supplierId], references: [id])
+  supplierCode  String        @db.VarChar(30)
+  supplierName  String        @db.VarChar(200)
+  warehouse     Warehouse
+  totalAmount   Float
+  totalWeight   Float         @default(0)
+  discountAmount Float        @default(0)
+  netAmount     Float
+  paidAmount    Float         @default(0)
+  remainingAmount Float
+  status        InvoiceStatus @default(pending)
+  seasonId      String?       @db.Uuid
+  season        Season?       @relation(fields: [seasonId], references: [id])
+  notes         String?
+  suspendReason String?
+  // Workflow fields
+  createdById   String        @db.Uuid
+  createdBy     User          @relation("PurchaseCreatedBy", fields: [createdById], references: [id])
+  approvedById  String?       @db.Uuid
+  approvedBy    User?         @relation("PurchaseApprovedBy", fields: [approvedById], references: [id])
+  approvedAt    DateTime?     @db.Timestamptz
+  editedById    String?       @db.Uuid
+  editedBy      User?         @relation("PurchaseEditedBy", fields: [editedById], references: [id])
+  editedAt      DateTime?     @db.Timestamptz
+  editNotes     String?
+
+  createdAt     DateTime      @default(now()) @db.Timestamptz
+  updatedAt     DateTime      @updatedAt      @db.Timestamptz
+
+  items         PurchaseInvoiceItem[]
+
+  @@unique([docNumber, seasonId])
+  @@index([supplierId, status])
+  @@index([supplierId, seasonId])
+  @@index([supplierId, seasonId, status])
+  @@index([seasonId, status])
+  @@index([seasonId, date(sort: Desc)])
+  @@index([seasonId, createdAt(sort: Desc)])
+  @@index([warehouse, seasonId, status])
+  @@index([status, date(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@map("purchase_invoices")
+}
+
+model PurchaseInvoiceItem {
+  id          String          @id @default(uuid()) @db.Uuid
+  invoiceId   String          @db.Uuid
+  invoice     PurchaseInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  itemId      String          @db.Uuid
+  item        Item            @relation(fields: [itemId], references: [id])
+  itemCode    String          @db.VarChar(50)
+  itemName    String          @db.VarChar(200)
+  quantity    Float
+  weight      Float
+  price       Float
+  discount    Float           @default(0)
+  total       Float
+  sortOrder   Int             @default(0)
+
+  @@index([invoiceId])
+  @@index([itemId])
+  @@map("purchase_invoice_items")
+}
+
+// ── 4.3  فاتورة المرتجع ───────────────────────────────────────────────────────
+
+model ReturnInvoice {
+  id               String         @id @default(uuid()) @db.Uuid
+  invoiceNumber    String         @unique @db.VarChar(30)
+  docNumber        String         @db.VarChar(50)
+  date             DateTime       @default(now()) @db.Timestamptz
+  type             ReturnType
+  // أحد الاثنين مطلوب — enforced في application layer
+  customerId       String?        @db.Uuid
+  customer         Customer?      @relation(fields: [customerId], references: [id])
+  customerCode     String?        @db.VarChar(30)
+  customerName     String?        @db.VarChar(200)
+  supplierId       String?        @db.Uuid
+  supplier         Supplier?      @relation(fields: [supplierId], references: [id])
+  supplierCode     String?        @db.VarChar(30)
+  supplierName     String?        @db.VarChar(200)
+  warehouse        Warehouse
+  totalAmount      Float
+  totalWeight      Float          @default(0)
+  refundMethod     RefundMethod   @default(none)
+  refundCashAmount Float          @default(0)
+  refundBankAmount Float          @default(0)
+  status           ApprovalStatus @default(pending)
+  notes            String?
+  /// رقم الفاتورة الأصلية كـ reference نصي
+  originalInvoiceRef String?      @db.VarChar(30)
+  seasonId         String?        @db.Uuid
+  season           Season?        @relation(fields: [seasonId], references: [id])
+  createdById      String         @db.Uuid
+  createdBy        User           @relation("ReturnCreatedBy", fields: [createdById], references: [id])
+  approvedById     String?        @db.Uuid
+  approvedBy       User?          @relation("ReturnApprovedBy", fields: [approvedById], references: [id])
+  approvedAt       DateTime?      @db.Timestamptz
+
+  createdAt        DateTime       @default(now()) @db.Timestamptz
+  updatedAt        DateTime       @updatedAt      @db.Timestamptz
+
+  items            ReturnInvoiceItem[]
+
+  @@index([customerId, type, status])
+  @@index([customerId, type, seasonId])
+  @@index([supplierId, type, status])
+  @@index([supplierId, type, seasonId])
+  @@index([seasonId, type, status])
+  @@index([seasonId, createdAt(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@map("return_invoices")
+}
+
+model ReturnInvoiceItem {
+  id          String        @id @default(uuid()) @db.Uuid
+  invoiceId   String        @db.Uuid
+  invoice     ReturnInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  itemId      String        @db.Uuid
+  item        Item          @relation(fields: [itemId], references: [id])
+  itemCode    String        @db.VarChar(50)
+  itemName    String        @db.VarChar(200)
+  quantity    Float
+  weight      Float
+  price       Float
+  total       Float
+  sortOrder   Int           @default(0)
+
+  @@index([invoiceId])
+  @@index([itemId])
+  @@map("return_invoice_items")
+}
+
+// ── 4.4  الدفعات ──────────────────────────────────────────────────────────────
+
+model Payment {
+  id             String        @id @default(uuid()) @db.Uuid
+  type           PaymentType
+  customerId     String?       @db.Uuid
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  customerCode   String?       @db.VarChar(30)
+  customerName   String?       @db.VarChar(200)
+  supplierId     String?       @db.Uuid
+  supplier       Supplier?     @relation(fields: [supplierId], references: [id])
+  supplierCode   String?       @db.VarChar(30)
+  supplierName   String?       @db.VarChar(200)
+  seasonId       String        @db.Uuid
+  season         Season        @relation(fields: [seasonId], references: [id])
+  amount         Float
+  paymentMethod  PaymentMethod @default(cash)
+  cashAmount     Float         @default(0)
+  instapayAmount Float         @default(0)
+  transferAmount Float         @default(0)
+  checkAmount    Float         @default(0)
+  receiptNumber  String?       @unique @db.VarChar(50)
+  notes          String?
+  reference      String?       @db.VarChar(100)
+  date           DateTime      @default(now()) @db.Timestamptz
+  createdById    String        @db.Uuid
+  createdBy      User          @relation(fields: [createdById], references: [id])
+  deletedAt      DateTime?     @db.Timestamptz
+
+  createdAt      DateTime      @default(now()) @db.Timestamptz
+  updatedAt      DateTime      @updatedAt      @db.Timestamptz
+
+  @@index([customerId, type])
+  @@index([supplierId, type])
+  @@index([customerId, type, seasonId])
+  @@index([supplierId, type, seasonId])
+  @@index([seasonId, date(sort: Desc)])
+  @@index([seasonId, createdAt(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@index([deletedAt])
+  @@map("payments")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 5 — STOCK MANAGEMENT (إدارة المخزون)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// سجل كل حركة مخزونية — يُكتب فقط لا يُحذف ولا يُعدَّل أبداً
+/// هو المصدر الوحيد للحقيقة (Single Source of Truth) للمخزون
+model StockMovement {
+  id              String            @id @default(uuid()) @db.Uuid
+  itemId          String            @db.Uuid
+  item            Item              @relation(fields: [itemId], references: [id])
+  itemCode        String            @db.VarChar(50)
+  itemName        String            @db.VarChar(200)
+  type            StockMovementType
+  ///양수 = دخول مخزن | سالب = خروج مخزن
+  quantityIn      Float             @default(0)
+  quantityOut     Float             @default(0)
+  weightIn        Float             @default(0)
+  weightOut       Float             @default(0)
+  price           Float             @default(0)
+  warehouse       Warehouse
+  /// بعد الحركة — لسهولة حساب الرصيد بدون aggregate
+  balanceQty      Float             @default(0)
+  balanceWeight   Float             @default(0)
+  reference       String?           @db.VarChar(50)
+  referenceModel  String?           @db.VarChar(50)
+  referenceId     String?           @db.Uuid
+  seasonId        String?           @db.Uuid
+  season          Season?           @relation(fields: [seasonId], references: [id])
+  createdById     String            @db.Uuid
+  createdBy       User              @relation(fields: [createdById], references: [id])
+  date            DateTime          @default(now()) @db.Timestamptz
+
+  createdAt       DateTime          @default(now()) @db.Timestamptz
+
+  @@index([itemId, warehouse, date(sort: Desc)])
+  @@index([itemId, seasonId, date(sort: Desc)])
+  @@index([itemId, warehouse, seasonId])
+  @@index([seasonId, date(sort: Desc)])
+  @@index([referenceId, referenceModel])
+  @@index([type, date(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@map("stock_movements")
+}
+
+/// تسوية المخزون (جرد) — سجل مستقل لتمييزه من الحركات التلقائية
+model StockAdjustment {
+  id          String    @id @default(uuid()) @db.Uuid
+  refNumber   String    @unique @db.VarChar(30)
+  warehouse   Warehouse
+  date        DateTime  @default(now()) @db.Timestamptz
+  notes       String?
+  seasonId    String?   @db.Uuid
+  season      Season?   @relation(fields: [seasonId], references: [id])
+  createdById String    @db.Uuid
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  approvedAt  DateTime? @db.Timestamptz
+
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  updatedAt   DateTime  @updatedAt
+
+  lines       StockAdjustmentLine[]
+
+  @@index([seasonId, date(sort: Desc)])
+  @@index([warehouse, date(sort: Desc)])
+  @@map("stock_adjustments")
+}
+
+model StockAdjustmentLine {
+  id             String          @id @default(uuid()) @db.Uuid
+  adjustmentId   String          @db.Uuid
+  adjustment     StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  itemId         String          @db.Uuid
+  item           Item            @relation(fields: [itemId], references: [id])
+  itemCode       String          @db.VarChar(50)
+  itemName       String          @db.VarChar(200)
+  systemQty      Float           // الكمية حسب النظام
+  systemWeight   Float
+  actualQty      Float           // الكمية الفعلية (عد)
+  actualWeight   Float
+  diffQty        Float           // الفرق = actual - system
+  diffWeight     Float
+  notes          String?
+
+  @@index([adjustmentId])
+  @@index([itemId])
+  @@map("stock_adjustment_lines")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 6 — TRANSFER & MANUFACTURING
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Transfer {
+  id             String            @id @default(uuid()) @db.Uuid
+  transferNumber String            @unique @db.VarChar(30)
+  docNumber      String            @db.VarChar(50)
+  direction      TransferDirection
+  date           DateTime          @default(now()) @db.Timestamptz
+  fromWarehouse  Warehouse
+  toWarehouse    Warehouse
+  totalWeight    Float             @default(0)
+  totalQuantity  Float             @default(0)
+  status         ApprovalStatus    @default(pending)
+  notes          String?
+  seasonId       String?           @db.Uuid
+  season         Season?           @relation(fields: [seasonId], references: [id])
+  createdById    String            @db.Uuid
+  createdBy      User              @relation("TransferCreatedBy", fields: [createdById], references: [id])
+  approvedById   String?           @db.Uuid
+  approvedBy     User?             @relation("TransferApprovedBy", fields: [approvedById], references: [id])
+  approvedAt     DateTime?         @db.Timestamptz
+
+  createdAt      DateTime          @default(now()) @db.Timestamptz
+  updatedAt      DateTime          @updatedAt
+
+  items          TransferItem[]
+
+  @@unique([docNumber, direction, seasonId])
+  @@index([seasonId, status])
+  @@index([seasonId, date(sort: Desc)])
+  @@index([direction, status])
+  @@map("transfers")
+}
+
+model TransferItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  transferId  String   @db.Uuid
+  transfer    Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  itemId      String   @db.Uuid
+  item        Item     @relation(fields: [itemId], references: [id])
+  itemCode    String   @db.VarChar(50)
+  itemName    String   @db.VarChar(200)
+  quantity    Float
+  weight      Float
+  totalWeight Float
+  sortOrder   Int      @default(0)
+
+  @@index([transferId])
+  @@index([itemId])
+  @@map("transfer_items")
+}
+
+model ManufacturingOrder {
+  id           String              @id @default(uuid()) @db.Uuid
+  orderNumber  String              @db.VarChar(30)
+  docNumber    String              @default("") @db.VarChar(50)
+  date         DateTime            @default(now()) @db.Timestamptz
+  warehouse    Warehouse           @default(ramses)
+  workerId     String?             @db.Uuid
+  worker       Worker?             @relation(fields: [workerId], references: [id])
+  workerName   String?             @db.VarChar(120)
+  notes        String?
+  status       ApprovalStatus      @default(pending)
+  seasonId     String?             @db.Uuid
+  season       Season?             @relation(fields: [seasonId], references: [id])
+  createdById  String              @db.Uuid
+  createdBy    User                @relation("ManufacturingCreatedBy", fields: [createdById], references: [id])
+  approvedById String?             @db.Uuid
+  approvedBy   User?               @relation("ManufacturingApprovedBy", fields: [approvedById], references: [id])
+  approvedAt   DateTime?           @db.Timestamptz
+
+  createdAt    DateTime            @default(now()) @db.Timestamptz
+  updatedAt    DateTime            @updatedAt
+
+  rawMaterials ManufacturingRawMaterial[]
+  outputs      ManufacturingOutput[]
+
+  @@unique([seasonId, orderNumber])
+  @@index([seasonId, status, createdAt(sort: Desc)])
+  @@index([seasonId, warehouse, date(sort: Desc)])
+  @@index([workerId, seasonId, date(sort: Desc)])
+  @@map("manufacturing_orders")
+}
+
+model ManufacturingRawMaterial {
+  id          String             @id @default(uuid()) @db.Uuid
+  orderId     String             @db.Uuid
+  order       ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId      String             @db.Uuid
+  item        Item               @relation(fields: [itemId], references: [id])
+  itemCode    String             @db.VarChar(50)
+  itemName    String             @db.VarChar(200)
+  quantity    Float
+  weight      Float
+  totalWeight Float
+  sortOrder   Int                @default(0)
+
+  @@index([orderId])
+  @@index([itemId])
+  @@map("manufacturing_raw_materials")
+}
+
+model ManufacturingOutput {
+  id          String             @id @default(uuid()) @db.Uuid
+  orderId     String             @db.Uuid
+  order       ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId      String             @db.Uuid
+  item        Item               @relation(fields: [itemId], references: [id])
+  itemCode    String             @db.VarChar(50)
+  itemName    String             @db.VarChar(200)
+  quantity    Float
+  weight      Float
+  totalWeight Float
+  sortOrder   Int                @default(0)
+
+  @@index([orderId])
+  @@index([itemId])
+  @@map("manufacturing_outputs")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 7 — FINANCIAL LEDGER (الخزينة والصندوق)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// كل قيد في الخزينة — immutable (لا يُحذف ولا يُعدَّل)
+/// التصحيح يكون بقيد عكسي (reversal)
+model TreasuryEntry {
+  id              String            @id @default(uuid()) @db.Uuid
+  treasury        TreasuryType
+  type            TreasuryEntryType
+  amount          Float
+  /// موجب = دخول | سالب = خروج
+  direction       Int               // +1 | -1
+  paymentMethod   PaymentMethod?
+  referenceId     String?           @db.Uuid
+  referenceModel  String?           @db.VarChar(50)
+  referenceNumber String?           @db.VarChar(50)
+  customerId      String?           @db.Uuid
+  customer        Customer?         @relation(fields: [customerId], references: [id])
+  customerName    String?           @db.VarChar(200)
+  supplierId      String?           @db.Uuid
+  supplier        Supplier?         @relation(fields: [supplierId], references: [id])
+  supplierName    String?           @db.VarChar(200)
+  seasonId        String?           @db.Uuid
+  season          Season?           @relation(fields: [seasonId], references: [id])
+  userId          String?           @db.Uuid
+  user            User?             @relation("TreasuryUser", fields: [userId], references: [id])
+  notes           String?
+  /// هل هذا القيد reversal لقيد آخر؟
+  reversalOf      String?           @db.Uuid
+  date            DateTime          @default(now()) @db.Timestamptz
+
+  createdAt       DateTime          @default(now()) @db.Timestamptz
+
+  @@index([treasury, date(sort: Desc)])
+  @@index([treasury, type, date(sort: Desc)])
+  @@index([treasury, seasonId, date(sort: Desc)])
+  @@index([referenceId, referenceModel])
+  @@index([customerId, date(sort: Desc)])
+  @@index([supplierId, date(sort: Desc)])
+  @@index([seasonId, date(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@map("treasury_entries")
+}
+
+/// سجل الصندوق اليومي لكل أدمن
+model CashRegister {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @db.Uuid
+  user            User             @relation("CashRegisterUser", fields: [userId], references: [id])
+  userName        String           @db.VarChar(120)
+  type            CashRegisterType
+  /// موجب = دخول | سالب = خروج
+  direction       Int              // +1 | -1
+  cashAmount      Float
+  referenceId     String?          @db.Uuid
+  referenceModel  String?          @db.VarChar(50)
+  referenceNumber String?          @db.VarChar(50)
+  customerId      String?          @db.Uuid
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  customerName    String?          @db.VarChar(200)
+  seasonId        String?          @db.Uuid
+  season          Season?          @relation(fields: [seasonId], references: [id])
+  notes           String?
+  date            DateTime         @default(now()) @db.Timestamptz
+
+  createdAt       DateTime         @default(now()) @db.Timestamptz
+
+  @@index([userId, date(sort: Desc)])
+  @@index([userId, seasonId, date(sort: Desc)])
+  @@index([seasonId, date(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@map("cash_registers")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 8 — PRICE LISTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+model PriceList {
+  id                   String              @id @default(uuid()) @db.Uuid
+  priceListName        String              @db.VarChar(100)
+  priceListDescription String              @default("") @db.VarChar(300)
+  displayOrder         Int                 @default(0)
+  displayName          String              @db.VarChar(200)
+  origin               String              @default("") @db.VarChar(100)
+  unit                 String              @default("") @db.VarChar(50)
+  notes                String              @default("") @db.VarChar(500)
+  prices               Json                @default("[]")
+  defaultPrice         Float               @default(0)
+  itemDisplayOrder     Int                 @default(0)
+  isActive             Boolean             @default(true)
+  updatedById          String?             @db.Uuid
+  updatedBy            User?               @relation(fields: [updatedById], references: [id])
+
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  linkedItems          PriceListItemLink[]
+
+  @@index([priceListName, isActive])
+  @@index([isActive])
+  @@map("price_lists")
+}
+
+/// ربط قائمة الأسعار بالأصناف
+model PriceListItemLink {
+  id           String    @id @default(uuid()) @db.Uuid
+  priceListId  String    @db.Uuid
+  priceList    PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  itemId       String    @db.Uuid
+  item         Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemCode     String    @db.VarChar(50)
+  itemName     String    @db.VarChar(200)
+
+  @@index([priceListId])
+  @@index([itemId])
+  @@map("price_list_item_links")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SECTION 9 — AUDIT & OBSERVABILITY
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// سجل المراجعة — immutable تماماً — لا يُحذف أبداً
+/// كل action في النظام يُسجَّل هنا
+model AuditLog {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String?     @db.Uuid
+  user         User?       @relation(fields: [userId], references: [id])
+  userName     String?     @db.VarChar(120)
+  userRole     String?     @db.VarChar(30)
+  action       AuditAction
+  resource     String?     @db.VarChar(50)   // اسم الـ model
+  resourceId   String?     @db.Uuid          // id السجل المتأثر
+  resourceRef  String?     @db.VarChar(50)   // رقم الفاتورة مثلاً
+  /// الفرق قبل وبعد — { before: {...}, after: {...} }
+  diff         Json?
+  /// بيانات إضافية حرة
+  meta         Json?
+  ipAddress    String?     @db.VarChar(45)
+  userAgent    String?     @db.VarChar(300)
+  seasonId     String?     @db.Uuid
+  createdAt    DateTime    @default(now()) @db.Timestamptz
+
+  @@index([createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([resource, resourceId])
+  @@index([action, createdAt(sort: Desc)])
+  @@index([seasonId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+/// إشعارات داخل النظام — للتنبيه على الأحداث المهمة
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  title      String    @db.VarChar(200)
+  body       String?
+  type       String    @db.VarChar(50)  // "low_stock" | "pending_approval" | ...
+  resourceId String?   @db.Uuid
+  isRead     Boolean   @default(false)
+  readAt     DateTime? @db.Timestamptz
+  createdAt  DateTime  @default(now()) @db.Timestamptz
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+/// إعدادات النظام — key-value store مرن
+model SystemSetting {
+  key       String   @id @db.VarChar(100)
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}

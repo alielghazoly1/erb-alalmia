@@ -1,0 +1,39 @@
+[{
+  "_id": {
+    "$oid": "69eb92a423073117c4b3e75f"
+  },
+  "name": "ا/ حسن",
+  "username": "hassan",
+  "password": "$2b$10$buxrGVxElYCzTOiigltGAufYeVQpBMQ7V/PMXSjJ8JGc0zMBqLyxi",
+  "role": "admin",
+  "warehouse": "both",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-04-24T15:56:20.748Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-24T15:56:20.748Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69ebc13156565543a6029eba"
+  },
+  "name": "علي محمد",
+  "username": "ali",
+  "password": "$2b$10$chL6OxgdHhQLVmXFyZCIquWhE6EEYqG/jjwGCvixkha.jwXcTojdu",
+  "role": "user",
+  "warehouse": "ramses",
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-04-24T19:14:57.773Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-25T09:40:28.756Z"
+  },
+  "__v": 0,
+  "permissions": {
+    "allowNegativeSale": true
+  }
+}]

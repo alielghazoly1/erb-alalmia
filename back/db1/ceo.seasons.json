@@ -1,0 +1,22 @@
+[{
+  "_id": {
+    "$oid": "69e3744beb9c78e4c0d5aab4"
+  },
+  "name": "ياميش 2026",
+  "startDate": {
+    "$date": "2026-04-01T00:00:00.000Z"
+  },
+  "endDate": {
+    "$date": "2026-06-30T00:00:00.000Z"
+  },
+  "isActive": true,
+  "isManufacturing": false,
+  "stockSnapshot": [],
+  "createdAt": {
+    "$date": "2026-04-18T12:08:43.432Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-18T12:08:43.432Z"
+  },
+  "__v": 0
+}]

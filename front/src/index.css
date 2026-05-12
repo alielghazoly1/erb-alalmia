@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
+
+* { font-family: 'Cairo', sans-serif; }
+body { direction: rtl; background-color: #f8fafc; }
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 
+           transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium;
+  }
+  .input-field {
+    @apply w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none 
+           focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+}
+
+/* ════════════════════════════════════
+   أنماط الطباعة الاحترافية
+════════════════════════════════════ */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    font-size: 12px;
+  }
+
+  /* إخفاء عناصر التنقل عند الطباعة */
+  aside,
+  header,
+  .print\:hidden,
+  button,
+  nav {
+    display: none !important;
+  }
+
+  /* إظهار عناصر الطباعة فقط */
+  .print\:block {
+    display: block !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+    border-radius: 4px !important;
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* حجم A4 */
+  @page {
+    size: A4;
+    margin: 15mm 10mm;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  td {
+    border: 1px solid #000 !important;
+    padding: 6px 0px !important;
+    font-size: 14px !important;
+  }
+  th{
+    border: 1px solid #000 !important;
+    padding: 6px 0px !important;
+    font-size: 14px !important;
+  }
+
+  tbody td {
+    line-height: 0.3 !important;
+  }
+
+  thead tr {
+    background-color: #f3f4f6 !important;
+    font-weight: bold;
+  }
+
+  /* منع قطع الجداول */
+  table, tr, td, th {
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+    
+  }
+
+  .print-invoice {
+    page-break-after: always;
+
+  }
+}
