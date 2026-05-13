@@ -1,10 +1,26 @@
+// ─── store/slices/saleSlice.js ────────────────────────────────────────────────
+// ✅ Lazy Loading: 100 فاتورة كل مرة، يحمل التالي لما المستخدم يوصل 80%
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
+export const PAGE_SIZE = 100;
+
+// جلب أول 100 فاتورة (reset)
 export const fetchSaleInvoices = createAsyncThunk('sales/fetchAll', async (params = {}) => {
-  const { limit = 500, ...rest } = params;
-  const { data } = await api.get('/sales', { params: { ...rest, limit } });
-  return Array.isArray(data) ? data : (data.invoices || []);
+  const { data } = await api.get('/sales', { params: { ...params, limit: PAGE_SIZE, page: 1 } });
+  const invoices = Array.isArray(data) ? data : (data.invoices || []);
+  const total    = data.total ?? invoices.length;
+  return { invoices, total, page: 1 };
+});
+
+// تحميل الصفحة التالية (append)
+export const fetchMoreSaleInvoices = createAsyncThunk('sales/fetchMore', async (params = {}, thunkAPI) => {
+  const state   = thunkAPI.getState().sales;
+  const nextPage = state.currentPage + 1;
+  const { data } = await api.get('/sales', { params: { ...params, limit: PAGE_SIZE, page: nextPage } });
+  const invoices = Array.isArray(data) ? data : (data.invoices || []);
+  const total    = data.total ?? invoices.length;
+  return { invoices, total, page: nextPage };
 });
 
 export const createSaleInvoice = createAsyncThunk('sales/create', async (d, thunkAPI) => {
@@ -52,22 +68,56 @@ const updateInList = (list, payload) => {
 
 const saleSlice = createSlice({
   name: 'sales',
-  initialState: { list: [], deletedIds: [], loading: false, error: null },
+  initialState: {
+    list: [],
+    deletedIds: [],
+    total: 0,
+    currentPage: 1,
+    hasMore: false,
+    loading: false,
+    loadingMore: false,
+    error: null,
+    lastParams: null,
+  },
   reducers: {
-    // مسح الـ deletedIds بعد fetch جديد مقصود (مثلاً تغيير الفلتر)
     clearDeletedIds: (state) => { state.deletedIds = []; },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchSaleInvoices.pending,   (state) => { state.loading = true; })
-      .addCase(fetchSaleInvoices.fulfilled, (state, action) => {
-        state.loading = false;
-        // فلتر أي فاتورة محذوفة محلياً حتى لو الـ API رجعها
-        state.list = action.payload.filter(i => !state.deletedIds.includes(i._id));
+      // ── fetchSaleInvoices (reset) ──────────────────────────────────────
+      .addCase(fetchSaleInvoices.pending, (state, action) => {
+        state.loading     = true;
+        state.lastParams  = action.meta.arg;
       })
-      .addCase(fetchSaleInvoices.rejected,  (state) => { state.loading = false; })
+      .addCase(fetchSaleInvoices.fulfilled, (state, action) => {
+        state.loading     = false;
+        const { invoices, total, page } = action.payload;
+        state.list        = invoices.filter(i => !state.deletedIds.includes(i._id));
+        state.total       = total;
+        state.currentPage = page;
+        state.hasMore     = state.list.length < total;
+      })
+      .addCase(fetchSaleInvoices.rejected, (state) => { state.loading = false; })
+
+      // ── fetchMoreSaleInvoices (append) ────────────────────────────────
+      .addCase(fetchMoreSaleInvoices.pending, (state) => { state.loadingMore = true; })
+      .addCase(fetchMoreSaleInvoices.fulfilled, (state, action) => {
+        state.loadingMore = false;
+        const { invoices, total, page } = action.payload;
+        const newItems = invoices.filter(i => !state.deletedIds.includes(i._id));
+        // deduplicate
+        const ids = new Set(state.list.map(i => i._id));
+        state.list        = [...state.list, ...newItems.filter(i => !ids.has(i._id))];
+        state.total       = total;
+        state.currentPage = page;
+        state.hasMore     = state.list.length < total;
+      })
+      .addCase(fetchMoreSaleInvoices.rejected, (state) => { state.loadingMore = false; })
+
+      // ── CRUD ──────────────────────────────────────────────────────────
       .addCase(createSaleInvoice.fulfilled, (state, action) => {
         state.list.unshift(action.payload);
+        state.total += 1;
       })
       .addCase(approveSaleInvoice.fulfilled, (state, action) => {
         state.list = updateInList(state.list, action.payload);
@@ -77,9 +127,9 @@ const saleSlice = createSlice({
       })
       .addCase(cancelSaleInvoice.fulfilled, (state, action) => {
         const id = action.payload;
-        // حذف فوري من القائمة + حفظ الـ ID كـ safety net ضد أي fetch مفاجئ
         state.list       = state.list.filter(i => i._id !== id);
         state.deletedIds = [...state.deletedIds, id];
+        state.total      = Math.max(0, state.total - 1);
       });
   },
 });

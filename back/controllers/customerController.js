@@ -67,7 +67,7 @@ async function _fetchFromDB({ search, type } = {}) {
 // ── CREATE ────────────────────────────────────────────────────────────────────
 const createCustomer = async (req, res) => {
   try {
-    const { openingBalance, ...customerData } = req.body;
+    const { openingBalance, initialBalance, ...customerData } = req.body;
 
     const exists = await prisma.customer.findUnique({ where: { code: customerData.code } });
     if (exists) return res.status(400).json({ message: 'كود العميل موجود بالفعل' });
@@ -75,7 +75,7 @@ const createCustomer = async (req, res) => {
     const customer = await prisma.customer.create({
       data: {
         ...pickCustomer(customerData),
-        openingBalance: Number(openingBalance) || 0,
+        openingBalance: Number(openingBalance ?? initialBalance) || 0,
         createdById:    req.user.id,
       },
     });
@@ -104,7 +104,7 @@ const updateCustomer = async (req, res) => {
 // ── UPDATE INITIAL BALANCE ────────────────────────────────────────────────────
 const updateInitialBalance = async (req, res) => {
   try {
-    const newAmount = Number(req.body.openingBalance);
+    const newAmount = Number(req.body.openingBalance ?? req.body.initialBalance);
     if (isNaN(newAmount) || newAmount < 0) return res.status(400).json({ message: 'المبلغ غير صحيح' });
 
     const customer = await prisma.customer.findUnique({ where: { id: req.params.id } });

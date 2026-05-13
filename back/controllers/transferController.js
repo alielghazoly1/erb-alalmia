@@ -5,7 +5,7 @@ const { nextNumber } = require('../utils/counterHelper');
 const { getStockQty, updateStock, createStockMovement } = require('../utils/stockHelper');
 
 const getDirection = (from, to) =>
-  from === 'ramses' && to === 'october' ? 'R2O' : 'O2R';
+  from === 'ramses' && to === 'october' ? 'ramses_to_october' : 'october_to_ramses';
 
 const transferIncludes = () => ({
   items:      { include: { item: { select: { code: true, name: true, defaultWeight: true } } } },
@@ -48,13 +48,23 @@ const getTransferById = async (req, res) => {
 };
 
 // ── CHECK docNumber ───────────────────────────────────────────────────────────
+// Map frontend short codes to DB enum values
+const mapDirection = (dir) => {
+  if (!dir) return undefined;
+  if (dir === 'R2O') return 'ramses_to_october';
+  if (dir === 'O2R') return 'october_to_ramses';
+  return dir; // already full name
+};
+
 const checkDocNumber = async (req, res) => {
   try {
     const { docNumber, direction, seasonId, excludeId } = req.query;
     if (!docNumber?.trim()) return res.json({ exists: false });
-    const where = { docNumber: docNumber.trim(), direction };
-    if (seasonId)  where.seasonId = seasonId;
-    if (excludeId) where.id = { not: excludeId };
+    const mappedDir = mapDirection(direction);
+    const where = { docNumber: docNumber.trim() };
+    if (mappedDir) where.direction = mappedDir;
+    if (seasonId)  where.seasonId  = seasonId;
+    if (excludeId) where.id        = { not: excludeId };
     const exists = await prisma.transfer.findFirst({ where, select: { transferNumber: true } });
     res.json({ exists: !!exists, transferNumber: exists?.transferNumber || null });
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -85,7 +95,7 @@ const createTransfer = async (req, res) => {
     const transferNumber = await nextNumber(`TRF_${direction}`, `TRF-${direction}`);
 
     const docExists = await prisma.transfer.findFirst({
-      where: { docNumber: docNumber.trim(), direction, seasonId: activeSeason?.id },
+      where: { docNumber: docNumber.trim(), direction: getDirection(fromWarehouse, toWarehouse), seasonId: activeSeason?.id },
       select: { transferNumber: true },
     });
     if (docExists)

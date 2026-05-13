@@ -27,10 +27,12 @@ const buildWhere = (workerId, { seasonId, status, startDate, endDate }) => {
 // ─── GET /api/workers ─────────────────────────────────────────────────────────
 const getWorkers = async (req, res) => {
   try {
-    const { warehouse, isActive } = req.query;
+    const { warehouse, scope, isActive } = req.query;
     const where = {};
-    if (warehouse)             where.warehouse = warehouse;
-    if (isActive !== undefined) where.isActive  = isActive === 'true';
+    // support both 'warehouse' (frontend) and 'scope' (schema)
+    const scopeVal = scope || warehouse;
+    if (scopeVal)              where.scope    = scopeVal;
+    if (isActive !== undefined) where.isActive = isActive === 'true';
 
     const workers = await prisma.worker.findMany({ where, orderBy: { name: 'asc' } });
     return res.json(workers.map(n));
@@ -55,7 +57,7 @@ const getWorkerById = async (req, res) => {
 // ─── POST /api/workers ────────────────────────────────────────────────────────
 const createWorker = async (req, res) => {
   try {
-    const { name, code, warehouse, phone, notes } = req.body;
+    const { name, code, warehouse, scope, phone, notes } = req.body;
     if (!name) return res.status(400).json({ message: 'اسم المعلم مطلوب' });
     if (!code) return res.status(400).json({ message: 'كود المعلم مطلوب' });
 
@@ -63,7 +65,7 @@ const createWorker = async (req, res) => {
     if (exists) return res.status(400).json({ message: 'الكود ده مستخدم قبل كده' });
 
     const worker = await prisma.worker.create({
-      data: { name, code: code.toUpperCase(), warehouse: warehouse || 'ramses', phone, notes },
+      data: { name, code: code.toUpperCase(), scope: (scope || warehouse || 'ramses'), phone, notes },
     });
     return res.status(201).json(n(worker));
   } catch (err) {
@@ -75,7 +77,7 @@ const createWorker = async (req, res) => {
 // ─── PUT /api/workers/:id ─────────────────────────────────────────────────────
 const updateWorker = async (req, res) => {
   try {
-    const { name, code, warehouse, phone, notes, isActive } = req.body;
+    const { name, code, warehouse, scope, phone, notes, isActive } = req.body;
     const worker = await prisma.worker.findUnique({ where: { id: req.params.id } });
     if (!worker) return res.status(404).json({ message: 'المعلم مش موجود' });
 
@@ -89,7 +91,8 @@ const updateWorker = async (req, res) => {
     const data = {};
     if (name      !== undefined) data.name      = name;
     if (code      !== undefined) data.code      = code.toUpperCase();
-    if (warehouse !== undefined) data.warehouse = warehouse;
+    const scopeUpdate = scope ?? warehouse;
+    if (scopeUpdate !== undefined) data.scope = scopeUpdate;
     if (phone     !== undefined) data.phone     = phone;
     if (notes     !== undefined) data.notes     = notes;
     if (isActive  !== undefined) data.isActive  = isActive;
@@ -235,7 +238,7 @@ const getWorkerOrders = async (req, res) => {
         orderNumber: true,
         docNumber:   true,
         date:        true,
-        warehouse:   true,
+        scope:       true,
         status:      true,
         notes:       true,
         season:      { select: { name: true } },

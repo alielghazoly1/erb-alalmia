@@ -39,7 +39,7 @@ const recalcWeights = (items) =>
 const orderIncludes = () => ({
   createdBy:      { select: { name: true } },
   approvedBy:     { select: { name: true } },
-  worker:         { select: { name: true, code: true, warehouse: true } },
+  worker:         { select: { name: true, code: true, scope: true } },
   season:         { select: { name: true, isActive: true } },
   rawMaterials:   { include: { item: { select: { name: true, code: true } } } },
   outputProducts: { include: { item: { select: { name: true, code: true } } } },

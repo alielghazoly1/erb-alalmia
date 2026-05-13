@@ -9,15 +9,19 @@ const getStockQty = async (itemId, warehouse, seasonId = null) => {
   return { quantity: stock?.quantity ?? 0, weight: stock?.weight ?? 0 };
 };
 
+// تأمين القيم ضد NaN/null
+const safeNum = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
+
 // تحديث مخزون صنف (delta موجب = إضافة، سالب = خصم)
+// ✅ FIX: رفع Math.max(0) — المخزون يُسمح له بالسالب
 const updateStock = async (itemId, warehouse, seasonId, delta) => {
   const sid = seasonId || null;
   const existing = await prisma.itemStock.findFirst({
     where: { itemId, warehouse, seasonId: sid },
   });
 
-  const newQty    = (existing?.quantity ?? 0) + (delta.quantity ?? 0);
-  const newWeight = (existing?.weight   ?? 0) + (delta.weight   ?? 0);
+  const newQty    = safeNum(existing?.quantity) + safeNum(delta.quantity);
+  const newWeight = safeNum(existing?.weight)   + safeNum(delta.weight);
 
   if (existing) {
     await prisma.itemStock.update({
@@ -26,12 +30,13 @@ const updateStock = async (itemId, warehouse, seasonId, delta) => {
     });
   } else {
     await prisma.itemStock.create({
-      data: { itemId, warehouse, seasonId: sid, quantity: Math.max(0, newQty), weight: Math.max(0, newWeight) },
+      data: { itemId, warehouse, seasonId: sid, quantity: newQty, weight: newWeight },
     });
   }
 };
 
 // تسجيل حركة مخزونية مع حساب الرصيد التلقائي
+// ✅ FIX: safeNum على كل القيم لتفادي NaN في DB
 const createStockMovement = async ({
   itemId, itemCode, itemName, type,
   quantity, weight, price,
@@ -44,21 +49,26 @@ const createStockMovement = async ({
   const INS = ['purchase_in', 'return_in', 'transfer_in', 'manufacturing_out', 'adjustment_add', 'opening_stock'];
   const isIn = INS.includes(type);
 
-  const quantityIn  = isIn ? Math.abs(quantity) : 0;
-  const quantityOut = isIn ? 0 : Math.abs(quantity);
-  const weightIn    = isIn ? Math.abs(weight) : 0;
-  const weightOut   = isIn ? 0 : Math.abs(weight);
-  const balanceQty    = Math.max(0, current.quantity + quantityIn - quantityOut);
-  const balanceWeight = Math.max(0, current.weight   + weightIn   - weightOut);
+  const absQty = Math.abs(safeNum(quantity));
+  const absWgt = Math.abs(safeNum(weight));
+
+  const quantityIn  = isIn ? absQty : 0;
+  const quantityOut = isIn ? 0      : absQty;
+  const weightIn    = isIn ? absWgt : 0;
+  const weightOut   = isIn ? 0      : absWgt;
+
+  // ✅ الرصيد يُسمح بالسالب — بدون Math.max(0,...)
+  const balanceQty    = safeNum(current.quantity) + quantityIn - quantityOut;
+  const balanceWeight = safeNum(current.weight)   + weightIn   - weightOut;
 
   return prisma.stockMovement.create({
     data: {
       itemId, itemCode, itemName, type,
       quantityIn, quantityOut,
       weightIn,   weightOut,
-      price:          price  ?? 0,
+      price:          safeNum(price),
       warehouse,
-      balanceQty, balanceWeight,
+      balanceQty,  balanceWeight,
       reference:      reference      ?? null,
       referenceModel: referenceModel ?? null,
       referenceId:    referenceId    ?? null,

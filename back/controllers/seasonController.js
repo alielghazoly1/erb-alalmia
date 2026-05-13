@@ -11,6 +11,7 @@
 'use strict';
 
 const prisma = require('../config/db');
+const { getStockQty } = require('../utils/stockHelper');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -20,21 +21,7 @@ const prisma = require('../config/db');
  */
 const normalSeason = (season) => ({ ...season, _id: season.id });
 
-/**
- * يبني snapshot للمخزن من قائمة الأصناف النشطة
- * @param {Array} items
- */
-const buildStockSnapshot = (items) =>
-  items.map(({ id, code, name, stock }) => {
-    const s = stock ?? {};
-    return {
-      itemId:   id,
-      itemCode: code,
-      itemName: name,
-      ramses:   s.ramses  ?? { quantity: 0, weight: 0 },
-      october:  s.october ?? { quantity: 0, weight: 0 },
-    };
-  });
+
 
 // ─── GET /api/seasons ─────────────────────────────────────────────────────────
 
@@ -108,29 +95,22 @@ const createSeason = async (req, res) => {
       return res.status(409).json({ message: `موسم بالاسم "${name.trim()}" موجود بالفعل` });
     }
 
-    // ── Stock snapshot من الأصناف النشطة ──────────────────────────────────────
-    const activeItems = await prisma.item.findMany({
-      where: { isActive: true },
-      select: { id: true, code: true, name: true, stock: true },
-    });
-    const stockSnapshot = buildStockSnapshot(activeItems);
-
     // ── Transaction: deactivate all → create new active season ───────────────
-    //  ✅ الإصلاح: updateMany بيحتاج { where, data } مش (where, data) منفصلين
     const season = await prisma.$transaction(async (tx) => {
       await tx.season.updateMany({
-        where: {},           // كل المواسم
+        where: {},
         data:  { isActive: false },
       });
 
       return tx.season.create({
         data: {
           name:            name.trim(),
+          code:            name.trim().replace(/\s+/g, '-').toUpperCase().slice(0, 20),
           startDate:       start,
           endDate:         end,
           isManufacturing: Boolean(isManufacturing),
           isActive:        true,
-          stockSnapshot,
+          createdById:     null,
         },
       });
     });

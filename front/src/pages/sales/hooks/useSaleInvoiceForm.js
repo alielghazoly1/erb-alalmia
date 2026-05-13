@@ -1,3 +1,5 @@
+// ─── hooks/useSaleInvoiceForm.js ──────────────────────────────────────────────
+// ✅ FIX: تحديث stock الصنف لما المخزن يتغير
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createSaleInvoice } from '../../../store/slices/saleSlice';
@@ -40,16 +42,8 @@ export function useSaleInvoiceForm() {
   const { activeSeason } = useSelector(s => s.season);
   const isAdmin         = user?.role === 'admin';
 
-  // البيع بالسالب:
-  //   - الأدمن: مفعّل دايماً تلقائياً (لا يحتاج toggle)
-  //   - اليوزر العادي: يُحدَّد من صلاحيات الأدمن فقط في إعدادات المستخدمين
-  //     لو allowNegativeSale = true → يبيع بدون toggle (تلقائي)
-  //     لو allowNegativeSale = false → ما ينفعش يبيع بالسالب خالص
-  // allowNegativeSale: بتُقرأ من الـ permissions دايماً (سواء أدمن أو يوزر)
-  // الأدمن قيمتها بتيجي من DB عبر serializeUser — مش مفترض true دايماً
   const userHasNegativePerm = user?.permissions?.allowNegativeSale === true;
-  const canNegativeSale     = userHasNegativePerm;   // الأدمن وغيره سواء هنا
-  // canEditInvoice: الأدمن دايماً يقدر، اليوزر لو الأدمن فعّلها له
+  const canNegativeSale     = userHasNegativePerm;
   const canEditInvoice      = isAdmin || user?.permissions?.canEditInvoice === true;
 
   // ── header state ──────────────────────────────────────────────────────────
@@ -78,9 +72,7 @@ export function useSaleInvoiceForm() {
   const [searchQuery,     setSearchQuery]     = useState('');
   const [searchResults,   setSearchResults]   = useState([]);
   const [searchLoading,   setSearchLoading]   = useState(false);
-
-  // ── show print ────────────────────────────────────────────────────────────
-  const [showPrint, setShowPrint] = useState(false);
+  const [showPrint,       setShowPrint]       = useState(false);
 
   // ── refs ──────────────────────────────────────────────────────────────────
   const docRef      = useRef(null);
@@ -105,12 +97,8 @@ export function useSaleInvoiceForm() {
     : paymentMethod !== 'credit' ? (parseFloat(cashAmount) || 0) : 0;
   const remaining      = totalAmount - paidAmount;
 
-  // ── auto-focus doc on mount ───────────────────────────────────────────────
-  useEffect(() => {
-    setTimeout(() => docRef.current?.focus(), 100);
-  }, []);
+  useEffect(() => { setTimeout(() => docRef.current?.focus(), 100); }, []);
 
-  // ── رصيد العميل ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!customer || customer.type === 'cash') { setCustomerBalance(null); return; }
     api.get(`/customers/${customer._id}/statement`)
@@ -118,7 +106,6 @@ export function useSaleInvoiceForm() {
       .catch(() => {});
   }, [customer]);
 
-  // ── نوع الدفع حسب نوع العميل ─────────────────────────────────────────────
   useEffect(() => {
     if (!customer) return;
     setPaymentMethod(customer.type === 'cash' ? 'cash' : 'credit');
@@ -126,13 +113,45 @@ export function useSaleInvoiceForm() {
     setInstapayAmount('');
   }, [customer]);
 
-  // ── auto-fill cashAmount بالـ total ──────────────────────────────────────
   useEffect(() => {
     if (!isCash || isMixed) return;
     if (paymentMethod !== 'credit') {
       setCashAmount(totalAmount > 0 ? totalAmount.toFixed(2) : '');
     }
   }, [totalAmount, isCash, isMixed, paymentMethod]);
+
+  // ✅ FIX: لما المخزن يتغير، حدّث كل صنف محفوظ بالمخزون الجديد
+  const handleWarehouseChange = useCallback(async (newWarehouse) => {
+    setWarehouse(newWarehouse);
+    // إعادة جلب المخزون المتاح لكل صنف في الـ rows
+    setRows(prev => prev.map(r => {
+      if (!r.item) return r;
+      return r; // سيتحدث عبر useEffect التالي
+    }));
+
+    // جيب stock محدّث لكل صنف فيه item
+    const itemIds = [...new Set(rows.filter(r => r.item).map(r => r.item))];
+    if (itemIds.length === 0) return;
+
+    // جلب موازي
+    const updates = await Promise.allSettled(
+      itemIds.map(id => api.get(`/items/${id}/stock`))
+    );
+
+    const stockByItem = {};
+    updates.forEach((res, i) => {
+      if (res.status === 'fulfilled') {
+        const data = res.value.data;
+        stockByItem[itemIds[i]] = data.stock;
+      }
+    });
+
+    setRows(prev => prev.map(r => {
+      if (!r.item || !stockByItem[r.item]) return r;
+      const wStock = stockByItem[r.item]?.[newWarehouse] || { quantity: 0, weight: 0 };
+      return { ...r, availableQty: wStock.quantity, availableWeight: wStock.weight };
+    }));
+  }, [rows]);
 
   // ── checkDocNumber ────────────────────────────────────────────────────────
   const checkDocNumber = useCallback(async (val, excludeId = null) => {
@@ -190,7 +209,6 @@ export function useSaleInvoiceForm() {
     srchTimer.current = setTimeout(() => doSearch(val), 400);
   };
 
-  // ── load invoice for edit ─────────────────────────────────────────────────
   const loadForEdit = async (inv) => {
     const { data } = await api.get(`/sales/${inv._id}`);
     setEditingInvoice(data);
@@ -245,8 +263,9 @@ export function useSaleInvoiceForm() {
     if (!item) return;
     let defaultPrice = '';
     const unitWeight = item.defaultWeight || 0;
-    const stockQty   = item.stock?.[warehouse]?.quantity || 0;
-    const stockWt    = item.stock?.[warehouse]?.weight   || 0;
+    // ✅ يستخدم المخزن الحالي المختار
+    const stockQty   = item.stock?.[warehouse]?.quantity ?? 0;
+    const stockWt    = item.stock?.[warehouse]?.weight   ?? 0;
     try {
       const { data } = await api.get(`/price-list/item/${item._id}`);
       if (data?.defaultPrice) defaultPrice = String(data.defaultPrice);
@@ -287,7 +306,7 @@ export function useSaleInvoiceForm() {
 
   const handleSaveRow = (rowId) => {
     const row = rows.find(r => r.id === rowId);
-    if (!row?.item)                         return toast.error('اختار الصنف أولاً');
+    if (!row?.item)                               return toast.error('اختار الصنف أولاً');
     if (!row.quantity || !row.weight || !row.price) return toast.error('اكمل بيانات الصنف');
     const duplicate = rows.find(r => r.id !== rowId && r.saved && r.item === row.item);
     if (duplicate) return toast.error(`الصنف "${row.itemName}" موجود بالفعل في الفاتورة`);
@@ -305,11 +324,10 @@ export function useSaleInvoiceForm() {
     }
   };
 
-  const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true }  : r));
+  const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true  } : r));
   const handleCancelRow = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true,  editing: false } : r));
   const handleDeleteRow = (rowId) => setRows(prev => prev.filter(r => r.id !== rowId));
 
-  // ── reset form ────────────────────────────────────────────────────────────
   const resetForm = () => {
     setCustomer(null);
     setDocNumber('');
@@ -354,10 +372,6 @@ export function useSaleInvoiceForm() {
       finalPaidAmount = finalCashAmount;
     }
 
-    // البيع بالسالب:
-    // الأدمن: دايماً مفعّل
-    // اليوزر: تلقائي لو الأدمن فعّلها له من إعدادات المستخدمين
-    // البيع بالسالب: نقرأ القيمة الفعلية من permissions (الأدمن قيمتها من DB)
     const shouldAllowNegative = userHasNegativePerm;
 
     const base = {
@@ -373,7 +387,6 @@ export function useSaleInvoiceForm() {
 
     try {
       if (editingInvoice) {
-        // الأدمن → force-edit (يعدّل حتى الـ approved) | اليوزر → PUT عادي
         const endpoint = isAdmin
           ? `/sales/${editingInvoice._id}/force-edit`
           : `/sales/${editingInvoice._id}`;
@@ -397,12 +410,11 @@ export function useSaleInvoiceForm() {
   };
 
   return {
-    // state
     user, isAdmin, canNegativeSale, userHasNegativePerm, canEditInvoice,
     customer, customerError, setCustomerError,
     docNumber, docError, docChecking,
     date, setDate,
-    warehouse, setWarehouse,
+    warehouse, setWarehouse: handleWarehouseChange,
     notes, setNotes,
     paymentMethod, setPaymentMethod,
     cashAmount, setCashAmount,
@@ -414,11 +426,8 @@ export function useSaleInvoiceForm() {
     editingInvoice, editNotes, setEditNotes,
     showAdminSearch, setShowAdminSearch,
     searchQuery, searchResults, searchLoading,
-    // computed
     totalAmount, totalWeightAll, isCash, isMixed, paidAmount, remaining,
-    // refs
     docRef, customerRef, itemRefs, qtyRefs, wtRefs, prRefs, customerKey,
-    // handlers
     handleDocChange, handleDocKeyDown,
     handleCustomerSelect, focusItemSearch,
     handleSearchChange, loadForEdit, cancelEdit,

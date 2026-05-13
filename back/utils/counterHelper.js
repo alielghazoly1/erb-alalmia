@@ -1,23 +1,23 @@
-// ─── utils/counterHelper.js ───────────────────────────────────────────────────
-// بديل Counter model من MongoDB
-// بيستخدم Prisma transaction عشان يضمن atomic increment
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── utils/counterHelper.js ──────────────────────────────────────────────────
+// ✅ يستخدم GlobalCounter الموجود في الـ Schema
+// ─────────────────────────────────────────────────────────────────────────────
 
 const prisma = require('../config/db');
 
 /**
- * يرجع رقم تسلسلي جديد لأي prefix (SAL, PUR, RET, TRF, MAN ...)
- * @param {string} name - اسم العداد
- * @param {string} prefix - البادئة في الرقم (مثلاً 'SAL')
- * @returns {Promise<string>} - مثلاً 'SAL-00001'
+ * يولّد رقم فاتورة تسلسلي باستخدام GlobalCounter
+ * @param {string} name — اسم العداد (مثلاً 'SAL')
+ * @param {string} prefix — بادئة الرقم (مثلاً 'SAL-')
+ * @param {number} pad — عدد الأصفار (default 5)
  */
-const nextNumber = async (name, prefix) => {
-  const counter = await prisma.counter.upsert({
-    where:  { name },
+const nextNumber = async (name, prefix, pad = 5) => {
+  const counter = await prisma.globalCounter.upsert({
+    where: { name },
     create: { name, value: 1 },
     update: { value: { increment: 1 } },
   });
-  return `${prefix}-${String(counter.value).padStart(5, '0')}`;
+
+  return `${prefix}-${String(counter.value).padStart(pad, '0')}`;
 };
 
 module.exports = { nextNumber };
