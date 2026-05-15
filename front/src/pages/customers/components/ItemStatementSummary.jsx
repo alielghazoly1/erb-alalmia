@@ -1,7 +1,7 @@
 // ─── components/ItemStatementSummary.jsx ────────────────────────────────────
 // كروت ملخص كشف الصنف — كمية / وزن / مبلغ / آخر سعر
 // ────────────────────────────────────────────────────────────────────────────
-
+import { toNum } from '../../../utils/fmt';
 export default function ItemStatementSummary({ data }) {
   if (!data) return null;
 
@@ -20,7 +20,7 @@ export default function ItemStatementSummary({ data }) {
     },
     {
       label: 'إجمالي المبلغ',
-      value: data.totalAmount?.toFixed(2),
+      value: toNum(data.totalAmount).toFixed(2)(),
       unit:  'ج.م',
       color: 'green',
     },

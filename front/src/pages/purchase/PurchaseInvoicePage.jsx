@@ -200,7 +200,8 @@ export default function PurchaseInvoicePage() {
     setSearchLoading(true);
     try {
       const { data } = await api.get('/purchase', { params: { search: q } });
-      setSearchResults(data.slice(0, 10));
+      const results = Array.isArray(data) ? data : (data.invoices ?? data.data ?? []);
+      setSearchResults(results.slice(0, 10));
     } catch {} finally { setSearchLoading(false); }
   }, []);
 

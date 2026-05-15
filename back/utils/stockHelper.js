@@ -1,28 +1,23 @@
 // ─── utils/stockHelper.js ────────────────────────────────────────────────────
-const prisma = require('../config/db');
+const prisma    = require('../config/db');
+const { safeNum } = require('./decimalHelper');
 
-// جلب رصيد صنف في مخزن
 const getStockQty = async (itemId, warehouse, seasonId = null) => {
   const stock = await prisma.itemStock.findFirst({
     where: { itemId, warehouse, seasonId: seasonId || null },
   });
-  return { quantity: stock?.quantity ?? 0, weight: stock?.weight ?? 0 };
+  return {
+    quantity: safeNum(stock?.quantity),
+    weight:   safeNum(stock?.weight),
+  };
 };
 
-// تأمين القيم ضد NaN/null
-const safeNum = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
-
-// تحديث مخزون صنف (delta موجب = إضافة، سالب = خصم)
-// ✅ FIX: رفع Math.max(0) — المخزون يُسمح له بالسالب
+// delta موجب = إضافة، سالب = خصم — المخزون يُسمح له بالسالب
 const updateStock = async (itemId, warehouse, seasonId, delta) => {
-  const sid = seasonId || null;
-  const existing = await prisma.itemStock.findFirst({
-    where: { itemId, warehouse, seasonId: sid },
-  });
-
+  const sid      = seasonId || null;
+  const existing = await prisma.itemStock.findFirst({ where: { itemId, warehouse, seasonId: sid } });
   const newQty    = safeNum(existing?.quantity) + safeNum(delta.quantity);
   const newWeight = safeNum(existing?.weight)   + safeNum(delta.weight);
-
   if (existing) {
     await prisma.itemStock.update({
       where: { id: existing.id },
@@ -35,8 +30,6 @@ const updateStock = async (itemId, warehouse, seasonId, delta) => {
   }
 };
 
-// تسجيل حركة مخزونية مع حساب الرصيد التلقائي
-// ✅ FIX: safeNum على كل القيم لتفادي NaN في DB
 const createStockMovement = async ({
   itemId, itemCode, itemName, type,
   quantity, weight, price,
@@ -45,10 +38,8 @@ const createStockMovement = async ({
   createdById, date,
 }) => {
   const current = await getStockQty(itemId, warehouse, seasonId);
-
-  const INS = ['purchase_in', 'return_in', 'transfer_in', 'manufacturing_out', 'adjustment_add', 'opening_stock'];
-  const isIn = INS.includes(type);
-
+  const INS    = ['purchase_in','return_in','transfer_in','manufacturing_out','adjustment_add','opening_stock'];
+  const isIn   = INS.includes(type);
   const absQty = Math.abs(safeNum(quantity));
   const absWgt = Math.abs(safeNum(weight));
 
@@ -57,7 +48,7 @@ const createStockMovement = async ({
   const weightIn    = isIn ? absWgt : 0;
   const weightOut   = isIn ? 0      : absWgt;
 
-  // ✅ الرصيد يُسمح بالسالب — بدون Math.max(0,...)
+  // ✅ المخزون يُسمح له بالسالب — بدون Math.max(0,...)
   const balanceQty    = safeNum(current.quantity) + quantityIn - quantityOut;
   const balanceWeight = safeNum(current.weight)   + weightIn   - weightOut;
 
@@ -68,7 +59,7 @@ const createStockMovement = async ({
       weightIn,   weightOut,
       price:          safeNum(price),
       warehouse,
-      balanceQty,  balanceWeight,
+      balanceQty,     balanceWeight,
       reference:      reference      ?? null,
       referenceModel: referenceModel ?? null,
       referenceId:    referenceId    ?? null,

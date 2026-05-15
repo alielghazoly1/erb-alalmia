@@ -2,6 +2,7 @@
 // نسخة محسّنة — Prisma + in-memory cache
 // ─────────────────────────────────────────────────────────────────────────────
 const prisma = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const cache  = require('../utils/priceListCache');
 
 const LISTS_CACHE_KEY = 'pl:lists';
@@ -264,7 +265,6 @@ const getCacheStats = (req, res) => {
   res.json({ message: 'In-memory cache active', timestamp: new Date() });
 };
 
-const n = (x) => ({ ...x, _id: x.id });
 
 module.exports = {
   getAllPriceLists, getPriceListByName,

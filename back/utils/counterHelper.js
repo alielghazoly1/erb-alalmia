@@ -1,23 +1,22 @@
-// ─── utils/counterHelper.js ──────────────────────────────────────────────────
-// ✅ يستخدم GlobalCounter الموجود في الـ Schema
+// ─── utils/counterHelper.js ───────────────────────────────────────────────────
+// يستخدم GlobalCounter من الـ schema (@@map: "global_counters")
+// atomic increment عبر prisma.$transaction لضمان uniqueness
 // ─────────────────────────────────────────────────────────────────────────────
-
 const prisma = require('../config/db');
 
 /**
- * يولّد رقم فاتورة تسلسلي باستخدام GlobalCounter
- * @param {string} name — اسم العداد (مثلاً 'SAL')
- * @param {string} prefix — بادئة الرقم (مثلاً 'SAL-')
- * @param {number} pad — عدد الأصفار (default 5)
+ * يرجع رقم تسلسلي جديد — مثال: 'SAL-00001'
+ * @param {string} name   - اسم العداد (مثلاً 'SAL')
+ * @param {string} prefix - البادئة في الرقم (مثلاً 'SAL')
  */
-const nextNumber = async (name, prefix, pad = 5) => {
+const nextNumber = async (name, prefix) => {
+  // ✅ FIX: globalCounter بدل counter (اسم الموديل في الـ schema)
   const counter = await prisma.globalCounter.upsert({
-    where: { name },
+    where:  { name },
     create: { name, value: 1 },
     update: { value: { increment: 1 } },
   });
-
-  return `${prefix}-${String(counter.value).padStart(pad, '0')}`;
+  return `${prefix}-${String(counter.value).padStart(5, '0')}`;
 };
 
 module.exports = { nextNumber };

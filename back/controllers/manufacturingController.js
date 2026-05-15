@@ -9,11 +9,11 @@
 'use strict';
 
 const prisma = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** يضيف _id للتوافق مع الـ frontend */
-const n = (x) => ({ ...x, _id: x.id });
 
 /** يولّد رقم الأمر (MFG-SEASON-00001) */
 const generateOrderNumber = async (seasonId, seasonCode) => {
@@ -31,8 +31,8 @@ const recalcWeights = (items) =>
   items.map(r => ({
     ...r,
     totalWeight: r.totalWeight != null
-      ? Number(r.totalWeight)
-      : Number(r.quantity) * Number(r.weight),
+      ? safeNum(r.totalWeight)
+      : safeNum(r.quantity) * safeNum(r.weight),
   }));
 
 /** الـ include الموحد لكل queries الأوامر الكاملة */
@@ -140,7 +140,7 @@ const createOrder = async (req, res) => {
       if (!dbItem) return res.status(404).json({ message: `الصنف ${raw.itemCode} مش موجود` });
 
       const { quantity: avail } = await getStockQty(raw.item, warehouse, null);
-      if (avail < Number(raw.quantity)) {
+      if (avail < safeNum(raw.quantity)) {
         return res.status(400).json({
           message: `"${raw.itemName}" مش كافية — متاح: ${avail} كرتون، مطلوب: ${raw.quantity}`,
         });
@@ -185,8 +185,8 @@ const createOrder = async (req, res) => {
             itemId:      r.item,
             itemCode:    r.itemCode,
             itemName:    r.itemName,
-            quantity:    Number(r.quantity),
-            weight:      Number(r.weight),
+            quantity:    safeNum(r.quantity),
+            weight:      safeNum(r.weight),
             totalWeight: r.totalWeight,
           })),
         },
@@ -195,8 +195,8 @@ const createOrder = async (req, res) => {
             itemId:      p.item,
             itemCode:    p.itemCode,
             itemName:    p.itemName,
-            quantity:    Number(p.quantity),
-            weight:      Number(p.weight),
+            quantity:    safeNum(p.quantity),
+            weight:      safeNum(p.weight),
             totalWeight: p.totalWeight,
           })),
         },
@@ -258,14 +258,14 @@ const updateOrder = async (req, res) => {
         await tx.stockMovement.deleteMany({ where: { referenceId: order.id } });
 
         for (const r of calcRaw)
-          await updateStock(r.item, usedWarehouse, order.seasonId, { quantity: -Number(r.quantity), weight: -r.totalWeight });
+          await updateStock(r.item, usedWarehouse, order.seasonId, { quantity: -safeNum(r.quantity), weight: -r.totalWeight });
         for (const p of calcOut)
-          await updateStock(p.item, usedWarehouse, order.seasonId, { quantity: +Number(p.quantity), weight: +p.totalWeight });
+          await updateStock(p.item, usedWarehouse, order.seasonId, { quantity: +safeNum(p.quantity), weight: +p.totalWeight });
 
         for (const r of calcRaw)
-          await createStockMovement({ itemId: r.item, itemCode: r.itemCode, itemName: r.itemName, type: 'manufacturing_out', quantity: Number(r.quantity), weight: r.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
+          await createStockMovement({ itemId: r.item, itemCode: r.itemCode, itemName: r.itemName, type: 'manufacturing_out', quantity: safeNum(r.quantity), weight: r.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
         for (const p of calcOut)
-          await createStockMovement({ itemId: p.item, itemCode: p.itemCode, itemName: p.itemName, type: 'manufacturing_in', quantity: Number(p.quantity), weight: p.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
+          await createStockMovement({ itemId: p.item, itemCode: p.itemCode, itemName: p.itemName, type: 'manufacturing_in', quantity: safeNum(p.quantity), weight: p.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
       }
 
       // حذف الصفوف القديمة وإنشاء الجديدة
@@ -284,13 +284,13 @@ const updateOrder = async (req, res) => {
           rawMaterials:   {
             create: calcRaw.map(r => ({
               itemId: r.item, itemCode: r.itemCode, itemName: r.itemName,
-              quantity: Number(r.quantity), weight: Number(r.weight), totalWeight: r.totalWeight,
+              quantity: safeNum(r.quantity), weight: safeNum(r.weight), totalWeight: r.totalWeight,
             })),
           },
           outputProducts: {
             create: calcOut.map(p => ({
               itemId: p.item, itemCode: p.itemCode, itemName: p.itemName,
-              quantity: Number(p.quantity), weight: Number(p.weight), totalWeight: p.totalWeight,
+              quantity: safeNum(p.quantity), weight: safeNum(p.weight), totalWeight: p.totalWeight,
             })),
           },
         },

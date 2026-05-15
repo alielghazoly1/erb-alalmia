@@ -1,5 +1,6 @@
 // ─── controllers/reportController.js ─────────────────────────────────────────
 const prisma = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // getGeneralStats  –  optimised for 100 k+ invoices / season
@@ -85,9 +86,9 @@ const getGeneralStats = async (req, res) => {
     let creditSales = 0, creditSalesCount = 0;
 
     for (const row of salesByMethod) {
-      const amt   = row._sum.totalAmount || 0;
-      const paid  = row._sum.paidAmount  || 0;
-      const cnt   = row._count.id        || 0;
+      const amt   = safeNum(row._sum.totalAmount);
+      const paid  = safeNum(row._sum.paidAmount);
+      const cnt   = safeNum(row._count.id);
       totalSales += amt;
       salesCount += cnt;
 
@@ -101,16 +102,16 @@ const getGeneralStats = async (req, res) => {
       }
     }
 
-    const customerReturns = salesReturnsAgg._sum.totalAmount    || 0;
-    const totalPurchases  = purchasesAgg._sum.totalAmount       || 0;
-    const purchasesCount  = purchasesAgg._count.id              || 0;
-    const supplierReturns = supplierReturnsAgg._sum.totalAmount || 0;
+    const customerReturns = safeNum(salesReturnsAgg._sum.totalAmount);
+    const totalPurchases  = safeNum(purchasesAgg._sum.totalAmount);
+    const purchasesCount  = safeNum(purchasesAgg._count.id);
+    const supplierReturns = safeNum(supplierReturnsAgg._sum.totalAmount);
 
     const netSales     = totalSales    - customerReturns;
     const netPurchases = totalPurchases - supplierReturns;
     const grossProfit  = netSales - netPurchases;
 
-    const collected    = paymentsAgg._sum.amount || 0;
+    const collected    = safeNum(paymentsAgg._sum.amount);
     const outstanding  = creditSales - collected;
 
     const [pendingSales, pendingPurchases, pendingReturns, pendingTransfers] = pendingCounts;
@@ -340,7 +341,6 @@ const getCustomerItemPrices = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-const n = x => ({ ...x, _id: x.id });
 
 module.exports = {
   getGeneralStats,

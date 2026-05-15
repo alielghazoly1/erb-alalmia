@@ -1,12 +1,13 @@
 // ─── controllers/saleController.js ───────────────────────────────────────────
 const prisma                = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { recordSaleInvoice, deleteTreasuryEntries } = require('../utils/treasuryHelper');
 const { getStockQty, updateStock, createStockMovement } = require('../utils/stockHelper');
 const { audit }             = require('../utils/auditHelper');
 const { nextNumber }        = require('../utils/counterHelper');
 
-const calcItemTotal       = (qty, wt, pr) => (Number(qty)||0) * (Number(wt)||0) * (Number(pr)||0);
-const calcItemTotalWeight = (qty, wt)     => (Number(qty)||0) * (Number(wt)||0);
+const calcItemTotal       = (qty, wt, pr) => round2(safeNum(qty) * safeNum(wt) * safeNum(pr));
+const calcItemTotalWeight = (qty, wt)     => round3(safeNum(qty) * safeNum(wt));
 
 // ── GET all ───────────────────────────────────────────────────────────────────
 const getSaleInvoices = async (req, res) => {
@@ -184,10 +185,10 @@ const createSaleInvoice = async (req, res) => {
         warehouse, totalAmount, totalWeight,
         discountAmount:  0,
         netAmount:       totalAmount,
-        paidAmount:      Number(paidAmount)     || 0,
-        remainingAmount: totalAmount - (Number(paidAmount) || 0),
-        cashAmount:      Number(cashAmount)     || 0,
-        instapayAmount:  Number(instapayAmount) || 0,
+        paidAmount:      safeNum(paidAmount)     || 0,
+        remainingAmount: totalAmount - (safeNum(paidAmount) || 0),
+        cashAmount:      safeNum(cashAmount)     || 0,
+        instapayAmount:  safeNum(instapayAmount) || 0,
         paymentMethod:   paymentMethod || 'credit',
         status:          'pending',
         seasonId:        activeSeason?.id ?? null,
@@ -197,7 +198,7 @@ const createSaleInvoice = async (req, res) => {
         items: {
           create: recalcItems.map(i => ({
             itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: Number(i.quantity), weight: Number(i.weight), price: Number(i.price), total: i.total,
+            quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
           })),
         },
       },
@@ -240,8 +241,8 @@ const updateSaleInvoice = async (req, res) => {
     }
 
     const recalcItems = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
-    const totalAmount = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight = recalcItems.reduce((s, i) => s + calcItemTotalWeight(i.quantity, i.weight), 0);
+    const totalAmount = round2(recalcItems.reduce((s, i) => s + safeNum(i.total), 0));
+    const totalWeight = round3(recalcItems.reduce((s, i) => s + calcItemTotalWeight(i.quantity, i.weight), 0));
 
     // حذف الأصناف القديمة وإضافة الجديدة
     await prisma.saleInvoiceItem.deleteMany({ where: { invoiceId: invoice.id } });
@@ -252,13 +253,13 @@ const updateSaleInvoice = async (req, res) => {
         docNumber:      docNumber || invoice.docNumber,
         date:           date ? new Date(date) : invoice.date,
         totalAmount, totalWeight,
-        paidAmount:     Number(paidAmount)     || 0,
-        cashAmount:     Number(cashAmount)     || 0,
-        instapayAmount: Number(instapayAmount) || 0,
+        paidAmount:     safeNum(paidAmount)     || 0,
+        cashAmount:     safeNum(cashAmount)     || 0,
+        instapayAmount: safeNum(instapayAmount) || 0,
         paymentMethod:  paymentMethod || invoice.paymentMethod,
         notes, status: 'pending',
         approvedById:   null, approvedAt: null,
-        items: { create: recalcItems.map(i => ({ itemId: i.item, itemCode: i.itemCode, itemName: i.itemName, quantity: Number(i.quantity), weight: Number(i.weight), price: Number(i.price), total: i.total })) },
+        items: { create: recalcItems.map(i => ({ itemId: i.item, itemCode: i.itemCode, itemName: i.itemName, quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total })) },
       },
       include: { items: true },
     });
@@ -294,8 +295,8 @@ const forceEditSaleInvoice = async (req, res) => {
     }
 
     const recalcItems = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
-    const totalAmount = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight = recalcItems.reduce((s, i) => s + calcItemTotalWeight(i.quantity, i.weight), 0);
+    const totalAmount = round2(recalcItems.reduce((s, i) => s + safeNum(i.total), 0));
+    const totalWeight = round3(recalcItems.reduce((s, i) => s + calcItemTotalWeight(i.quantity, i.weight), 0));
 
     await prisma.saleInvoiceItem.deleteMany({ where: { invoiceId: invoice.id } });
 
@@ -305,15 +306,15 @@ const forceEditSaleInvoice = async (req, res) => {
         docNumber:      docNumber || invoice.docNumber,
         date:           date ? new Date(date) : invoice.date,
         totalAmount, totalWeight,
-        paidAmount:     Number(paidAmount)     || 0,
-        cashAmount:     Number(cashAmount)     || 0,
-        instapayAmount: Number(instapayAmount) || 0,
+        paidAmount:     safeNum(paidAmount)     || 0,
+        cashAmount:     safeNum(cashAmount)     || 0,
+        instapayAmount: safeNum(instapayAmount) || 0,
         paymentMethod:  paymentMethod || invoice.paymentMethod,
         notes:          notes ?? invoice.notes,
         status:         'pending',
         approvedById:   null, approvedAt: null,
         editedById:     req.user.id, editedAt: new Date(), editNotes: editNotes || '',
-        items: { create: recalcItems.map(i => ({ itemId: i.item, itemCode: i.itemCode, itemName: i.itemName, quantity: Number(i.quantity), weight: Number(i.weight), price: Number(i.price), total: i.total })) },
+        items: { create: recalcItems.map(i => ({ itemId: i.item, itemCode: i.itemCode, itemName: i.itemName, quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total })) },
       },
       include: invoiceIncludes(),
     });
@@ -395,7 +396,6 @@ const invoiceIncludes = () => ({
   season:     { select: { name: true } },
 });
 
-const n = (x) => ({ ...x, _id: x.id });
 
 module.exports = {
   getSaleInvoices, getSaleInvoiceById,

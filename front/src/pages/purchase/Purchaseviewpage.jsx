@@ -10,7 +10,10 @@ import {
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
-// weight = وزن الكرتونة الواحدة | وزن كلي = qty × weight | total = qty × weight × price
+// ✅ FIX precision: نستخدم totalWeight من DB مباشرة
+// weight = وزن الكرتونة الواحدة | وزن كلي = totalWeight (from DB) | total = totalWeight × price
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+const round3 = (n) => Math.round((n + Number.EPSILON) * 1000) / 1000;
 const calcTotalWeight = (qty, wt) => (qty || 0) * (wt || 0);
 const calcTotal = (qty, wt, pr) => (qty || 0) * (wt || 0) * (pr || 0);
 
@@ -155,7 +158,7 @@ export default function PurchaseViewPage() {
   const st = statusMap[invoice.status] || statusMap.pending;
   const totalWeight =
     invoice.items?.reduce(
-      (s, i) => s + calcTotalWeight(i.quantity, i.weight),
+      (s, i) => s + (i.totalWeight !== undefined && Number(i.totalWeight) > 0 ? Number(i.totalWeight) : (Number(i.quantity)||0)*(Number(i.weight)||0)),
       0,
     ) || 0;
   const totalQty =
@@ -389,13 +392,13 @@ export default function PurchaseViewPage() {
                     {(item.weight || 0).toFixed(3)}
                   </td>
                   <td className="px-3 py-2 text-center font-medium">
-                    {calcTotalWeight(item.quantity, item.weight).toFixed(3)}
+                    {(item.totalWeight !== undefined && Number(item.totalWeight) > 0 ? round3(Number(item.totalWeight)) : round3((Number(item.quantity)||0)*(Number(item.weight)||0))).toFixed(3)}
                   </td>
                   <td className="px-3 py-2 text-center">
                     {(item.price || 0).toFixed(2)}
                   </td>
                   <td className="px-3 py-2 text-center font-semibold">
-                    {calcTotal(item.quantity, item.weight, item.price).toFixed(
+                    {((item.totalWeight !== undefined && Number(item.totalWeight) > 0 ? Number(item.totalWeight) : (Number(item.quantity)||0)*(Number(item.weight)||0)) * (Number(item.price)||0)).toFixed(
                       2,
                     )}
                   </td>

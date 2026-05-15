@@ -4,6 +4,7 @@
 //   - userId/userName بدل adminId/adminName
 //   - direction field
 const prisma = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 
 const calcTotals = (movements) => {
   let totalIn = 0, totalOut = 0;
@@ -147,6 +148,5 @@ const getDailySummary = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-const n = (x) => ({ ...x, _id: x.id });
 
 module.exports = { getAdmins, getAdminRegister, getBankRegister, getDailySummary };

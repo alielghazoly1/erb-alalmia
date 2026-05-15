@@ -1,6 +1,7 @@
 // ─── controllers/itemController.js ───────────────────────────────────────────
 // الأصناف — بيرجع stock من ItemStock table مباشرة في كل response
 const prisma = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 
 const PAGE_SIZE = 100;
 

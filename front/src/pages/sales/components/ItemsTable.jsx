@@ -1,4 +1,6 @@
-import { calcTotal, calcTotalWeight } from '../hooks/useSaleInvoiceForm';
+import { calcTotalWeight } from '../hooks/useSaleInvoiceForm';
+const r2 = (v) => Math.round(v * 100) / 100;
+const r3 = (v) => Math.round(v * 1000) / 1000;
 
 export default function ItemsTable({ savedRows, totalAmount, totalWeightAll, onEditRow, onDeleteRow }) {
   if (savedRows.length === 0) return null;
@@ -26,11 +28,11 @@ export default function ItemsTable({ savedRows, totalAmount, totalWeightAll, onE
                 <td className="px-2 py-2 text-center font-medium">{row.quantity}</td>
                 <td className="px-2 py-2 text-center text-gray-400 text-xs">{parseFloat(row.weight).toFixed(3)}</td>
                 <td className="px-2 py-2 text-center font-medium">
-                  {calcTotalWeight(row.quantity, row.weight).toFixed(3)} ك
+                  { (row._totalWeight ?? r3((parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0))).toFixed(3) } ك
                 </td>
                 <td className="px-2 py-2 text-center">{parseFloat(row.price).toFixed(2)}</td>
                 <td className="px-2 py-2 text-center font-semibold">
-                  {calcTotal(row.quantity, row.weight, row.price).toFixed(2)}
+                  { (() => { const tw = row._totalWeight ?? r3((parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0)); return r2(tw * (parseFloat(row.price)||0)).toFixed(2); })() }
                 </td>
                 <td className="px-2 py-2">
                   <div className="flex items-center gap-1">

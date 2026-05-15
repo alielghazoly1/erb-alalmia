@@ -1,10 +1,10 @@
 // ─── store/slices/purchaseSlice.js ────────────────────────────────────────────
-// مدعوم cursor-based infinite scroll — بدل replace بنعمل append
+// Cursor-based infinite scroll — بدل replace بنعمل append
+// ─────────────────────────────────────────────────────────────────────────────
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
-// جلب صفحة من الفواتير
-// params: { status, search, seasonId, startDate, endDate, cursor, limit }
+// ── Thunks ────────────────────────────────────────────────────────────────────
 export const fetchPurchaseInvoices = createAsyncThunk(
   'purchase/fetchAll',
   async (params = {}, thunkAPI) => {
@@ -57,99 +57,114 @@ export const suspendPurchaseInvoice = createAsyncThunk(
   }
 );
 
+// ✅ FIX: بنبعت id بدل ما نعتمد على response.invoice._id
 export const cancelPurchaseInvoice = createAsyncThunk(
   'purchase/cancel',
   async (id, thunkAPI) => {
     try {
-      const { data } = await api.delete(`/purchase/${id}`);
-      return data;
+      await api.delete(`/purchase/${id}`);
+      return id;   // ✅ نرجع الـ id مباشرة للـ slice
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data?.message);
     }
   }
 );
 
+// ── Helper ────────────────────────────────────────────────────────────────────
+const upsertInList = (list, payload) => {
+  if (!payload) return list;
+  const id  = payload._id ?? payload.id;
+  const idx = list.findIndex(i => (i._id ?? i.id) === id);
+  if (idx !== -1) {
+    const copy = [...list];
+    copy[idx] = { ...payload, _id: id };
+    return copy;
+  }
+  return list;
+};
+
+// ── Slice ─────────────────────────────────────────────────────────────────────
 const purchaseSlice = createSlice({
   name: 'purchase',
   initialState: {
-    list: [],
-    loading: false,
-    loadingMore: false, // للتحميل في الخلفية (infinite scroll)
-    error: null,
-    hasMore: false,
-    nextCursor: null,
-    total: null,
+    list:        [],
+    loading:     false,
+    loadingMore: false,
+    error:       null,
+    hasMore:     false,
+    nextCursor:  null,
+    total:       null,
   },
   reducers: {
-    // reset عند تغيير الفلاتر
     resetList(state) {
-      state.list = [];
-      state.hasMore = false;
+      state.list       = [];
+      state.hasMore    = false;
       state.nextCursor = null;
-      state.total = null;
-      state.error = null;
+      state.total      = null;
+      state.error      = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // ─── fetchAll ───────────────────────────────────────────────────────────
+      // ── fetchAll ──────────────────────────────────────────────────────────
       .addCase(fetchPurchaseInvoices.pending, (state, action) => {
-        const isFirstPage = !action.meta.arg?.cursor;
-        if (isFirstPage) {
+        const isFirst = !action.meta.arg?.cursor;
+        if (isFirst) {
           state.loading = true;
-          state.list = [];
-          state.error = null;
+          state.list    = [];
+          state.error   = null;
         } else {
           state.loadingMore = true;
         }
       })
       .addCase(fetchPurchaseInvoices.fulfilled, (state, action) => {
-        const { invoices, hasMore, nextCursor, total, isFirstPage } =
-          action.payload;
-        state.loading = false;
+        const { invoices, hasMore, nextCursor, total, isFirstPage } = action.payload;
+        state.loading     = false;
         state.loadingMore = false;
-        state.error = null;
-        state.hasMore = hasMore;
-        state.nextCursor = nextCursor;
+        state.error       = null;
+        state.hasMore     = hasMore;
+        state.nextCursor  = nextCursor;
         if (total !== null) state.total = total;
 
+        const mapped = (invoices || []).map(i => ({ ...i, _id: i._id ?? i.id }));
         if (isFirstPage) {
-          state.list = invoices;
+          state.list = mapped;
         } else {
-          // append — مش replace
-          state.list = [...state.list, ...invoices];
+          // append مع dedup
+          const ids = new Set(state.list.map(i => i._id));
+          state.list = [...state.list, ...mapped.filter(i => !ids.has(i._id))];
         }
       })
       .addCase(fetchPurchaseInvoices.rejected, (state, action) => {
-        state.loading = false;
+        state.loading     = false;
         state.loadingMore = false;
-        state.error = action.payload || 'حدث خطأ';
+        state.error       = action.payload || 'حدث خطأ';
       })
 
-      // ─── create ─────────────────────────────────────────────────────────────
+      // ── create ────────────────────────────────────────────────────────────
       .addCase(createPurchaseInvoice.fulfilled, (state, action) => {
-        state.list.unshift(action.payload);
+        const inv = { ...action.payload, _id: action.payload._id ?? action.payload.id };
+        state.list.unshift(inv);
         if (state.total !== null) state.total += 1;
       })
 
-      // ─── approve ────────────────────────────────────────────────────────────
+      // ── approve ───────────────────────────────────────────────────────────
       .addCase(approvePurchaseInvoice.fulfilled, (state, action) => {
-        const idx = state.list.findIndex((i) => i._id === action.payload._id);
-        if (idx !== -1) state.list[idx] = action.payload;
+        state.list = upsertInList(state.list, action.payload);
       })
 
-      // ─── suspend ────────────────────────────────────────────────────────────
+      // ── suspend ───────────────────────────────────────────────────────────
       .addCase(suspendPurchaseInvoice.fulfilled, (state, action) => {
-        const idx = state.list.findIndex((i) => i._id === action.payload._id);
-        if (idx !== -1) state.list[idx] = action.payload;
+        state.list = upsertInList(state.list, action.payload);
       })
 
-      // ─── cancel ─────────────────────────────────────────────────────────────
+      // ── cancel ────────────────────────────────────────────────────────────
+      // ✅ FIX: action.payload هو الـ id مباشرة (string) مش object
       .addCase(cancelPurchaseInvoice.fulfilled, (state, action) => {
-        const idx = state.list.findIndex(
-          (i) => i._id === action.payload?._id
-        );
-        if (idx !== -1) state.list[idx].status = 'cancelled';
+        const id = action.payload;
+        // نحدث الـ status محلياً بدل الحذف عشان نحافظ على الـ list
+        const idx = state.list.findIndex(i => (i._id ?? i.id) === id);
+        if (idx !== -1) state.list[idx] = { ...state.list[idx], status: 'cancelled' };
       });
   },
 });

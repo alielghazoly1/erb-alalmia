@@ -1,3 +1,4 @@
+import { toNum } from '../../../utils/fmt';
 // ─── components/SaleTableRow.jsx ──────────────────────────────────────────────
 // ✅ onView: فتح في Modal (نفس الصفحة) بدل Link خارجي
 import SaleStatusBadge from './SaleStatusBadge';
@@ -35,7 +36,7 @@ export default function SaleTableRow({ inv, isAdmin, onApprove, onSuspend, onCan
       </td>
       {/* الإجمالي */}
       <td className="px-4 py-3 font-bold text-gray-800">
-        {inv.totalAmount?.toLocaleString('eg-EG', { minimumFractionDigits: 2 })} ج.م
+        {toNum(inv.totalAmount).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م
       </td>
       {/* الحالة */}
       <td className="px-4 py-3 text-center">

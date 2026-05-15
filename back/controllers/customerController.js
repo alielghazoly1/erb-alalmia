@@ -1,5 +1,6 @@
 // ─── controllers/customerController.js ───────────────────────────────────────
 const prisma       = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { audit }    = require('../utils/auditHelper');
 const { nextNumber } = require('../utils/counterHelper');
 
@@ -48,9 +49,9 @@ async function _fetchFromDB({ search, type } = {}) {
     }),
   ]);
 
-  const salesMap    = new Map(salesAgg.map(r    => [r.customerId, r._sum.totalAmount || 0]));
-  const returnsMap  = new Map(returnsAgg.map(r  => [r.customerId, r._sum.totalAmount || 0]));
-  const paymentsMap = new Map(paymentsAgg.map(r => [r.customerId, r._sum.amount      || 0]));
+  const salesMap    = new Map(salesAgg.map(r    => [r.customerId, safeNum(r._sum.totalAmount)]));
+  const returnsMap  = new Map(returnsAgg.map(r  => [r.customerId, safeNum(r._sum.totalAmount)]));
+  const paymentsMap = new Map(paymentsAgg.map(r => [r.customerId, safeNum(r._sum.amount)]));
 
   return customers.map(c => {
     const totalSales   = salesMap.get(c.id)    || 0;
@@ -166,9 +167,9 @@ const getCustomerStatement = async (req, res) => {
       prisma.payment.count({ where: payWhere }),
     ]);
 
-    const totalSales   = totalsAgg[0]._sum.totalAmount || 0;
-    const totalReturns = totalsAgg[1]._sum.totalAmount || 0;
-    const totalPaid    = totalsAgg[2]._sum.amount      || 0;
+    const totalSales   = safeNum(totalsAgg[0]._sum.totalAmount);
+    const totalReturns = safeNum(totalsAgg[1]._sum.totalAmount);
+    const totalPaid    = safeNum(totalsAgg[2]._sum.amount);
 
     const fetchInv = tab === 'all' || tab === 'invoices';
     const fetchRet = tab === 'all' || tab === 'returns';
@@ -255,9 +256,9 @@ const getCustomerItemStatement = async (req, res) => {
     const toMove = (type) => (inv) => {
       const it = inv.items[0];
       if (!it) return null;
-      const qty = Number(it.quantity) || 0;
-      const wt  = Number(it.weight)   || 0;
-      const pr  = Number(it.price)    || 0;
+      const qty = safeNum(it.quantity) || 0;
+      const wt  = safeNum(it.weight)   || 0;
+      const pr  = safeNum(it.price)    || 0;
       return {
         type, date: inv.date, createdAt: inv.createdAt,
         invoiceNumber: inv.invoiceNumber, invoiceId: inv.id,
@@ -326,9 +327,9 @@ const getCustomerTimeline = async (req, res) => {
       prisma.payment.count({ where: payWhere }),
     ]);
 
-    const totalSales   = salesAgg._sum.totalAmount   || 0;
-    const totalReturns = returnsAgg._sum.totalAmount || 0;
-    const totalPaid    = paymentsAgg._sum.amount     || 0;
+    const totalSales   = safeNum(salesAgg._sum.totalAmount);
+    const totalReturns = safeNum(returnsAgg._sum.totalAmount);
+    const totalPaid    = safeNum(paymentsAgg._sum.amount);
     const totalRows    = invCount + retCount + payCount;
 
     // ── جلب الداتا بـ cursor pagination ──────────────────────────────────
@@ -402,7 +403,7 @@ const getCustomerTimeline = async (req, res) => {
     // لو cursor موجود (صفحة 2+)، الـ runningBefore بييجي في الـ request
     const runningBefore = cursor
       ? parseFloat(req.query.runningBefore || '0')
-      : (customer.openingBalance || 0);
+      : safeNum(customer.openingBalance);
 
     let running = runningBefore;
     const rowsWithBalance = pageRows.map(r => {
@@ -429,7 +430,6 @@ const getCustomerTimeline = async (req, res) => {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const n = (x) => ({ ...x, _id: x.id });
 
 const pickCustomer = (data) => {
   const keys = ['name','code','phone','address','type','isActive','notes'];

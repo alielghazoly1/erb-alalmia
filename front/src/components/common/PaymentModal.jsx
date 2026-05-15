@@ -1,4 +1,5 @@
 // components/common/PaymentModal.jsx
+import { toNum } from '../../pages/sales/hooks/useSaleInvoiceForm';
 /**
  * موديل الدفع المشترك بين العملاء والموردين
  * Props:
@@ -35,7 +36,7 @@ export default function PaymentModal({
           {balance > 0 && (
             <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex justify-between items-center">
               <span className="text-sm text-red-600">{balanceLabel}</span>
-              <span className="font-bold text-red-700 text-lg">{balance.toFixed(2)} ج.م</span>
+              <span className="font-bold text-red-700 text-lg">{toNum(balance).toFixed(2)} ج.م</span>
             </div>
           )}
 

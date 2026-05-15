@@ -78,7 +78,12 @@ const ItemInputRow = memo(function ItemInputRow({
         <div className="col-span-1 flex flex-col items-center gap-1">
           <p className="text-xs text-gray-400">الإجمالي</p>
           <p className="text-sm font-bold text-green-600 leading-tight">
-            {calcTotal(row.quantity, row.weight, row.price).toFixed(0)}
+            { (() => {
+                const tw = row._totalWeight ?? ((parseFloat(row.quantity)||0) * (parseFloat(row.weight)||0));
+                const total = tw * (parseFloat(row.price)||0);
+                return Math.round(total * 100) / 100;
+              })()
+            }
           </p>
         </div>
       </div>

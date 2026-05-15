@@ -1,5 +1,6 @@
 // ─── controllers/paymentController.js ────────────────────────────────────────
 const prisma            = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { audit }         = require('../utils/auditHelper');
 const { recordPayment, deleteTreasuryEntries } = require('../utils/treasuryHelper');
 
@@ -63,10 +64,10 @@ const createPayment = async (req, res) => {
         supplierId:    supplierId || null,
         supplierCode:  supplierCode || null,
         supplierName:  supplierName || null,
-        amount:        Number(amount),
+        amount:        safeNum(amount),
         paymentMethod: paymentMethod || 'cash',
-        cashAmount:    Number(cashAmount) || 0,
-        instapayAmount:Number(instapayAmount) || 0,
+        cashAmount:    safeNum(cashAmount) || 0,
+        instapayAmount:safeNum(instapayAmount) || 0,
         receiptNumber: receiptNumber?.trim() || null,
         notes,
         reference,
@@ -80,14 +81,14 @@ const createPayment = async (req, res) => {
     await recordPayment(payment, req.user);
 
     // تسجيل في كشف الصندوق
-    if (type === 'customer_payment' && paymentMethod === 'cash' && Number(cashAmount) > 0) {
+    if (type === 'customer_payment' && paymentMethod === 'cash' && safeNum(cashAmount) > 0) {
       await prisma.cashRegister.create({
         data: {
           userId:         req.user.id,
           userName:       req.user.name,
           type:           'payment_in',
           direction:      1,
-          cashAmount:     Number(cashAmount),
+          cashAmount:     safeNum(cashAmount),
           referenceId:    payment.id,
           referenceModel: 'Payment',
           referenceNumber: payment.receiptNumber,
@@ -118,10 +119,10 @@ const updatePayment = async (req, res) => {
     }
 
     const data = {};
-    if (amount         !== undefined) data.amount         = Number(amount);
+    if (amount         !== undefined) data.amount         = safeNum(amount);
     if (paymentMethod  !== undefined) data.paymentMethod  = paymentMethod;
-    if (cashAmount     !== undefined) data.cashAmount     = Number(cashAmount);
-    if (instapayAmount !== undefined) data.instapayAmount = Number(instapayAmount);
+    if (cashAmount     !== undefined) data.cashAmount     = safeNum(cashAmount);
+    if (instapayAmount !== undefined) data.instapayAmount = safeNum(instapayAmount);
     if (notes          !== undefined) data.notes          = notes;
     if (reference      !== undefined) data.reference      = reference;
     if (receiptNumber  !== undefined) data.receiptNumber  = receiptNumber?.trim() || null;
@@ -152,6 +153,5 @@ const deletePayment = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-const n = (x) => ({ ...x, _id: x.id });
 
 module.exports = { getPayments, checkReceiptNumber, createPayment, updatePayment, deletePayment };

@@ -1,5 +1,6 @@
 // ─── controllers/supplierController.js ───────────────────────────────────────
 const prisma        = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { audit }     = require('../utils/auditHelper');
 const { nextNumber } = require('../utils/counterHelper');
 
@@ -39,9 +40,9 @@ const getSuppliers = async (req, res) => {
       }),
     ]);
 
-    const purchasesMap = new Map(purchasesAgg.map(r => [r.supplierId, r._sum.totalAmount || 0]));
-    const returnsMap   = new Map(returnsAgg.map(r   => [r.supplierId, r._sum.totalAmount || 0]));
-    const paymentsMap  = new Map(paymentsAgg.map(r  => [r.supplierId, r._sum.amount      || 0]));
+    const purchasesMap = new Map(purchasesAgg.map(r => [r.supplierId, safeNum(r._sum.totalAmount)]));
+    const returnsMap   = new Map(returnsAgg.map(r   => [r.supplierId, safeNum(r._sum.totalAmount)]));
+    const paymentsMap  = new Map(paymentsAgg.map(r  => [r.supplierId, safeNum(r._sum.amount)]));
 
     const result = suppliers.map(s => ({
       ...s, _id: s.id,
@@ -149,9 +150,9 @@ const getSupplierStatement = async (req, res) => {
       prisma.payment.count({ where: payWhere }),
     ]);
 
-    const totalPurchases = totalsAgg[0]._sum.totalAmount || 0;
-    const totalReturns   = totalsAgg[1]._sum.totalAmount || 0;
-    const totalPaid      = totalsAgg[2]._sum.amount      || 0;
+    const totalPurchases = safeNum(totalsAgg[0]._sum.totalAmount);
+    const totalReturns   = safeNum(totalsAgg[1]._sum.totalAmount);
+    const totalPaid      = safeNum(totalsAgg[2]._sum.amount);
 
     const fetchInv = tab === 'all' || tab === 'invoices';
     const fetchRet = tab === 'all' || tab === 'returns';
@@ -213,7 +214,7 @@ const getSupplierAllSeasons = async (req, res) => {
 
 const updateSupplierInitialBalance = async (req, res) => {
   try {
-    const newAmount = Number(req.body.openingBalance);
+    const newAmount = safeNum(req.body.openingBalance);
     if (isNaN(newAmount) || newAmount < 0) return res.status(400).json({ message: 'المبلغ غير صحيح' });
 
     const supplier = await prisma.supplier.findUnique({ where: { id: req.params.id } });
@@ -258,9 +259,9 @@ const getSupplierItemStatement = async (req, res) => {
     const toMove = (type) => (inv) => {
       const it = inv.items[0];
       if (!it) return null;
-      const qty = Number(it.quantity) || 0;
-      const wt  = Number(it.weight)   || 0;
-      const pr  = Number(it.price)    || 0;
+      const qty = safeNum(it.quantity) || 0;
+      const wt  = safeNum(it.weight)   || 0;
+      const pr  = safeNum(it.price)    || 0;
       return {
         type, date: inv.date, createdAt: inv.createdAt,
         invoiceNumber: inv.invoiceNumber, invoiceId: inv.id,
@@ -324,9 +325,9 @@ const getSupplierTimeline = async (req, res) => {
       prisma.payment.count({ where: payWhere }),
     ]);
 
-    const totalPurchases = purchasesAgg._sum.totalAmount || 0;
-    const totalReturns   = returnsAgg._sum.totalAmount   || 0;
-    const totalPaid      = paymentsAgg._sum.amount       || 0;
+    const totalPurchases = safeNum(purchasesAgg._sum.totalAmount);
+    const totalReturns   = safeNum(returnsAgg._sum.totalAmount);
+    const totalPaid      = safeNum(paymentsAgg._sum.amount);
     const totalRows      = invCount + retCount + payCount;
 
     let cursorDate = null;
@@ -384,7 +385,7 @@ const getSupplierTimeline = async (req, res) => {
 
     const runningBefore = cursor
       ? parseFloat(req.query.runningBefore || '0')
-      : (supplier.openingBalance || 0);
+      : safeNum(supplier.openingBalance);
 
     let running = runningBefore;
     const rowsWithBalance = pageRows.map(r => {
@@ -410,7 +411,6 @@ const getSupplierTimeline = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-const n   = (x) => ({ ...x, _id: x.id });
 const pick = (obj, keys) => Object.fromEntries(keys.filter(k => k in obj).map(k => [k, obj[k]]));
 
 module.exports = { getSuppliers, getSupplierByCode, createSupplier, updateSupplier, deleteSupplier, getSupplierStatement, getSupplierAllSeasons, updateSupplierInitialBalance, getSupplierItemStatement, getSupplierTimeline };

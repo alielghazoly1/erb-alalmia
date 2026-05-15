@@ -1,5 +1,6 @@
 // ─── controllers/transferController.js ───────────────────────────────────────
 const prisma         = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { audit }      = require('../utils/auditHelper');
 const { nextNumber } = require('../utils/counterHelper');
 const { getStockQty, updateStock, createStockMovement } = require('../utils/stockHelper');
@@ -84,8 +85,8 @@ const createTransfer = async (req, res) => {
     // التحقق من المخزون
     for (const trItem of items) {
       const { quantity: availQty, weight: availWeight } = await getStockQty(trItem.item, fromWarehouse, activeSeason?.id);
-      const neededWeight = Number(trItem.quantity) * Number(trItem.weight);
-      if (availQty < Number(trItem.quantity))
+      const neededWeight = safeNum(trItem.quantity) * safeNum(trItem.weight);
+      if (availQty < safeNum(trItem.quantity))
         return res.status(400).json({ message: `العدد مش كافي للصنف "${trItem.itemName}" — متاح: ${availQty}` });
       if (availWeight < neededWeight)
         return res.status(400).json({ message: `الوزن مش كافي للصنف "${trItem.itemName}" — متاح: ${availWeight.toFixed(2)} ك` });
@@ -101,9 +102,9 @@ const createTransfer = async (req, res) => {
     if (docExists)
       return res.status(400).json({ message: `رقم المستند "${docNumber}" موجود بالفعل (${docExists.transferNumber})` });
 
-    const recalcItems   = items.map(i => ({ ...i, totalWeight: Number(i.quantity) * Number(i.weight) }));
+    const recalcItems   = items.map(i => ({ ...i, totalWeight: safeNum(i.quantity) * safeNum(i.weight) }));
     const totalWeight   = recalcItems.reduce((s, i) => s + i.totalWeight, 0);
-    const totalQuantity = recalcItems.reduce((s, i) => s + Number(i.quantity), 0);
+    const totalQuantity = recalcItems.reduce((s, i) => s + safeNum(i.quantity), 0);
 
     const transfer = await prisma.transfer.create({
       data: {
@@ -115,7 +116,7 @@ const createTransfer = async (req, res) => {
         items: {
           create: recalcItems.map(i => ({
             itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: Number(i.quantity), weight: Number(i.weight), totalWeight: i.totalWeight,
+            quantity: safeNum(i.quantity), weight: safeNum(i.weight), totalWeight: i.totalWeight,
           })),
         },
       },
@@ -167,16 +168,16 @@ const updateTransfer = async (req, res) => {
     // التحقق من المخزون الجديد
     for (const trItem of items) {
       const { quantity: availQty, weight: availWeight } = await getStockQty(trItem.item, newFrom, transfer.seasonId);
-      const neededWeight = Number(trItem.quantity) * Number(trItem.weight);
-      if (availQty < Number(trItem.quantity))
+      const neededWeight = safeNum(trItem.quantity) * safeNum(trItem.weight);
+      if (availQty < safeNum(trItem.quantity))
         return res.status(400).json({ message: `العدد مش كافي للصنف "${trItem.itemName}" — متاح: ${availQty}` });
       if (availWeight < neededWeight)
         return res.status(400).json({ message: `الوزن مش كافي للصنف "${trItem.itemName}" — متاح: ${availWeight.toFixed(2)} ك` });
     }
 
-    const recalcItems   = items.map(i => ({ ...i, totalWeight: Number(i.quantity) * Number(i.weight) }));
+    const recalcItems   = items.map(i => ({ ...i, totalWeight: safeNum(i.quantity) * safeNum(i.weight) }));
     const totalWeight   = recalcItems.reduce((s, i) => s + i.totalWeight, 0);
-    const totalQuantity = recalcItems.reduce((s, i) => s + Number(i.quantity), 0);
+    const totalQuantity = recalcItems.reduce((s, i) => s + safeNum(i.quantity), 0);
 
     await prisma.transferItem.deleteMany({ where: { transferId: transfer.id } });
 
@@ -187,7 +188,7 @@ const updateTransfer = async (req, res) => {
         docNumber: newDoc, totalWeight, totalQuantity,
         notes: notes ?? transfer.notes,
         date:  date ? new Date(date) : transfer.date,
-        items: { create: recalcItems.map(i => ({ itemId: i.item, itemCode: i.itemCode, itemName: i.itemName, quantity: Number(i.quantity), weight: Number(i.weight), totalWeight: i.totalWeight })) },
+        items: { create: recalcItems.map(i => ({ itemId: i.item, itemCode: i.itemCode, itemName: i.itemName, quantity: safeNum(i.quantity), weight: safeNum(i.weight), totalWeight: i.totalWeight })) },
       },
       include: transferIncludes(),
     });
@@ -243,6 +244,5 @@ const rejectTransfer = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-const n = (x) => ({ ...x, _id: x.id });
 
 module.exports = { getTransfers, getTransferById, checkDocNumber, createTransfer, updateTransfer, approveTransfer, rejectTransfer };

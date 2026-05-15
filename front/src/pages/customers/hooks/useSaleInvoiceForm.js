@@ -22,26 +22,21 @@ const newRow = () => ({
   editing: false,
 });
 
-// ✅ FIX: helper functions
-export const toNum = (v) => {
-  const n = Number(v);
-  return Number.isNaN(n) ? 0 : n;
-};
-
-export const calcRowTotal = (row) =>
-  toNum(row.quantity) *
-  toNum(row.weight) *
-  toNum(row.price);
-
-export const calcRowTotalWeight = (row) =>
-  toNum(row.quantity) *
-  toNum(row.weight);
+const r2 = (v) => Math.round(v * 100) / 100;
+const r3 = (v) => Math.round(v * 1000) / 1000;
 
 export const calcTotal = (q, w, p) =>
-  (parseFloat(q) || 0) * (parseFloat(w) || 0) * (parseFloat(p) || 0);
+  r2((parseFloat(q) || 0) * (parseFloat(w) || 0) * (parseFloat(p) || 0));
 
 export const calcTotalWeight = (q, w) =>
-  (parseFloat(q) || 0) * (parseFloat(w) || 0);
+  r3((parseFloat(q) || 0) * (parseFloat(w) || 0));
+
+/**
+ * calcTotalFromWeight — يحسب الإجمالي من الوزن الكلي مباشرة
+ * بيتجنب أخطاء الفاصلة العائمة من (totalWt / unitWt) * unitWt * price
+ */
+export const calcTotalFromWeight = (totalWt, p) =>
+  r2((parseFloat(totalWt) || 0) * (parseFloat(p) || 0));
 
 export const PAYMENT_METHODS = [
   { value: 'cash',      label: 'نقدي' },
@@ -60,7 +55,6 @@ export function useSaleInvoiceForm() {
   const userHasNegativePerm = Array.isArray(user?.permissions)
     ? user.permissions.some(p => p.permission === 'sale_allow_negative' && p.granted === true)
     : false;
-
   const canNegativeSale     = userHasNegativePerm;
   const canEditInvoice      = isAdmin;
 
@@ -71,11 +65,9 @@ export function useSaleInvoiceForm() {
   const [docError,        setDocError]        = useState('');
   const [docChecking,     setDocChecking]     = useState(false);
   const [date,            setDate]            = useState(new Date().toISOString().split('T')[0]);
-
-  const [warehouse, setWarehouse] = useState(
+  const [warehouse,       setWarehouse]       = useState(
     user?.scope === 'october' ? 'october' : 'ramses',
   );
-
   const [notes,           setNotes]           = useState('');
   const [paymentMethod,   setPaymentMethod]   = useState('credit');
   const [cashAmount,      setCashAmount]      = useState('');
@@ -83,7 +75,6 @@ export function useSaleInvoiceForm() {
   const [rows,            setRows]            = useState([newRow()]);
   const [saving,          setSaving]          = useState(false);
   const [customerBalance, setCustomerBalance] = useState(null);
-
   const [totalWeightInput,setTotalWeightInput]= useState({});
 
   // ── edit mode state ───────────────────────────────────────────────────────
@@ -109,38 +100,26 @@ export function useSaleInvoiceForm() {
   // ── computed ──────────────────────────────────────────────────────────────
   const savedRows      = rows.filter(r => r.saved);
   const activeRowId    = rows.find(r => !r.saved)?.id;
-
-  const totalAmount = savedRows.reduce(
-    (s, r) => s + calcTotal(r.quantity, r.weight, r.price),
-    0
-  );
-
-  const totalWeightAll = savedRows.reduce(
-    (s, r) => s + calcTotalWeight(r.quantity, r.weight),
-    0
-  );
-
+  const totalAmount = savedRows.reduce((s, r) => {
+    // لو المستخدم دخل الوزن الكلي يدوياً، نحسب من الوزن الكلي × السعر مباشرة
+    const tw = r._totalWeight ?? (parseFloat(r.quantity) * parseFloat(r.weight));
+    return s + r2((parseFloat(tw) || 0) * (parseFloat(r.price) || 0));
+  }, 0);
+  const totalWeightAll = savedRows.reduce((s, r) => {
+    const tw = r._totalWeight ?? (parseFloat(r.quantity) * parseFloat(r.weight));
+    return s + r3(parseFloat(tw) || 0);
+  }, 0);
   const isCash         = customer?.type === 'cash';
   const isMixed        = paymentMethod === 'mixed';
-
-  const paidAmount = isMixed
+  const paidAmount     = isMixed
     ? (parseFloat(cashAmount) || 0) + (parseFloat(instapayAmount) || 0)
-    : paymentMethod !== 'credit'
-      ? (parseFloat(cashAmount) || 0)
-      : 0;
+    : paymentMethod !== 'credit' ? (parseFloat(cashAmount) || 0) : 0;
+  const remaining      = totalAmount - paidAmount;
 
-  const remaining = totalAmount - paidAmount;
-
-  useEffect(() => {
-    setTimeout(() => docRef.current?.focus(), 100);
-  }, []);
+  useEffect(() => { setTimeout(() => docRef.current?.focus(), 100); }, []);
 
   useEffect(() => {
-    if (!customer || customer.type === 'cash') {
-      setCustomerBalance(null);
-      return;
-    }
-
+    if (!customer || customer.type === 'cash') { setCustomerBalance(null); return; }
     api.get(`/customers/${customer._id}/statement`)
       .then(({ data }) => setCustomerBalance(data))
       .catch(() => {});
@@ -148,7 +127,6 @@ export function useSaleInvoiceForm() {
 
   useEffect(() => {
     if (!customer) return;
-
     setPaymentMethod(customer.type === 'cash' ? 'cash' : 'credit');
     setCashAmount('');
     setInstapayAmount('');
@@ -156,50 +134,42 @@ export function useSaleInvoiceForm() {
 
   useEffect(() => {
     if (!isCash || isMixed) return;
-
     if (paymentMethod !== 'credit') {
       setCashAmount(totalAmount > 0 ? totalAmount.toFixed(2) : '');
     }
   }, [totalAmount, isCash, isMixed, paymentMethod]);
 
-  // ✅ FIX: لما المخزن يتغير يحدث المخزون لكل الأصناف
+  // ✅ FIX: لما المخزن يتغير، حدّث كل صنف محفوظ بالمخزون الجديد
   const handleWarehouseChange = useCallback(async (newWarehouse) => {
     setWarehouse(newWarehouse);
+    // إعادة جلب المخزون المتاح لكل صنف في الـ rows
+    setRows(prev => prev.map(r => {
+      if (!r.item) return r;
+      return r; // سيتحدث عبر useEffect التالي
+    }));
 
-    const itemIds = [
-      ...new Set(rows.filter(r => r.item).map(r => r.item))
-    ];
-
+    // جيب stock محدّث لكل صنف فيه item
+    const itemIds = [...new Set(rows.filter(r => r.item).map(r => r.item))];
     if (itemIds.length === 0) return;
 
+    // جلب موازي
     const updates = await Promise.allSettled(
       itemIds.map(id => api.get(`/items/${id}/stock`))
     );
 
     const stockByItem = {};
-
     updates.forEach((res, i) => {
       if (res.status === 'fulfilled') {
-        stockByItem[itemIds[i]] = res.value.data.stock;
+        const data = res.value.data;
+        stockByItem[itemIds[i]] = data.stock;
       }
     });
 
-    setRows(prev =>
-      prev.map(r => {
-        if (!r.item || !stockByItem[r.item]) return r;
-
-        const wStock = stockByItem[r.item]?.[newWarehouse] || {
-          quantity: 0,
-          weight: 0,
-        };
-
-        return {
-          ...r,
-          availableQty: wStock.quantity,
-          availableWeight: wStock.weight,
-        };
-      })
-    );
+    setRows(prev => prev.map(r => {
+      if (!r.item || !stockByItem[r.item]) return r;
+      const wStock = stockByItem[r.item]?.[newWarehouse] || { quantity: 0, weight: 0 };
+      return { ...r, availableQty: wStock.quantity, availableWeight: wStock.weight };
+    }));
   }, [rows]);
 
   // ── checkDocNumber ────────────────────────────────────────────────────────
@@ -336,12 +306,18 @@ export function useSaleInvoiceForm() {
 
   const handleTotalWeightChange = (rowId, totalWt) => {
     setTotalWeightInput(prev => ({ ...prev, [rowId]: totalWt }));
+    const tw = parseFloat(totalWt) || 0;
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
-      const uw = parseFloat(r.weight) || r.unitWeight;
+      const uw = parseFloat(r.weight) || parseFloat(r.unitWeight) || 0;
       if (!uw) return r;
-      const qty = (parseFloat(totalWt) || 0) / uw;
-      return { ...r, quantity: qty > 0 ? String(parseFloat(qty.toFixed(4))) : '' };
+      // نحسب العدد من الوزن الكلي — نحتفظ بالوزن الكلي للحساب الدقيق
+      const qty = tw / uw;
+      return {
+        ...r,
+        quantity:    qty > 0 ? String(Math.round(qty * 10000) / 10000) : '',
+        _totalWeight: tw,   // نحفظ الوزن الكلي الأصلي
+      };
     }));
   };
 
@@ -400,11 +376,17 @@ export function useSaleInvoiceForm() {
 
     setSaving(true);
 
-    const itemsPayload = savedRows.map(r => ({
-      item: r.item, itemCode: r.itemCode, itemName: r.itemName,
-      quantity: Number(r.quantity), weight: Number(r.weight),
-      price: Number(r.price), total: calcTotal(r.quantity, r.weight, r.price),
-    }));
+    const itemsPayload = savedRows.map(r => {
+      const qty = parseFloat(r.quantity) || 0;
+      const uw  = parseFloat(r.weight)   || 0;
+      const pr  = parseFloat(r.price)    || 0;
+      const tw  = r._totalWeight != null ? parseFloat(r._totalWeight) : r3(qty * uw);
+      return {
+        item: r.item, itemCode: r.itemCode, itemName: r.itemName,
+        quantity: qty, weight: uw, price: pr,
+        total: r2(tw * pr),
+      };
+    });
 
     const finalPaymentMethod = customer.type === 'cash' ? paymentMethod : 'credit';
     let finalCashAmount = 0, finalInstapayAmount = 0, finalPaidAmount = 0;

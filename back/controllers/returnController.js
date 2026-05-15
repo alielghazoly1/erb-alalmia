@@ -1,5 +1,6 @@
 // ─── controllers/returnController.js ─────────────────────────────────────────
 const prisma           = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { audit }        = require('../utils/auditHelper');
 const { recordReturn, deleteTreasuryEntries } = require('../utils/treasuryHelper');
 const { updateStock, createStockMovement } = require('../utils/stockHelper');
@@ -72,7 +73,7 @@ const createReturn = async (req, res) => {
     const activeSeason  = await prisma.season.findFirst({ where: { isActive: true } });
     const invoiceNumber = await nextNumber('RET', 'RET');
     const totalAmount   = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight   = recalcItems.reduce((s, i) => s + Number(i.quantity) * Number(i.weight), 0);
+    const totalWeight   = recalcItems.reduce((s, i) => s + safeNum(i.quantity) * safeNum(i.weight), 0);
 
     const returnInv = await prisma.returnInvoice.create({
       data: {
@@ -96,7 +97,7 @@ const createReturn = async (req, res) => {
         items: {
           create: recalcItems.map(i => ({
             itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: Number(i.quantity), weight: Number(i.weight), price: Number(i.price), total: i.total,
+            quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
           })),
         },
       },
@@ -130,7 +131,7 @@ const updateReturn = async (req, res) => {
     // ── عكس أثر المخزن القديم لو كان معتمد ──────────────────────────────────
     if (wasApproved) {
       for (const oldItem of returnInv.items) {
-        const oldTW = Number(oldItem.quantity) * Number(oldItem.weight);
+        const oldTW = safeNum(oldItem.quantity) * safeNum(oldItem.weight);
         if (returnInv.type === 'customer_return') {
           await updateStock(oldItem.itemId, returnInv.warehouse, returnInv.seasonId, { quantity: -oldItem.quantity, weight: -oldTW });
         } else {
@@ -143,7 +144,7 @@ const updateReturn = async (req, res) => {
 
     const recalcItems = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
     const totalAmount = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight = recalcItems.reduce((s, i) => s + Number(i.quantity) * Number(i.weight), 0);
+    const totalWeight = recalcItems.reduce((s, i) => s + safeNum(i.quantity) * safeNum(i.weight), 0);
     const newWarehouse = warehouse || returnInv.warehouse;
 
     // ── حذف الأصناف القديمة وإضافة الجديدة ─────────────────────────────────
@@ -170,7 +171,7 @@ const updateReturn = async (req, res) => {
         items: {
           create: recalcItems.map(i => ({
             itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: Number(i.quantity), weight: Number(i.weight), price: Number(i.price), total: i.total,
+            quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
           })),
         },
       },
@@ -180,7 +181,7 @@ const updateReturn = async (req, res) => {
     // ── إعادة تطبيق أثر المخزن لو كان معتمد ─────────────────────────────────
     if (wasApproved) {
       for (const newItem of updated.items) {
-        const newTW  = Number(newItem.quantity) * Number(newItem.weight);
+        const newTW  = safeNum(newItem.quantity) * safeNum(newItem.weight);
         const mvType = updated.type === 'customer_return' ? 'return_in' : 'return_out';
         const delta  = updated.type === 'customer_return'
           ? { quantity: newItem.quantity, weight: newTW }
@@ -210,7 +211,7 @@ const approveReturn = async (req, res) => {
     if (returnInv.status === 'approved') return res.status(400).json({ message: 'المرتجع اتوافق عليه قبل كده' });
 
     for (const retItem of returnInv.items) {
-      const tw     = Number(retItem.quantity) * Number(retItem.weight);
+      const tw     = safeNum(retItem.quantity) * safeNum(retItem.weight);
       const mvType = returnInv.type === 'customer_return' ? 'return_in' : 'return_out';
       const delta  = returnInv.type === 'customer_return'
         ? { quantity: retItem.quantity, weight: tw }
@@ -250,6 +251,5 @@ const rejectReturn = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-const n = (x) => ({ ...x, _id: x.id });
 
 module.exports = { getReturns, createReturn, updateReturn, approveReturn, rejectReturn, getReturnById };

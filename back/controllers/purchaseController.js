@@ -6,6 +6,7 @@
 //   - Indexes ضرورية مذكورة في التعليق أسفل
 
 const prisma = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { updateStock, createStockMovement } = require('../utils/stockHelper');
 const { nextNumber } = require('../utils/counterHelper');
 
@@ -201,7 +202,7 @@ const createPurchaseInvoice = async (req, res) => {
 
     const totalAmount = recalcItems.reduce((s, i) => s + i.total, 0);
     const totalWeight = recalcItems.reduce(
-      (s, i) => s + Number(i.quantity) * Number(i.weight),
+      (s, i) => s + safeNum(i.quantity) * safeNum(i.weight),
       0
     );
 
@@ -229,9 +230,9 @@ const createPurchaseInvoice = async (req, res) => {
             itemId:   i.item,
             itemCode: i.itemCode,
             itemName: i.itemName,
-            quantity: Number(i.quantity),
-            weight:   Number(i.weight),
-            price:    Number(i.price),
+            quantity: safeNum(i.quantity),
+            weight:   safeNum(i.weight),
+            price:    safeNum(i.price),
             total:    i.total,
           })),
         },
@@ -264,7 +265,7 @@ const forceEditPurchaseInvoice = async (req, res) => {
     // لو approved — نرجع المخزن
     if (invoice.status === 'approved') {
       for (const inv of invoice.items) {
-        const tw = Number(inv.quantity) * Number(inv.weight);
+        const tw = safeNum(inv.quantity) * safeNum(inv.weight);
         await updateStock(inv.itemId, invoice.warehouse, invoice.seasonId, { quantity: -inv.quantity, weight: -tw });
       }
       await prisma.stockMovement.deleteMany({ where: { referenceId: invoice.id } });
@@ -302,7 +303,7 @@ const forceEditPurchaseInvoice = async (req, res) => {
         date: date ? new Date(date) : invoice.date,
         totalAmount: recalcItems.reduce((s, i) => s + i.total, 0),
         totalWeight: recalcItems.reduce(
-          (s, i) => s + Number(i.quantity) * Number(i.weight),
+          (s, i) => s + safeNum(i.quantity) * safeNum(i.weight),
           0
         ),
         notes: notes ?? invoice.notes,
@@ -317,9 +318,9 @@ const forceEditPurchaseInvoice = async (req, res) => {
             itemId: i.item,
             itemCode: i.itemCode,
             itemName: i.itemName,
-            quantity: Number(i.quantity),
-            weight: Number(i.weight),
-            price: Number(i.price),
+            quantity: safeNum(i.quantity),
+            weight: safeNum(i.weight),
+            price: safeNum(i.price),
             total: i.total,
           })),
         },
@@ -349,7 +350,7 @@ const approvePurchaseInvoice = async (req, res) => {
 
     // تحديث المخزن
     for (const inv of invoice.items) {
-      const tw = Number(inv.quantity) * Number(inv.weight);
+      const tw = safeNum(inv.quantity) * safeNum(inv.weight);
       await updateStock(inv.itemId, invoice.warehouse, invoice.seasonId, { quantity: inv.quantity, weight: tw });
       await prisma.item.update({ where: { id: inv.itemId }, data: { lastPurchasePrice: inv.price } });
       await createStockMovement({

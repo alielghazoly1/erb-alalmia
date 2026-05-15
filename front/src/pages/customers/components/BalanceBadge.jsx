@@ -15,7 +15,7 @@ export default function BalanceBadge({ balance, label, size = 'md' }) {
         {label}
       </p>
       <p className={`${numClass} font-bold ${isDebt ? 'text-red-700' : 'text-green-700'}`}>
-        {Math.abs(balance).toFixed(2)}
+        {Math.abs(toNum(balance)).toFixed(2)}
       </p>
       <p className={`text-xs ${isDebt ? 'text-red-400' : 'text-green-400'}`}>ج.م</p>
     </div>

@@ -11,6 +11,7 @@
 'use strict';
 
 const prisma = require('../config/db');
+const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { getStockQty } = require('../utils/stockHelper');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { toNum } from '../../../utils/fmt';
 const statusLabel = {
   approved:  { text: 'مُوافق',  cls: 'bg-green-100 text-green-700' },
   pending:   { text: 'معلق',    cls: 'bg-yellow-100 text-yellow-700' },
@@ -41,7 +42,7 @@ export default function AdminSearchPanel({
                       <span className="text-gray-400 text-xs">{inv.docNumber}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-700">{inv.totalAmount?.toFixed(2)} ج.م</span>
+                      <span className="text-sm font-bold text-gray-700">{toNum(inv.totalAmount).toFixed(2)()} ج.م</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusLabel[inv.status]?.cls || 'bg-gray-100 text-gray-500'}`}>
                         {statusLabel[inv.status]?.text || inv.status}
                       </span>
