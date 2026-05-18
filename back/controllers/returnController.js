@@ -3,11 +3,16 @@ const prisma           = require('../config/db');
 const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { audit }        = require('../utils/auditHelper');
 const { recordReturn, deleteTreasuryEntries } = require('../utils/treasuryHelper');
-const { updateStock, createStockMovement } = require('../utils/stockHelper');
+const { updateStock, createStockMovement }    = require('../utils/stockHelper');
 const { nextNumber }   = require('../utils/counterHelper');
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 100;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const calcItemTotalWeight = (qty, wt, tw = null) =>
   tw != null ? round3(safeNum(tw)) : round3(safeNum(qty) * safeNum(wt));
+
 const calcItemTotal = (qty, wt, pr, tw = null) =>
   round2(calcItemTotalWeight(qty, wt, tw) * safeNum(pr));
 
@@ -24,7 +29,7 @@ const invoiceIncludes = () => ({
 const getReturnById = async (req, res) => {
   try {
     const returnInv = await prisma.returnInvoice.findUnique({
-      where: { id: req.params.id },
+      where:   { id: req.params.id },
       include: invoiceIncludes(),
     });
     if (!returnInv) return res.status(404).json({ message: 'المرتجع مش موجود' });
@@ -32,10 +37,14 @@ const getReturnById = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// ── GET all ───────────────────────────────────────────────────────────────────
+// ── GET all (cursor-based lazy loading) ───────────────────────────────────────
+// Query params: type, status, search, cursor
+// Response: { returns[], nextCursor, hasMore, total }
 const getReturns = async (req, res) => {
   try {
-    const { type, status, search } = req.query;
+    const { type, status, search, cursor } = req.query;
+    const take = PAGE_SIZE + 1;
+
     const where = {};
     if (type)   where.type   = type;
     if (status) where.status = status;
@@ -47,12 +56,35 @@ const getReturns = async (req, res) => {
       ];
     }
 
-    const returns = await prisma.returnInvoice.findMany({
-      where,
-      include: { createdBy: { select: { name: true } }, approvedBy: { select: { name: true } } },
-      orderBy: { createdAt: 'desc' },
+    const cursorClause = cursor
+      ? { cursor: { id: cursor }, skip: 1 }
+      : {};
+
+    const [returns, total] = await Promise.all([
+      prisma.returnInvoice.findMany({
+        where,
+        include: {
+          createdBy:  { select: { name: true } },
+          approvedBy: { select: { name: true } },
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take,
+        ...cursorClause,
+      }),
+      // نجيب الـ total فقط عند الصفحة الأولى
+      cursor ? Promise.resolve(null) : prisma.returnInvoice.count({ where }),
+    ]);
+
+    const hasMore    = returns.length > PAGE_SIZE;
+    const page       = hasMore ? returns.slice(0, PAGE_SIZE) : returns;
+    const nextCursor = hasMore ? page[page.length - 1].id : null;
+
+    res.json({
+      returns:    page.map(n),
+      nextCursor,
+      hasMore,
+      total,
     });
-    res.json(returns.map(n));
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
@@ -65,7 +97,7 @@ const createReturn = async (req, res) => {
       supplierId, supplierCode, supplierName,
       warehouse, items, notes,
       originalInvoiceRef,
-      refundMethod = 'none',
+      refundMethod     = 'none',
       refundCashAmount = 0,
       refundBankAmount = 0,
     } = req.body;
@@ -79,17 +111,17 @@ const createReturn = async (req, res) => {
     const activeSeason  = await prisma.season.findFirst({ where: { isActive: true } });
     const invoiceNumber = await nextNumber('RET', 'RET');
     const totalAmount   = round2(recalcItems.reduce((s, i) => s + i.total, 0));
-    const totalWeight   = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
+    const totalWeight   = round3(recalcItems.reduce((s, i) => s + i._tw,  0));
 
     const returnInv = await prisma.returnInvoice.create({
       data: {
         invoiceNumber, docNumber,
         date:             date ? new Date(date) : new Date(),
         type, warehouse,
-        customerId:       customerId || null,
+        customerId:       customerId  || null,
         customerCode:     customerCode || null,
         customerName:     customerName || null,
-        supplierId:       supplierId || null,
+        supplierId:       supplierId  || null,
         supplierCode:     supplierCode || null,
         supplierName:     supplierName || null,
         totalAmount, totalWeight,
@@ -102,8 +134,9 @@ const createReturn = async (req, res) => {
         createdById:      req.user.id,
         items: {
           create: recalcItems.map(i => ({
-            itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
+            itemId:   i.item, itemCode: i.itemCode, itemName: i.itemName,
+            quantity: safeNum(i.quantity), weight: safeNum(i.weight),
+            price:    safeNum(i.price),    total:  i.total,
           })),
         },
       },
@@ -115,17 +148,20 @@ const createReturn = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// ── UPDATE (حتى بعد الموافقة — بيعكس الأثر القديم ثم يطبق الجديد) ─────────────
+// ── UPDATE ────────────────────────────────────────────────────────────────────
 const updateReturn = async (req, res) => {
   try {
-    const returnInv = await prisma.returnInvoice.findUnique({ where: { id: req.params.id }, include: { items: true } });
+    const returnInv = await prisma.returnInvoice.findUnique({
+      where:   { id: req.params.id },
+      include: { items: true },
+    });
     if (!returnInv) return res.status(404).json({ message: 'المرتجع مش موجود' });
     if (returnInv.status === 'rejected') return res.status(400).json({ message: 'لا يمكن تعديل مرتجع مرفوض' });
 
     const {
       docNumber, date, customerId, customerCode, customerName,
       supplierId, supplierCode, supplierName, warehouse, items, notes, originalInvoiceRef,
-      refundMethod = returnInv.refundMethod,
+      refundMethod     = returnInv.refundMethod,
       refundCashAmount = returnInv.refundCashAmount,
       refundBankAmount = returnInv.refundBankAmount,
     } = req.body;
@@ -134,15 +170,14 @@ const updateReturn = async (req, res) => {
 
     const wasApproved = returnInv.status === 'approved';
 
-    // ── عكس أثر المخزن القديم لو كان معتمد ──────────────────────────────────
+    // عكس أثر المخزن القديم لو كان معتمد
     if (wasApproved) {
       for (const oldItem of returnInv.items) {
         const oldTW = safeNum(oldItem.quantity) * safeNum(oldItem.weight);
-        if (returnInv.type === 'customer_return') {
-          await updateStock(oldItem.itemId, returnInv.warehouse, returnInv.seasonId, { quantity: -oldItem.quantity, weight: -oldTW });
-        } else {
-          await updateStock(oldItem.itemId, returnInv.warehouse, returnInv.seasonId, { quantity: oldItem.quantity, weight: oldTW });
-        }
+        const delta = returnInv.type === 'customer_return'
+          ? { quantity: -oldItem.quantity, weight: -oldTW }
+          : { quantity:  oldItem.quantity, weight:  oldTW };
+        await updateStock(oldItem.itemId, returnInv.warehouse, returnInv.seasonId, delta);
       }
       await prisma.stockMovement.deleteMany({ where: { referenceModel: 'ReturnInvoice', referenceId: returnInv.id } });
       await deleteTreasuryEntries(returnInv.id, 'ReturnInvoice');
@@ -152,48 +187,48 @@ const updateReturn = async (req, res) => {
       const tw = calcItemTotalWeight(i.quantity, i.weight, i.totalWeight ?? null);
       return { ...i, _tw: tw, total: calcItemTotal(i.quantity, i.weight, i.price, tw) };
     });
-    const totalAmount = round2(recalcItems.reduce((s, i) => s + i.total, 0));
-    const totalWeight = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
+    const totalAmount  = round2(recalcItems.reduce((s, i) => s + i.total, 0));
+    const totalWeight  = round3(recalcItems.reduce((s, i) => s + i._tw,  0));
     const newWarehouse = warehouse || returnInv.warehouse;
 
-    // ── حذف الأصناف القديمة وإضافة الجديدة ─────────────────────────────────
     await prisma.returnInvoiceItem.deleteMany({ where: { invoiceId: returnInv.id } });
 
     const updated = await prisma.returnInvoice.update({
       where: { id: returnInv.id },
       data: {
-        docNumber:        docNumber      ?? returnInv.docNumber,
-        date:             date ? new Date(date) : returnInv.date,
-        customerCode:     customerCode   ?? returnInv.customerCode,
-        customerName:     customerName   ?? returnInv.customerName,
-        supplierCode:     supplierCode   ?? returnInv.supplierCode,
-        supplierName:     supplierName   ?? returnInv.supplierName,
-        customerId:       customerId     ?? returnInv.customerId,
-        supplierId:       supplierId     ?? returnInv.supplierId,
-        warehouse:        newWarehouse,
+        docNumber:          docNumber          ?? returnInv.docNumber,
+        date:               date ? new Date(date) : returnInv.date,
+        customerCode:       customerCode       ?? returnInv.customerCode,
+        customerName:       customerName       ?? returnInv.customerName,
+        supplierCode:       supplierCode       ?? returnInv.supplierCode,
+        supplierName:       supplierName       ?? returnInv.supplierName,
+        customerId:         customerId         ?? returnInv.customerId,
+        supplierId:         supplierId         ?? returnInv.supplierId,
+        warehouse:          newWarehouse,
         totalAmount, totalWeight,
-        notes:            notes          ?? returnInv.notes,
+        notes:              notes              ?? returnInv.notes,
         originalInvoiceRef: originalInvoiceRef ?? returnInv.originalInvoiceRef,
         refundMethod,
-        refundCashAmount: Number(refundCashAmount) || 0,
-        refundBankAmount: Number(refundBankAmount) || 0,
+        refundCashAmount:   Number(refundCashAmount) || 0,
+        refundBankAmount:   Number(refundBankAmount) || 0,
         items: {
           create: recalcItems.map(i => ({
-            itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
+            itemId:   i.item, itemCode: i.itemCode, itemName: i.itemName,
+            quantity: safeNum(i.quantity), weight: safeNum(i.weight),
+            price:    safeNum(i.price),    total:  i.total,
           })),
         },
       },
       include: invoiceIncludes(),
     });
 
-    // ── إعادة تطبيق أثر المخزن لو كان معتمد ─────────────────────────────────
+    // إعادة تطبيق أثر المخزن لو كان معتمد
     if (wasApproved) {
       for (const newItem of updated.items) {
         const newTW  = safeNum(newItem.quantity) * safeNum(newItem.weight);
         const mvType = updated.type === 'customer_return' ? 'return_in' : 'return_out';
         const delta  = updated.type === 'customer_return'
-          ? { quantity: newItem.quantity, weight: newTW }
+          ? { quantity:  newItem.quantity, weight:  newTW }
           : { quantity: -newItem.quantity, weight: -newTW };
         await updateStock(newItem.itemId, newWarehouse, updated.seasonId, delta);
         await createStockMovement({
@@ -215,7 +250,10 @@ const updateReturn = async (req, res) => {
 // ── APPROVE ───────────────────────────────────────────────────────────────────
 const approveReturn = async (req, res) => {
   try {
-    const returnInv = await prisma.returnInvoice.findUnique({ where: { id: req.params.id }, include: { items: true } });
+    const returnInv = await prisma.returnInvoice.findUnique({
+      where:   { id: req.params.id },
+      include: { items: true },
+    });
     if (!returnInv) return res.status(404).json({ message: 'المرتجع مش موجود' });
     if (returnInv.status === 'approved') return res.status(400).json({ message: 'المرتجع اتوافق عليه قبل كده' });
 
@@ -223,7 +261,7 @@ const approveReturn = async (req, res) => {
       const tw     = safeNum(retItem.quantity) * safeNum(retItem.weight);
       const mvType = returnInv.type === 'customer_return' ? 'return_in' : 'return_out';
       const delta  = returnInv.type === 'customer_return'
-        ? { quantity: retItem.quantity, weight: tw }
+        ? { quantity:  retItem.quantity, weight:  tw }
         : { quantity: -retItem.quantity, weight: -tw };
       await updateStock(retItem.itemId, returnInv.warehouse, returnInv.seasonId, delta);
       await createStockMovement({
@@ -254,11 +292,13 @@ const rejectReturn = async (req, res) => {
     const returnInv = await prisma.returnInvoice.findUnique({ where: { id: req.params.id } });
     if (!returnInv) return res.status(404).json({ message: 'المرتجع مش موجود' });
 
-    const updated = await prisma.returnInvoice.update({ where: { id: returnInv.id }, data: { status: 'rejected' } });
+    const updated = await prisma.returnInvoice.update({
+      where: { id: returnInv.id },
+      data:  { status: 'rejected' },
+    });
     await audit(req.user, 'return_rejected', 'ReturnInvoice', returnInv.id, returnInv.invoiceNumber);
     res.json({ message: 'تم الرفض', returnInv: n(updated) });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
-
 
 module.exports = { getReturns, createReturn, updateReturn, approveReturn, rejectReturn, getReturnById };

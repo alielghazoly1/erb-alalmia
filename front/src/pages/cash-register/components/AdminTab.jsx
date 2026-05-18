@@ -1,18 +1,45 @@
+// ─── components/AdminTab.jsx ──────────────────────────────────────────────────
 import React from 'react';
 import { fmt } from '../cashRegisterConfig';
-import DateFilter from './DateFilter';
+import DateFilter    from './DateFilter';
 import MovementsTable from './MovementsTable';
 
 const STAT_CARDS = (adminData) => [
-  { label: 'إجمالي الوارد', value: adminData.totalIn,  bg: 'bg-green-50 border-green-200',  color: 'text-green-700' },
-  { label: 'مرتجعات (خصم)', value: adminData.totalOut, bg: 'bg-red-50 border-red-200',    color: 'text-red-600' },
-  { label: 'الصافي',          value: adminData.net,     bg: 'bg-blue-50 border-blue-200',   color: adminData.net >= 0 ? 'text-blue-700' : 'text-red-600' },
+  {
+    label: 'إجمالي الوارد',
+    value: adminData.totalIn,
+    bg:    'bg-green-50 border-green-200',
+    color: 'text-green-700',
+  },
+  {
+    label: 'مرتجعات (خصم)',
+    value: adminData.totalOut,
+    bg:    'bg-red-50 border-red-200',
+    color: 'text-red-600',
+  },
+  {
+    label: 'الصافي',
+    value: adminData.net,
+    bg:    'bg-blue-50 border-blue-200',
+    color: adminData.net >= 0 ? 'text-blue-700' : 'text-red-600',
+  },
 ];
 
 export default function AdminTab({
-  admins, adminData, loading,
-  selectedId, showAll, dateFrom, dateTo,
-  setSelectedId, setShowAll, setDateFrom, setDateTo, setQuick,
+  admins,
+  adminData,
+  loading,
+  loadingMore,
+  selectedId,
+  showAll,
+  dateFrom,
+  dateTo,
+  setSelectedId,
+  setShowAll,
+  setDateFrom,
+  setDateTo,
+  setQuick,
+  onLoadMore,
 }) {
   const selectedAdmin = admins.find((a) => a._id === selectedId);
 
@@ -37,9 +64,15 @@ export default function AdminTab({
             </select>
           </div>
         </div>
+
         <DateFilter
-          showAll={showAll} dateFrom={dateFrom} dateTo={dateTo}
-          onShowAll={setShowAll} onFrom={setDateFrom} onTo={setDateTo} onQuick={setQuick}
+          showAll={showAll}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onShowAll={setShowAll}
+          onFrom={setDateFrom}
+          onTo={setDateTo}
+          onQuick={setQuick}
         />
       </div>
 
@@ -50,7 +83,10 @@ export default function AdminTab({
           <p className="text-lg font-medium text-gray-500">اختار أدمن لعرض خزنته</p>
         </div>
       ) : loading ? (
-        <div className="card text-center py-12 text-gray-400">جاري التحميل...</div>
+        <div className="card text-center py-12 text-gray-400">
+          <div className="animate-spin text-3xl mb-2">⏳</div>
+          جاري التحميل...
+        </div>
       ) : adminData ? (
         <>
           {/* Summary cards */}
@@ -70,9 +106,26 @@ export default function AdminTab({
               <h3 className="font-semibold text-gray-700">
                 خزنة: <span className="text-blue-600">{selectedAdmin?.name}</span>
               </h3>
-              <span className="text-xs text-gray-400">{adminData.count} حركة</span>
+              <span className="text-xs text-gray-400">
+                {adminData.count?.toLocaleString('ar-EG')} حركة
+                {adminData.hasMore && (
+                  <span className="text-orange-500 mr-1">
+                    — عارض {adminData.movements.length.toLocaleString('ar-EG')}
+                  </span>
+                )}
+              </span>
             </div>
-            <MovementsTable movements={adminData.movements} emptyMsg="مفيش حركات نقدية في هذه الفترة" />
+
+            <MovementsTable
+              movements={adminData.movements}
+              emptyMsg="مفيش حركات نقدية في هذه الفترة"
+              totalIn={adminData.totalIn}
+              totalOut={adminData.totalOut}
+              net={adminData.net}
+              hasMore={adminData.hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={onLoadMore}
+            />
           </div>
         </>
       ) : null}

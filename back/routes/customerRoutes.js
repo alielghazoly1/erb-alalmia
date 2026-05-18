@@ -21,6 +21,6 @@ router.patch('/:id/initial-balance', protect, adminOnly, updateInitialBalance);
 router.get('/:customerId/statement',        protect, getCustomerStatement);
 router.get('/:customerId/timeline',         protect, getCustomerTimeline);
 router.get('/:customerId/all-seasons',      protect, getCustomerAllSeasons);
-router.get('/:customerId/item/:itemId',     protect, getCustomerItemStatement);
+// router.get('/:customerId/item/:itemId',     protect, getCustomerItemStatement);
 
 module.exports = router;

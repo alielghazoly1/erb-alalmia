@@ -39,8 +39,9 @@ export default function CustomersPage() {
   // ── Hooks ─────────────────────────────────────────────────────────────────
   const filters     = useCustomerFilters(list);
   const form        = useCustomerForm();
-  const initBalance = useInitialBalance();
-
+const initBalance = useInitialBalance(() =>
+  dispatch(fetchCustomers({ seasonId: undefined }))
+);
   // ── حالة موديل الكشف السريع ───────────────────────────────────────────────
   const [statementCustomer, setStatementCustomer] = useState(null);
   const [isStatementOpen,   setIsStatementOpen]   = useState(false);
@@ -133,6 +134,7 @@ export default function CustomersPage() {
       {/* ══ موديل تعديل الرصيد الابتدائي ══ */}
       <InitialBalanceModal
         isOpen={initBalance.isOpen}
+        seasonId={initBalance.seasonId}
         onClose={initBalance.close}
         customer={initBalance.customer}
         amount={initBalance.amount}

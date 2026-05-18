@@ -1,10 +1,11 @@
+// ─── pages/cash-register/Cashregisterpage.jsx ────────────────────────────────
 import React from 'react';
-import { TABS } from './cashRegisterConfig';
-import { useCashRegisterFilters } from './hooks/useCashRegisterFilters';
-import { useCashRegisterData }    from './hooks/useCashRegisterData';
-import SummaryTab from './components/SummaryTab';
-import AdminTab   from './components/AdminTab';
-import BankTab    from './components/BankTab';
+import { TABS }                     from './cashRegisterConfig';
+import { useCashRegisterFilters }   from './hooks/useCashRegisterFilters';
+import { useCashRegisterData }      from './hooks/useCashRegisterData';
+import SummaryTab                   from './components/SummaryTab';
+import AdminTab                     from './components/AdminTab';
+import BankTab                      from './components/BankTab';
 
 export default function CashRegisterPage() {
   const {
@@ -14,7 +15,16 @@ export default function CashRegisterPage() {
     setSelectedId, setBankMethod, setQuick, openAdminOnDate,
   } = useCashRegisterFilters();
 
-  const { admins, adminData, bankData, summary, loading } = useCashRegisterData({
+  const {
+    admins,
+    adminData,
+    bankData,
+    summary,
+    loading,
+    loadingMore,
+    loadMoreAdmin,
+    loadMoreBank,
+  } = useCashRegisterData({
     tab, selectedId, effectiveFrom, effectiveTo, summaryDate, bankMethod,
   });
 
@@ -43,6 +53,7 @@ export default function CashRegisterPage() {
         ))}
       </div>
 
+      {/* Tab content */}
       {tab === 'summary' && (
         <SummaryTab
           summary={summary}
@@ -59,6 +70,7 @@ export default function CashRegisterPage() {
           admins={admins}
           adminData={adminData}
           loading={loading}
+          loadingMore={loadingMore}
           selectedId={selectedId}
           showAll={showAll}
           dateFrom={dateFrom}
@@ -68,6 +80,7 @@ export default function CashRegisterPage() {
           setDateFrom={setDateFrom}
           setDateTo={setDateTo}
           setQuick={setQuick}
+          onLoadMore={loadMoreAdmin}
         />
       )}
 
@@ -75,6 +88,7 @@ export default function CashRegisterPage() {
         <BankTab
           bankData={bankData}
           loading={loading}
+          loadingMore={loadingMore}
           bankMethod={bankMethod}
           showAll={showAll}
           dateFrom={dateFrom}
@@ -84,6 +98,7 @@ export default function CashRegisterPage() {
           setDateFrom={setDateFrom}
           setDateTo={setDateTo}
           setQuick={setQuick}
+          onLoadMore={loadMoreBank}
         />
       )}
     </div>

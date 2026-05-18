@@ -1,14 +1,13 @@
-// ─── hooks/useSupplierInitialBalance.js ──────────────────────────────────────
-// Hook مخصص لتعديل الرصيد الابتدائي لمورد موجود
-// ────────────────────────────────────────────────────────────────────────────
-import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import api from '../../../services/api';
-import toast from 'react-hot-toast';
-import { fetchSuppliers } from '../../../store/slices/supplierSlice';
+// ─── useSupplierInitialBalance.js ─────────────────────────────────────────────
+import { useState }    from 'react';
+import { useSelector } from 'react-redux';
+import api             from '../../../services/api';
+import toast           from 'react-hot-toast';
 
-export function useSupplierInitialBalance() {
-  const dispatch = useDispatch();
+export function useSupplierInitialBalance(onSuccess) {
+  const seasonId = useSelector(s =>
+    s.season?.selectedSeasonId || s.season?.activeSeason?._id || null
+  );
 
   const [isOpen,     setIsOpen]     = useState(false);
   const [supplier,   setSupplier]   = useState(null);
@@ -17,41 +16,33 @@ export function useSupplierInitialBalance() {
 
   const open = (s) => {
     setSupplier(s);
-    // pre-fill with current opening balance
-    const current = s.openingBalance ?? s.initialBalance ?? 0;
-    setAmount(String(Number(current)));
+    setAmount(String(Number(s.openingBalance ?? 0)));
     setIsOpen(true);
   };
 
-  const close = () => setIsOpen(false);
+  const close = () => { setIsOpen(false); setSupplier(null); setAmount(''); };
 
-  /**
-   * PATCH /suppliers/:id/initial-balance
-   * يعدّل فاتورة الرصيد الابتدائي بدون إنشاء فاتورة جديدة
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const value = Number(amount);
+    const value = parseFloat(amount);
     if (isNaN(value)) return toast.error('أدخل رقماً صحيحاً');
+    if (!seasonId)    return toast.error('لا يوجد موسم محدد');
 
     setSubmitting(true);
     try {
       await api.patch(`/suppliers/${supplier._id}/initial-balance`, {
         openingBalance: value,
+        seasonId,
       });
-      toast.success('تم تعديل الرصيد الابتدائي');
-      dispatch(fetchSuppliers());
-      setIsOpen(false);
+      toast.success(`✅ تم تعديل الرصيد الابتدائي إلى ${value.toFixed(2)} ج.م`);
+      onSuccess?.();
+      close();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'حدث خطأ');
+      toast.error(err.response?.data?.message || 'حدث خطأ في الحفظ');
     } finally {
       setSubmitting(false);
     }
   };
 
-  return {
-    isOpen, supplier, amount, submitting,
-    open, close,
-    setAmount, handleSubmit,
-  };
+  return { isOpen, supplier, amount, submitting, seasonId, open, close, setAmount, handleSubmit };
 }

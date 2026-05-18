@@ -14,12 +14,15 @@ import { useSupplierForm }          from './hooks/useSupplierForm';
 import { useSupplierInitialBalance } from './hooks/useSupplierInitialBalance';
 import { useSupplierStatement }     from './hooks/useSupplierStatement';
 
+
 // Components
 import SupplierFilters              from './components/SupplierFilters';
 import SupplierTable                from './components/SupplierTable';
 import SupplierFormModal            from './components/SupplierFormModal';
 import SupplierStatementModal       from './components/SupplierStatementModal';
 import SupplierInitialBalanceModal  from './components/SupplierInitialBalanceModal';
+
+
 
 export default function SuppliersPage() {
   const dispatch = useDispatch();
@@ -33,8 +36,9 @@ export default function SuppliersPage() {
   // ── Hooks ─────────────────────────────────────────────────────────────────
   const filters     = useSupplierFilters(list);
   const form        = useSupplierForm();
-  const initBalance = useSupplierInitialBalance();
-  const statement   = useSupplierStatement();
+const initBalance = useSupplierInitialBalance(() =>
+  dispatch(fetchSuppliers({ seasonId: undefined }))
+);  const statement   = useSupplierStatement();
 
   // ── حذف المورد ───────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
@@ -120,6 +124,7 @@ export default function SuppliersPage() {
       {/* ══ موديل تعديل الرصيد الابتدائي ══ */}
       <SupplierInitialBalanceModal
         isOpen={initBalance.isOpen}
+        seasonId={initBalance.seasonId}
         onClose={initBalance.close}
         supplier={initBalance.supplier}
         amount={initBalance.amount}

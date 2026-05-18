@@ -1,96 +1,146 @@
 // ─── controllers/supplierController.js ───────────────────────────────────────
-const prisma        = require('../config/db');
-const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
-const { audit }     = require('../utils/auditHelper');
-const { nextNumber } = require('../utils/counterHelper');
+'use strict';
 
-// ── getSuppliers ──────────────────────────────────────────────────────────────
+const prisma          = require('../config/db');
+const { audit }       = require('../utils/auditHelper');
+const { safeNum, round2, n } = require('../utils/decimalHelper');
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+const SUPPLIER_SELECT = {
+  id: true, code: true, name: true, phone: true, phone2: true,
+  address: true, taxNumber: true, isActive: true, notes: true, openingBalance: true,
+};
+
+const pickSupplier = (body) => {
+  const keys = ['name','code','phone','phone2','address','taxNumber','notes','isActive'];
+  return Object.fromEntries(keys.filter(k => body[k] !== undefined).map(k => [k, body[k]]));
+};
+
+const getSeasonOpeningBalance = async (supplierId, seasonId) => {
+  if (!seasonId) return 0;
+  const rec = await prisma.supplierSeasonBalance.findUnique({
+    where:  { supplierId_seasonId: { supplierId, seasonId } },
+    select: { openingBalance: true },
+  });
+  return round2(safeNum(rec?.openingBalance));
+};
+
+const upsertSeasonBalance = async (supplierId, seasonId, amount, userId) => {
+  await prisma.supplierSeasonBalance.upsert({
+    where:  { supplierId_seasonId: { supplierId, seasonId } },
+    update: { openingBalance: amount, updatedById: userId },
+    create: { supplierId, seasonId, openingBalance: amount, updatedById: userId },
+  });
+};
+
+// ── GET /api/suppliers ────────────────────────────────────────────────────────
 const getSuppliers = async (req, res) => {
   try {
-    const { search } = req.query;
-    const where = { isActive: true };
-    if (search) {
+    const { search, seasonId } = req.query;
+
+    const where = { isActive: true, deletedAt: null };
+    if (search?.trim()) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { code: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search.trim(), mode: 'insensitive' } },
+        { code: { contains: search.trim(), mode: 'insensitive' } },
       ];
     }
 
-    const suppliers = await prisma.supplier.findMany({ where, orderBy: { code: 'asc' } });
-    if (suppliers.length === 0) return res.json([]);
+    const suppliers = await prisma.supplier.findMany({ where, select: SUPPLIER_SELECT, orderBy: { code: 'asc' } });
+    if (!suppliers.length) return res.json([]);
 
-    const supplierIds = suppliers.map(s => s.id);
+    const ids          = suppliers.map(s => s.id);
+    const seasonFilter = seasonId ? { seasonId } : {};
 
-    // Aggregation بـ groupBy بدل aggregate
-    const [purchasesAgg, returnsAgg, paymentsAgg] = await Promise.all([
+    const [purchasesAgg, returnsAgg, paymentsAgg, seasonBalances] = await Promise.all([
       prisma.purchaseInvoice.groupBy({
         by: ['supplierId'],
-        where: { supplierId: { in: supplierIds }, status: { not: 'cancelled' } },
+        where: { supplierId: { in: ids }, status: { not: 'cancelled' }, ...seasonFilter },
         _sum: { totalAmount: true },
       }),
       prisma.returnInvoice.groupBy({
         by: ['supplierId'],
-        where: { supplierId: { in: supplierIds }, type: 'supplier_return', status: 'approved' },
+        where: { supplierId: { in: ids }, type: 'supplier_return', status: 'approved', ...seasonFilter },
         _sum: { totalAmount: true },
       }),
       prisma.payment.groupBy({
         by: ['supplierId'],
-        where: { supplierId: { in: supplierIds }, type: 'supplier_payment' },
+        where: { supplierId: { in: ids }, type: 'supplier_payment', ...seasonFilter },
         _sum: { amount: true },
       }),
+      seasonId
+        ? prisma.supplierSeasonBalance.findMany({
+            where: { supplierId: { in: ids }, seasonId },
+            select: { supplierId: true, openingBalance: true },
+          })
+        : Promise.resolve([]),
     ]);
 
-    const purchasesMap = new Map(purchasesAgg.map(r => [r.supplierId, safeNum(r._sum.totalAmount)]));
-    const returnsMap   = new Map(returnsAgg.map(r   => [r.supplierId, safeNum(r._sum.totalAmount)]));
-    const paymentsMap  = new Map(paymentsAgg.map(r  => [r.supplierId, safeNum(r._sum.amount)]));
+    const purchasesMap = new Map(purchasesAgg.map(r => [r.supplierId, round2(safeNum(r._sum.totalAmount))]));
+    const returnsMap   = new Map(returnsAgg.map(r   => [r.supplierId, round2(safeNum(r._sum.totalAmount))]));
+    const paymentsMap  = new Map(paymentsAgg.map(r  => [r.supplierId, round2(safeNum(r._sum.amount))]));
+    const openingMap   = new Map(seasonBalances.map(r=> [r.supplierId, round2(safeNum(r.openingBalance))]));
 
-    const result = suppliers.map(s => ({
-      ...s, _id: s.id,
-      totalPurchases: purchasesMap.get(s.id) || 0,
-      totalReturns:   returnsMap.get(s.id)   || 0,
-      totalPaid:      paymentsMap.get(s.id)  || 0,
-      balance: (purchasesMap.get(s.id) || 0) - (returnsMap.get(s.id) || 0) - (paymentsMap.get(s.id) || 0),
-    }));
+    const result = suppliers.map(s => {
+      const tp  = purchasesMap.get(s.id) ?? 0;
+      const tr  = returnsMap.get(s.id)   ?? 0;
+      const pay = paymentsMap.get(s.id)  ?? 0;
+      const ob  = seasonId
+        ? (openingMap.get(s.id) ?? 0)
+        : round2(safeNum(s.openingBalance));
+      return {
+        ...n(s),
+        openingBalance: ob,
+        totalPurchases: tp,
+        totalReturns:   tr,
+        totalPaid:      pay,
+        balance:        round2(ob + tp - tr - pay),
+      };
+    });
 
     res.json(result);
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+// ── GET /api/suppliers/code/:code ─────────────────────────────────────────────
 const getSupplierByCode = async (req, res) => {
   try {
-    const supplier = await prisma.supplier.findFirst({ where: { code: req.params.code, isActive: true } });
-    if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
-    res.json(n(supplier));
+    const s = await prisma.supplier.findFirst({ where: { code: req.params.code, isActive: true } });
+    if (!s) return res.status(404).json({ message: 'المورد مش موجود' });
+    res.json(n(s));
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+// ── POST /api/suppliers ───────────────────────────────────────────────────────
 const createSupplier = async (req, res) => {
   try {
-    const { openingBalance, ...supplierData } = req.body;
-    const exists = await prisma.supplier.findUnique({ where: { code: supplierData.code } });
+    const { openingBalance, ...body } = req.body;
+    const exists = await prisma.supplier.findUnique({ where: { code: body.code } });
     if (exists) return res.status(400).json({ message: 'كود المورد موجود بالفعل' });
 
     const supplier = await prisma.supplier.create({
-      data: { ...pick(supplierData, ['name','code','phone','phone2','address','taxNumber','notes']), openingBalance: Number(openingBalance) || 0, createdById: req.user.id },
+      data: { ...pickSupplier(body), openingBalance: 0, createdById: req.user.id },
     });
+
+    const ob = round2(safeNum(openingBalance));
+    if (ob !== 0) {
+      const season = await prisma.season.findFirst({ where: { isActive: true } });
+      if (season) await upsertSeasonBalance(supplier.id, season.id, ob, req.user.id);
+    }
 
     await audit(req.user, 'supplier_created', 'Supplier', supplier.id, supplier.name, { code: supplier.code });
     res.status(201).json(n(supplier));
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+// ── PUT /api/suppliers/:id ────────────────────────────────────────────────────
 const updateSupplier = async (req, res) => {
   try {
-    const { name, code, phone, address, notes, isActive } = req.body;
-    const data = {};
-    if (name      !== undefined) data.name      = name;
-    if (code      !== undefined) data.code      = code;
-    if (phone     !== undefined) data.phone     = phone;
-    if (address   !== undefined) data.address   = address;
-    if (notes     !== undefined) data.notes     = notes;
-    if (isActive  !== undefined) data.isActive  = isActive;
-
-    const supplier = await prisma.supplier.update({ where: { id: req.params.id }, data });
+    const { openingBalance, ...body } = req.body;
+    const supplier = await prisma.supplier.update({
+      where: { id: req.params.id },
+      data:  pickSupplier(body),
+    });
     await audit(req.user, 'supplier_updated', 'Supplier', supplier.id, supplier.name);
     res.json(n(supplier));
   } catch (err) {
@@ -99,338 +149,267 @@ const updateSupplier = async (req, res) => {
   }
 };
 
+// ── DELETE /api/suppliers/:id ─────────────────────────────────────────────────
 const deleteSupplier = async (req, res) => {
   try {
-    const supplier = await prisma.supplier.update({ where: { id: req.params.id }, data: { isActive: false } });
-    await audit(req.user, 'supplier_deleted', 'Supplier', supplier.id, supplier.name);
+    await prisma.supplier.update({ where: { id: req.params.id }, data: { deletedAt: new Date() } });
     res.json({ message: 'تم الحذف' });
-  } catch (err) {
-    if (err.code === 'P2025') return res.status(404).json({ message: 'المورد مش موجود' });
-    res.status(500).json({ message: err.message });
-  }
-};
-
-const getSupplierStatement = async (req, res) => {
-  try {
-    const { supplierId } = req.params;
-    const { seasonId, page = 1, pageSize = 200, tab = 'all' } = req.query;
-
-    const supplier = await prisma.supplier.findUnique({
-      where: { id: supplierId },
-      select: { id: true, code: true, name: true, phone: true, address: true, notes: true, openingBalance: true },
-    });
-    if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
-
-    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
-    const targetSeason = seasonId
-      ? seasons.find(s => s.id === seasonId)
-      : seasons.find(s => s.isActive);
-
-    const sf = targetSeason ? { seasonId: targetSeason.id } : {};
-    const pg = Math.max(1, parseInt(page));
-    const ps = Math.min(500, Math.max(50, parseInt(pageSize)));
-    const skip = (pg - 1) * ps;
-
-    const invSelect  = { id: true, invoiceNumber: true, docNumber: true, date: true, createdAt: true, totalAmount: true, status: true };
-    const retSelect  = { id: true, invoiceNumber: true, docNumber: true, date: true, createdAt: true, totalAmount: true, status: true };
-    const paySelect  = { id: true, receiptNumber: true, date: true, createdAt: true, amount: true, paymentMethod: true, cashAmount: true, instapayAmount: true, notes: true, reference: true };
-
-    const invWhere  = { supplierId, status: { not: 'cancelled' }, ...sf };
-    const retWhere  = { supplierId, type: 'supplier_return', status: 'approved', ...sf };
-    const payWhere  = { supplierId, type: 'supplier_payment', ...(targetSeason ? { seasonId: targetSeason.id } : {}) };
-
-    const [totalsAgg, invCount, retCount, payCount] = await Promise.all([
-      prisma.$transaction([
-        prisma.purchaseInvoice.aggregate({ where: invWhere, _sum: { totalAmount: true } }),
-        prisma.returnInvoice.aggregate({ where: retWhere, _sum: { totalAmount: true } }),
-        prisma.payment.aggregate({ where: payWhere, _sum: { amount: true } }),
-      ]),
-      prisma.purchaseInvoice.count({ where: invWhere }),
-      prisma.returnInvoice.count({ where: retWhere }),
-      prisma.payment.count({ where: payWhere }),
-    ]);
-
-    const totalPurchases = safeNum(totalsAgg[0]._sum.totalAmount);
-    const totalReturns   = safeNum(totalsAgg[1]._sum.totalAmount);
-    const totalPaid      = safeNum(totalsAgg[2]._sum.amount);
-
-    const fetchInv = tab === 'all' || tab === 'invoices';
-    const fetchRet = tab === 'all' || tab === 'returns';
-    const fetchPay = tab === 'all' || tab === 'payments';
-
-    const [invoices, returns_, payments] = await Promise.all([
-      fetchInv
-        ? prisma.purchaseInvoice.findMany({ where: invWhere, select: invSelect, orderBy: { date: 'asc' }, skip, take: ps })
-        : [],
-      fetchRet
-        ? prisma.returnInvoice.findMany({ where: retWhere, select: retSelect, orderBy: { date: 'asc' }, skip, take: ps })
-        : [],
-      fetchPay
-        ? prisma.payment.findMany({ where: payWhere, select: paySelect, orderBy: { date: 'asc' }, skip, take: ps })
-        : [],
-    ]);
-
-    res.json({
-      supplier: n(supplier), season: targetSeason || null, seasons: seasons.map(n),
-      invoices: invoices.map(n), returns: returns_.map(n), payments: payments.map(n),
-      totalPurchases, totalReturns, totalPaid,
-      netPurchases: totalPurchases - totalReturns,
-      balance:      totalPurchases - totalReturns - totalPaid,
-      pagination: {
-        page: pg, pageSize: ps,
-        invTotal: invCount, retTotal: retCount, payTotal: payCount,
-        invPages: Math.ceil(invCount / ps),
-        retPages: Math.ceil(retCount / ps),
-        payPages: Math.ceil(payCount / ps),
-      },
-    });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-const getSupplierAllSeasons = async (req, res) => {
-  try {
-    const { supplierId } = req.params;
-    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
-    const seasonIds = seasons.map(s => s.id);
-
-    const [purchasesRaw, returnsRaw, paymentsRaw] = await Promise.all([
-      prisma.purchaseInvoice.groupBy({ by: ['seasonId'], where: { supplierId, status: { not: 'cancelled' }, seasonId: { in: seasonIds } }, _sum: { totalAmount: true }, _count: { id: true } }),
-      prisma.returnInvoice.groupBy({ by: ['seasonId'], where: { supplierId, type: 'supplier_return', status: 'approved', seasonId: { in: seasonIds } }, _sum: { totalAmount: true } }),
-      prisma.payment.groupBy({ by: ['seasonId'], where: { supplierId, type: 'supplier_payment', seasonId: { in: seasonIds } }, _sum: { amount: true } }),
-    ]);
-
-    const purchasesMap = new Map(purchasesRaw.map(r => [r.seasonId, r]));
-    const returnsMap   = new Map(returnsRaw.map(r   => [r.seasonId, r]));
-    const paymentsMap  = new Map(paymentsRaw.map(r  => [r.seasonId, r]));
-
-    res.json(seasons.map(s => {
-      const tp = purchasesMap.get(s.id)?._sum.totalAmount || 0;
-      const tr = returnsMap.get(s.id)?._sum.totalAmount   || 0;
-      const tm = paymentsMap.get(s.id)?._sum.amount       || 0;
-      return { season: { _id: s.id, name: s.name, isActive: s.isActive }, totalPurchases: tp, totalReturns: tr, totalPaid: tm, balance: tp - tr - tm, invoiceCount: purchasesMap.get(s.id)?._count.id || 0 };
-    }));
-  } catch (err) { res.status(500).json({ message: err.message }); }
-};
-
+// ── PATCH /api/suppliers/:id/initial-balance ──────────────────────────────────
 const updateSupplierInitialBalance = async (req, res) => {
   try {
-    const newAmount = safeNum(req.body.openingBalance);
-    if (isNaN(newAmount) || newAmount < 0) return res.status(400).json({ message: 'المبلغ غير صحيح' });
+    const newAmount = round2(safeNum(req.body.openingBalance ?? req.body.initialBalance));
+    const { seasonId } = req.body;
 
     const supplier = await prisma.supplier.findUnique({ where: { id: req.params.id } });
     if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
+    if (!seasonId) return res.status(400).json({ message: 'seasonId مطلوب' });
 
-    await prisma.supplier.update({ where: { id: supplier.id }, data: { openingBalance: newAmount } });
-    await audit(req.user, 'initial_balance_updated', 'Supplier', supplier.id, supplier.name, { newBalance: newAmount });
-    res.json({ message: 'تم تعديل الرصيد الابتدائي', openingBalance: newAmount });
+    await upsertSeasonBalance(supplier.id, seasonId, newAmount, req.user.id);
+    await audit(req.user, 'supplier_updated', 'Supplier', supplier.id, supplier.name, { newBalance: newAmount, seasonId });
+
+    res.json({ message: 'تم تعديل الرصيد الابتدائي', openingBalance: newAmount, seasonId });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// ── SUPPLIER ITEM STATEMENT ────────────────────────────────────────────────────
-const getSupplierItemStatement = async (req, res) => {
-  try {
-    const { supplierId, itemId } = req.params;
-    const { seasonId }           = req.query;
-
-    const [supplier, item] = await Promise.all([
-      prisma.supplier.findUnique({ where: { id: supplierId }, select: { id: true, code: true, name: true } }),
-      prisma.item.findUnique({ where: { id: itemId }, select: { id: true, code: true, name: true, unit: true } }),
-    ]);
-    if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
-    if (!item)     return res.status(404).json({ message: 'الصنف مش موجود' });
-
-    const sf = seasonId ? { seasonId } : {};
-
-    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
-
-    const [invoices, returns_] = await Promise.all([
-      prisma.purchaseInvoice.findMany({
-        where: { supplierId, status: { not: 'cancelled' }, ...sf, items: { some: { itemId } } },
-        include: { items: { where: { itemId } }, season: { select: { name: true } } },
-        orderBy: { date: 'desc' },
-      }),
-      prisma.returnInvoice.findMany({
-        where: { supplierId, type: 'supplier_return', status: 'approved', ...sf, items: { some: { itemId } } },
-        include: { items: { where: { itemId } }, season: { select: { name: true } } },
-        orderBy: { date: 'desc' },
-      }),
-    ]);
-
-    const toMove = (type) => (inv) => {
-      const it = inv.items[0];
-      if (!it) return null;
-      const qty = safeNum(it.quantity) || 0;
-      const wt  = safeNum(it.weight)   || 0;
-      const pr  = safeNum(it.price)    || 0;
-      return {
-        type, date: inv.date, createdAt: inv.createdAt,
-        invoiceNumber: inv.invoiceNumber, invoiceId: inv.id,
-        docNumber: inv.docNumber, season: inv.season,
-        quantity: qty, weight: wt, totalWeight: qty * wt,
-        price: pr, total: qty * wt * pr, status: inv.status,
-      };
-    };
-
-    const movements = [
-      ...invoices.map(toMove('purchase')).filter(Boolean),
-      ...returns_.map(toMove('return')).filter(Boolean),
-    ].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    const purchases = movements.filter(m => m.type === 'purchase');
-    const returns   = movements.filter(m => m.type === 'return');
-
-    res.json({
-      supplier: n(supplier),
-      item:     n(item),
-      seasons:  seasons.map(n),
-      movements,
-      totalQty:     purchases.reduce((s, m) => s + m.quantity,    0),
-      totalWeight:  purchases.reduce((s, m) => s + m.totalWeight, 0),
-      totalAmount:  purchases.reduce((s, m) => s + m.total,       0),
-      returnQty:    returns.reduce((s, m)   => s + m.quantity,    0),
-      returnWeight: returns.reduce((s, m)   => s + m.totalWeight, 0),
-      lastPrice:    purchases[0]?.price || 0,
-    });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-};
-
-// ── TIMELINE — كل الحركات مرتبة بالتاريخ مع running balance ─────────────────
-const getSupplierTimeline = async (req, res) => {
+// ── GET /api/suppliers/:id/statement ─────────────────────────────────────────
+const getSupplierStatement = async (req, res) => {
   try {
     const { supplierId } = req.params;
-    const { seasonId, cursor, limit = '100' } = req.query;
+    const { seasonId, page = 1, pageSize = 200 } = req.query;
 
-    const take = Math.min(500, Math.max(20, parseInt(limit)));
-
-    const supplier = await prisma.supplier.findUnique({
-      where:  { id: supplierId },
-      select: { id: true, code: true, name: true, phone: true, address: true,
-                notes: true, openingBalance: true },
-    });
+    const supplier = await prisma.supplier.findUnique({ where: { id: supplierId }, select: SUPPLIER_SELECT });
     if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
 
-    const sf = seasonId ? { seasonId } : {};
+    const seasonFilter = seasonId ? { seasonId } : {};
+    const purWhere = { supplierId, status: { not: 'cancelled' }, ...seasonFilter };
+    const retWhere = { supplierId, type: 'supplier_return', status: 'approved', ...seasonFilter };
+    const payWhere = { supplierId, type: 'supplier_payment', ...seasonFilter };
 
-    const invWhere = { supplierId, status: { not: 'cancelled' }, ...sf };
-    const retWhere = { supplierId, type: 'supplier_return', status: 'approved', ...sf };
-    const payWhere = { supplierId, type: 'supplier_payment', ...sf };
-
-    const [purchasesAgg, returnsAgg, paymentsAgg,
-           invCount, retCount, payCount] = await Promise.all([
-      prisma.purchaseInvoice.aggregate({ where: invWhere, _sum: { totalAmount: true } }),
+    const [openingBal, purAgg, retAgg, payAgg, purCount, retCount, payCount] = await Promise.all([
+      getSeasonOpeningBalance(supplierId, seasonId),
+      prisma.purchaseInvoice.aggregate({ where: purWhere, _sum: { totalAmount: true } }),
       prisma.returnInvoice.aggregate({ where: retWhere, _sum: { totalAmount: true } }),
       prisma.payment.aggregate({ where: payWhere, _sum: { amount: true } }),
-      prisma.purchaseInvoice.count({ where: invWhere }),
+      prisma.purchaseInvoice.count({ where: purWhere }),
       prisma.returnInvoice.count({ where: retWhere }),
       prisma.payment.count({ where: payWhere }),
     ]);
 
-    const totalPurchases = safeNum(purchasesAgg._sum.totalAmount);
-    const totalReturns   = safeNum(returnsAgg._sum.totalAmount);
-    const totalPaid      = safeNum(paymentsAgg._sum.amount);
-    const totalRows      = invCount + retCount + payCount;
+    const totalPurchases = round2(safeNum(purAgg._sum.totalAmount));
+    const totalReturns   = round2(safeNum(retAgg._sum.totalAmount));
+    const totalPaid      = round2(safeNum(payAgg._sum.amount));
+    const trueBalance    = round2(openingBal + totalPurchases - totalReturns - totalPaid);
 
-    let cursorDate = null;
-    let cursorId   = null;
-    if (cursor) {
-      try {
-        const parsed = JSON.parse(Buffer.from(cursor, 'base64').toString());
-        cursorDate = new Date(parsed.date);
-        cursorId   = parsed.id;
-      } catch { /* cursor باظ */ }
-    }
+    const skip = (Number(page) - 1) * Number(pageSize);
+    const take = Number(pageSize);
 
-    const fetchLimit   = take + 1;
-    const invDateFilter = cursorDate
-      ? { OR: [{ date: { gt: cursorDate } }, { date: cursorDate, id: { gt: cursorId } }] }
-      : {};
-
-    const [invoices, returns_, payments] = await Promise.all([
+    const [purchases, returns, payments] = await Promise.all([
       prisma.purchaseInvoice.findMany({
-        where:   { ...invWhere, ...invDateFilter },
-        select:  { id: true, invoiceNumber: true, docNumber: true, date: true, totalAmount: true, status: true },
+        where: purWhere, skip, take,
+        select: { id: true, invoiceNumber: true, docNumber: true, date: true, totalAmount: true, status: true },
         orderBy: [{ date: 'asc' }, { id: 'asc' }],
-        take:    fetchLimit,
       }),
       prisma.returnInvoice.findMany({
-        where:   { ...retWhere, ...invDateFilter },
-        select:  { id: true, invoiceNumber: true, docNumber: true, date: true, totalAmount: true, status: true },
+        where: retWhere, skip, take,
+        select: { id: true, invoiceNumber: true, docNumber: true, date: true, totalAmount: true, status: true },
         orderBy: [{ date: 'asc' }, { id: 'asc' }],
-        take:    fetchLimit,
       }),
       prisma.payment.findMany({
-        where:   { ...payWhere, ...invDateFilter },
-        select:  { id: true, receiptNumber: true, date: true, amount: true, paymentMethod: true,
-                   cashAmount: true, instapayAmount: true, notes: true, reference: true },
+        where: payWhere, skip, take,
+        select: { id: true, receiptNumber: true, date: true, amount: true, paymentMethod: true, notes: true },
         orderBy: [{ date: 'asc' }, { id: 'asc' }],
-        take:    fetchLimit,
       }),
     ]);
 
-    const rows = [
-      ...invoices.map(r => ({ ...r, _id: r.id, rowType: 'invoice', amount: r.totalAmount })),
-      ...returns_.map(r => ({ ...r, _id: r.id, rowType: 'return',  amount: r.totalAmount })),
-      ...payments.map(r => ({ ...r, _id: r.id, rowType: 'payment', amount: r.amount })),
-    ].sort((a, b) => {
-      const d = new Date(a.date) - new Date(b.date);
-      return d !== 0 ? d : a.id.localeCompare(b.id);
+    const allRows = [
+      ...purchases.map(r => ({ ...r, rowType: 'purchase', amount: round2(safeNum(r.totalAmount)) })),
+      ...returns.map(r   => ({ ...r, rowType: 'supplier_return', amount: round2(safeNum(r.totalAmount)) })),
+      ...payments.map(r  => ({ ...r, rowType: 'supplier_payment', amount: round2(safeNum(r.amount)) })),
+    ].sort((a, b) => new Date(a.date) - new Date(b.date) || a.id.localeCompare(b.id));
+
+    let running = openingBal;
+    const rows = allRows.map(r => {
+      running = r.rowType === 'purchase'
+        ? round2(running + r.amount)
+        : round2(running - r.amount);
+      return { ...r, _id: r.id, runningBalance: running };
     });
 
-    const hasMore  = rows.length > take;
-    const pageRows = hasMore ? rows.slice(0, take) : rows;
-    const lastRow  = pageRows[pageRows.length - 1];
-    const nextCursor = hasMore && lastRow
-      ? Buffer.from(JSON.stringify({ date: lastRow.date, id: lastRow.id })).toString('base64')
-      : null;
+    const openingRow = openingBal !== 0 ? [{
+      _id: 'opening', id: 'opening', rowType: 'opening',
+      amount: openingBal, runningBalance: openingBal,
+      date: supplier.createdAt, docNumber: 'رصيد ابتدائي',
+    }] : [];
 
-    const openingBal    = round2(safeNum(supplier.openingBalance));
-    const runningBefore = cursor
+    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
+
+    res.json({
+      supplier:  { ...n(supplier), openingBalance: openingBal },
+      seasons:   seasons.map(n),
+      totals:    { totalPurchases, totalReturns, totalPaid, openingBalance: openingBal, netPurchases: round2(totalPurchases - totalReturns), balance: trueBalance },
+      counts:    { invoices: purCount, returns: retCount, payments: payCount, total: purCount + retCount + payCount },
+      rows:      [...openingRow, ...rows],
+    });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// ── GET /api/suppliers/:supplierId/all-seasons ────────────────────────────────
+const getSupplierAllSeasons = async (req, res) => {
+  try {
+    const { supplierId } = req.params;
+    const supplier = await prisma.supplier.findUnique({ where: { id: supplierId }, select: SUPPLIER_SELECT });
+    if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
+
+    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
+    const [seasonBalances, purBySeason, retBySeason, payBySeason] = await Promise.all([
+      prisma.supplierSeasonBalance.findMany({ where: { supplierId }, select: { seasonId: true, openingBalance: true } }),
+      prisma.purchaseInvoice.groupBy({ by: ['seasonId'], where: { supplierId, status: { not: 'cancelled' } }, _sum: { totalAmount: true }, _count: { id: true } }),
+      prisma.returnInvoice.groupBy({ by: ['seasonId'], where: { supplierId, type: 'supplier_return', status: 'approved' }, _sum: { totalAmount: true } }),
+      prisma.payment.groupBy({ by: ['seasonId'], where: { supplierId, type: 'supplier_payment' }, _sum: { amount: true } }),
+    ]);
+
+    const openingMap  = new Map(seasonBalances.map(r => [r.seasonId, round2(safeNum(r.openingBalance))]));
+    const purMap      = new Map(purBySeason.map(r   => [r.seasonId, { total: round2(safeNum(r._sum.totalAmount)), count: r._count.id }]));
+    const retMap      = new Map(retBySeason.map(r   => [r.seasonId, round2(safeNum(r._sum.totalAmount))]));
+    const payMap      = new Map(payBySeason.map(r   => [r.seasonId, round2(safeNum(r._sum.amount))]));
+
+    const result = seasons.map(s => {
+      const ob  = openingMap.get(s.id)  ?? 0;
+      const tp  = purMap.get(s.id)?.total ?? 0;
+      const tc  = purMap.get(s.id)?.count ?? 0;
+      const tr  = retMap.get(s.id)  ?? 0;
+      const pay = payMap.get(s.id)  ?? 0;
+      return {
+        season: n(s), openingBalance: ob,
+        totalPurchases: tp, totalReturns: tr, totalPaid: pay,
+        balance: round2(ob + tp - tr - pay), invoiceCount: tc,
+      };
+    }).filter(s => s.totalPurchases > 0 || s.totalReturns > 0 || s.totalPaid > 0 || s.openingBalance !== 0);
+
+    res.json({ supplier: n(supplier), seasons: result });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// ── GET /api/suppliers/:supplierId/timeline ───────────────────────────────────
+const getSupplierTimeline = async (req, res) => {
+  try {
+    const { supplierId } = req.params;
+    const { seasonId, limit = 100, cursor } = req.query;
+
+    const supplier = await prisma.supplier.findUnique({ where: { id: supplierId }, select: SUPPLIER_SELECT });
+    if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
+
+    const openingBal   = await getSeasonOpeningBalance(supplierId, seasonId);
+    const seasonFilter = seasonId ? { seasonId } : {};
+    const purWhere     = { supplierId, status: { not: 'cancelled' }, ...seasonFilter };
+    const retWhere     = { supplierId, type: 'supplier_return', status: 'approved', ...seasonFilter };
+    const payWhere     = { supplierId, type: 'supplier_payment', ...seasonFilter };
+
+    const [purCount, retCount, payCount, purchases, returns, payments] = await Promise.all([
+      prisma.purchaseInvoice.count({ where: purWhere }),
+      prisma.returnInvoice.count({ where: retWhere }),
+      prisma.payment.count({ where: payWhere }),
+      prisma.purchaseInvoice.findMany({
+        where: purWhere,
+        select: { id: true, invoiceNumber: true, docNumber: true, date: true, totalAmount: true, status: true, createdAt: true },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      }),
+      prisma.returnInvoice.findMany({
+        where: retWhere,
+        select: { id: true, invoiceNumber: true, docNumber: true, date: true, totalAmount: true, status: true, createdAt: true },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      }),
+      prisma.payment.findMany({
+        where: payWhere,
+        select: { id: true, receiptNumber: true, date: true, amount: true, paymentMethod: true, notes: true, createdAt: true },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      }),
+    ]);
+
+    const allRows = [
+      ...purchases.map(r => ({ ...r, rowType: 'purchase',         amount: round2(safeNum(r.totalAmount)) })),
+      ...returns.map(r   => ({ ...r, rowType: 'supplier_return',   amount: round2(safeNum(r.totalAmount)) })),
+      ...payments.map(r  => ({ ...r, rowType: 'supplier_payment',  amount: round2(safeNum(r.amount)) })),
+    ].sort((a, b) => new Date(a.date) - new Date(b.date) || a.id.localeCompare(b.id));
+
+    const cursorIdx      = cursor ? allRows.findIndex(r => r.id === cursor) + 1 : 0;
+    const pageRows       = allRows.slice(cursorIdx, cursorIdx + Number(limit));
+    const nextCursor     = pageRows.length === Number(limit) ? pageRows[pageRows.length - 1].id : null;
+
+    const runningBefore  = cursor
       ? round2(parseFloat(req.query.runningBefore || '0'))
       : openingBal;
 
     let running = runningBefore;
     const rowsWithBalance = pageRows.map(r => {
-      const amt = round2(safeNum(r.amount));   // ← Decimal → number
-      if (r.rowType === 'invoice') running = round2(running + amt);
-      else                         running = round2(running - amt);
-      return { ...r, amount: amt, runningBalance: running };
+      running = r.rowType === 'purchase'
+        ? round2(running + r.amount)
+        : round2(running - r.amount);
+      return { ...r, _id: r.id, runningBalance: running };
     });
 
-    // الرصيد الابتدائي كأول صف
     const openingRow = (!cursor && openingBal !== 0) ? [{
-      _id:            'opening',
-      id:             'opening',
-      rowType:        'opening',
-      amount:         openingBal,
-      runningBalance: openingBal,
-      date:           supplier.createdAt || new Date(0),
-      docNumber:      'رصيد ابتدائي',
-      invoiceNumber:  null,
+      _id: 'opening', id: 'opening', rowType: 'opening',
+      amount: openingBal, runningBalance: openingBal,
+      date: supplier.createdAt, docNumber: 'رصيد ابتدائي',
     }] : [];
 
-    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
-
-    // balance يشمل الرصيد الابتدائي
-    const trueBalance = round2(openingBal + totalPurchases - totalReturns - totalPaid);
+    const totalPurchases = round2(purchases.reduce((s, r) => s + safeNum(r.totalAmount), 0));
+    const totalReturns   = round2(returns.reduce((s, r)   => s + safeNum(r.totalAmount), 0));
+    const totalPaid      = round2(payments.reduce((s, r)  => s + safeNum(r.amount), 0));
+    const seasons        = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
 
     res.json({
-      supplier:    { ...supplier, _id: supplier.id, openingBalance: openingBal },
-      seasons:     seasons.map(n),
-      totals: {
-        totalPurchases, totalReturns, totalPaid,
-        openingBalance:  openingBal,
-        netPurchases:    round2(totalPurchases - totalReturns),
-        balance:         trueBalance,
-      },
-      counts:      { invoices: invCount, returns: retCount, payments: payCount, total: totalRows },
-      rows:        [...openingRow, ...rowsWithBalance],
+      supplier:     { ...n(supplier), openingBalance: openingBal },
+      seasons:      seasons.map(n),
+      totals:       { totalPurchases, totalReturns, totalPaid, openingBalance: openingBal, netPurchases: round2(totalPurchases - totalReturns), balance: round2(openingBal + totalPurchases - totalReturns - totalPaid) },
+      counts:       { invoices: purCount, returns: retCount, payments: payCount, total: purCount + retCount + payCount },
+      rows:         [...openingRow, ...rowsWithBalance],
       nextCursor,
-      hasMore,
+      hasMore:      nextCursor !== null,
       runningAtEnd: running,
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-const pick = (obj, keys) => Object.fromEntries(keys.filter(k => k in obj).map(k => [k, obj[k]]));
+// ── GET /api/suppliers/:supplierId/item-statement ─────────────────────────────
+const getSupplierItemStatement = async (req, res) => {
+  try {
+    const { supplierId }     = req.params;
+    const { itemId, seasonId } = req.query;
+    if (!itemId) return res.status(400).json({ message: 'itemId مطلوب' });
 
-module.exports = { getSuppliers, getSupplierByCode, createSupplier, updateSupplier, deleteSupplier, getSupplierStatement, getSupplierAllSeasons, updateSupplierInitialBalance, getSupplierItemStatement, getSupplierTimeline };
+    const where = { supplierId, items: { some: { itemId } } };
+    if (seasonId) where.seasonId = seasonId;
+
+    const invoices = await prisma.purchaseInvoice.findMany({
+      where,
+      include: { items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } } },
+      orderBy: [{ date: 'asc' }],
+    });
+
+    const rows = invoices.flatMap(inv =>
+      inv.items.map(item => ({
+        _id:       inv.id,
+        date:      inv.date,
+        docNumber: inv.docNumber,
+        invoiceNumber: inv.invoiceNumber,
+        quantity:  round2(safeNum(item.quantity)),
+        weight:    round2(safeNum(item.weight)),
+        price:     round2(safeNum(item.price)),
+        total:     round2(safeNum(item.total)),
+      }))
+    );
+
+    res.json({ rows });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+module.exports = {
+  getSuppliers, getSupplierByCode, createSupplier, updateSupplier, deleteSupplier,
+  updateSupplierInitialBalance, getSupplierStatement, getSupplierAllSeasons,
+  getSupplierItemStatement, getSupplierTimeline,
+};
