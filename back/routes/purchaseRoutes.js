@@ -5,13 +5,11 @@ const {
   getPurchaseInvoices, getPurchaseInvoiceById, checkDocNumber,
   createPurchaseInvoice, forceEditPurchaseInvoice,
   approvePurchaseInvoice, suspendPurchaseInvoice, cancelPurchaseInvoice,
-  getItemMovements,
 } = require('../controllers/purchaseController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 // ⚠️ الثابتة قبل /:id
 router.get ('/check-doc',         protect,            checkDocNumber);
-router.get ('/movements/:itemId', protect,            getItemMovements);
 router.get ('/',                  protect,            getPurchaseInvoices);
 router.post('/',                  protect,            createPurchaseInvoice);
 router.get ('/:id',               protect,            getPurchaseInvoiceById);

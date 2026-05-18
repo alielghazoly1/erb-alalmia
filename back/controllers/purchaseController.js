@@ -426,51 +426,6 @@ const cancelPurchaseInvoice = async (req, res) => {
   }
 };
 
-// ── GET ITEM MOVEMENTS (paginated) ────────────────────────────────────────────
-const MOV_PAGE_SIZE = 100;
-
-// const getItemMovements = async (req, res) => {
-//   try {
-//     const { itemId } = req.params;
-//     const { warehouse, startDate, endDate, page = 1 } = req.query;
-//     const pageNum = Math.max(1, parseInt(page, 10));
-//     const skip = (pageNum - 1) * MOV_PAGE_SIZE;
-
-//     const where = { itemId };
-//     if (warehouse) where.warehouse = warehouse;
-//     if (startDate || endDate) {
-//       where.date = {};
-//       if (startDate) where.date.gte = new Date(startDate);
-//       if (endDate)
-//         where.date.lte = new Date(new Date(endDate).setHours(23, 59, 59));
-//     }
-
-//     const [total, movements] = await Promise.all([
-//       prisma.stockMovement.count({ where }),
-//       prisma.stockMovement.findMany({
-//         where,
-//         include: {
-//           createdBy: { select: { name: true } },
-//           season: { select: { name: true } },
-//         },
-//         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-//         skip,
-//         take: MOV_PAGE_SIZE,
-//       }),
-//     ]);
-
-//     res.json({
-//       movements: movements.map(norm),
-//       total,
-//       page: pageNum,
-//       pageSize: MOV_PAGE_SIZE,
-//       hasMore: skip + movements.length < total,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
 const norm = (x) => ({ ...x, _id: x.id });
 
 module.exports = {
@@ -482,5 +437,4 @@ module.exports = {
   approvePurchaseInvoice,
   suspendPurchaseInvoice,
   cancelPurchaseInvoice,
-  // getItemMovements,
 };

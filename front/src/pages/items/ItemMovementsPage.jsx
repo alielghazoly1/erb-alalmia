@@ -1,6 +1,5 @@
 // ─── pages/items/ItemMovementsPage.jsx ───────────────────────────────────────
-// ✅ FIX: فتح الفاتورة في Modal نفس الصفحة بدل target="_blank"
-// ✅ FIX: تأمين NaN في quantity/weight بـ safeNum
+// حركات الأصناف — رصيد تراكمي صحيح + طباعة في نفس الصفحة (iframe)
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
@@ -8,7 +7,7 @@ import ItemSearch from '../../components/common/ItemSearch';
 import { useInfiniteScroll } from '../../hook/useInfiniteScroll';
 import toast from 'react-hot-toast';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ── نوع الحركة → label + لون + إشارة ────────────────────────────────────────
 const TYPE_LABELS = {
   purchase_in:       { text: 'توريد',         cls: 'bg-blue-100 text-blue-700',     sign: '+' },
   purchase:          { text: 'توريد',         cls: 'bg-blue-100 text-blue-700',     sign: '+' },
@@ -25,22 +24,21 @@ const TYPE_LABELS = {
   opening_stock:     { text: 'رصيد افتتاحي', cls: 'bg-gray-100 text-gray-600',     sign: '+' },
 };
 
-// ✅ FIX: safeNum تحذف NaN/null
 const safeNum = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
+const fmt     = (n) => safeNum(n).toLocaleString('eg-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtQty  = (n) => safeNum(n).toLocaleString('eg-EG');
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('ar-EG') : '—';
+const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '—';
+const today   = () => new Date().toISOString().slice(0, 10);
 
 const getInvoicePath = (m) => {
   if (!m.referenceId) return null;
   const t = m.type;
-  if (t === 'sale_out' || t === 'sale' || t === 'return_in')          return { type: 'sale',     id: m.referenceId };
-  if (t === 'purchase_in' || t === 'purchase' || t === 'return_out')  return { type: 'purchase', id: m.referenceId };
-  if (t === 'transfer_in' || t === 'transfer_out')                     return { type: 'transfer', id: m.referenceId };
+  if (t === 'sale_out'   || t === 'sale'     || t === 'return_in')  return { type: 'sale',     id: m.referenceId };
+  if (t === 'purchase_in'|| t === 'purchase' || t === 'return_out') return { type: 'purchase', id: m.referenceId };
+  if (t === 'transfer_in'|| t === 'transfer_out')                   return { type: 'transfer', id: m.referenceId };
   return null;
 };
-
-const today   = () => new Date().toISOString().slice(0, 10);
-const fmt     = (n) => safeNum(n).toLocaleString('eg-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('ar-EG') : '—';
-const fmtTime = (d) => d ? new Date(d).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '—';
 
 // ── Inline Invoice Modal ───────────────────────────────────────────────────────
 function InvoiceModal({ path, onClose }) {
@@ -62,51 +60,25 @@ function InvoiceModal({ path, onClose }) {
 
   if (!path) return null;
 
-  const renderItems = (items = []) => (
-    <table className="w-full text-xs border-collapse mt-3">
-      <thead>
-        <tr className="bg-blue-50 text-gray-600">
-          <th className="px-3 py-2 text-right border border-gray-200">الصنف</th>
-          <th className="px-3 py-2 text-center border border-gray-200">الكراتين</th>
-          <th className="px-3 py-2 text-center border border-gray-200">الوزن/وحدة</th>
-          <th className="px-3 py-2 text-center border border-gray-200">السعر</th>
-          <th className="px-3 py-2 text-center border border-gray-200">الإجمالي</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((it, i) => (
-          <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-            <td className="px-3 py-2 border border-gray-200">
-              <span className="font-mono text-blue-600 font-bold">{it.itemCode}</span>
-              <span className="text-gray-700 mr-2">{it.itemName}</span>
-            </td>
-            <td className="px-3 py-2 text-center border border-gray-200 font-bold">{safeNum(it.quantity).toLocaleString()}</td>
-            <td className="px-3 py-2 text-center border border-gray-200">{fmt(it.weight)}</td>
-            <td className="px-3 py-2 text-center border border-gray-200">{fmt(it.price)}</td>
-            <td className="px-3 py-2 text-center border border-gray-200 font-bold text-green-700">
-              {fmt(safeNum(it.quantity) * safeNum(it.weight) * safeNum(it.price))}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center overflow-auto py-4"
-         onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
-           onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center overflow-auto py-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between px-5 py-3 bg-blue-700 text-white">
           <h2 className="font-bold text-lg">
-            {path.type === 'sale' ? '🧾 فاتورة مبيعات'
+            {path.type === 'sale'     ? '🧾 فاتورة مبيعات'
            : path.type === 'purchase' ? '📦 فاتورة مشتريات'
            : '🔄 إذن نقل'}
           </h2>
-          <button onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-600 transition-colors text-xl font-bold">
-            ×
-          </button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-600 transition-colors text-xl font-bold"
+          >×</button>
         </div>
         <div className="p-5 max-h-[80vh] overflow-auto">
           {loading && (
@@ -138,8 +110,38 @@ function InvoiceModal({ path, onClose }) {
                   </div>
                 ))}
               </div>
-              <h3 className="font-semibold text-gray-700 text-sm mb-1">الأصناف</h3>
-              {renderItems(data.items || [])}
+              {(data.items || []).length > 0 && (
+                <>
+                  <h3 className="font-semibold text-gray-700 text-sm mb-1">الأصناف</h3>
+                  <table className="w-full text-xs border-collapse mt-3">
+                    <thead>
+                      <tr className="bg-blue-50 text-gray-600">
+                        <th className="px-3 py-2 text-right  border border-gray-200">الصنف</th>
+                        <th className="px-3 py-2 text-center border border-gray-200">الكراتين</th>
+                        <th className="px-3 py-2 text-center border border-gray-200">الوزن/وحدة</th>
+                        <th className="px-3 py-2 text-center border border-gray-200">السعر</th>
+                        <th className="px-3 py-2 text-center border border-gray-200">الإجمالي</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.items.map((it, i) => (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-2 border border-gray-200">
+                            <span className="font-mono text-blue-600 font-bold">{it.itemCode}</span>
+                            <span className="text-gray-700 mr-2">{it.itemName}</span>
+                          </td>
+                          <td className="px-3 py-2 text-center border border-gray-200 font-bold">{safeNum(it.quantity).toLocaleString()}</td>
+                          <td className="px-3 py-2 text-center border border-gray-200">{fmt(it.weight)}</td>
+                          <td className="px-3 py-2 text-center border border-gray-200">{fmt(it.price)}</td>
+                          <td className="px-3 py-2 text-center border border-gray-200 font-bold text-green-700">
+                            {fmt(safeNum(it.quantity) * safeNum(it.weight) * safeNum(it.price))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
               {data.notes && (
                 <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-gray-600">
                   <strong>ملاحظات:</strong> {data.notes}
@@ -153,17 +155,15 @@ function InvoiceModal({ path, onClose }) {
   );
 }
 
-// ── Print ─────────────────────────────────────────────────────────────────────
-function printMovements({ item, movements, warehouse, startDate, endDate }) {
+// ── printMovements — طباعة عبر iframe في نفس الصفحة ─────────────────────────
+function printMovements({ item, movements, warehouse, startDate, endDate, openingQty, openingWeight, periodTotals }) {
   const wLabel  = warehouse === 'ramses' ? 'رمسيس' : warehouse === 'october' ? 'أكتوبر' : 'الكل';
   const now     = new Date();
   const dateStr = now.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
-  const totalInQty  = movements.filter(m => safeNum(m.quantityIn)  > 0).reduce((s, m) => s + safeNum(m.quantityIn),  0);
-  const totalOutQty = movements.filter(m => safeNum(m.quantityOut) > 0).reduce((s, m) => s + safeNum(m.quantityOut), 0);
-  const totalInWgt  = movements.filter(m => safeNum(m.weightIn)    > 0).reduce((s, m) => s + safeNum(m.weightIn),    0);
-  const totalOutWgt = movements.filter(m => safeNum(m.weightOut)   > 0).reduce((s, m) => s + safeNum(m.weightOut),   0);
+  const closingQty    = safeNum(openingQty)    + safeNum(periodTotals?.totalInQty)    - safeNum(periodTotals?.totalOutQty);
+  const closingWeight = safeNum(openingWeight) + safeNum(periodTotals?.totalInWeight) - safeNum(periodTotals?.totalOutWeight);
 
   const rows = movements.map((m, idx) => {
     const tp    = TYPE_LABELS[m.type] || { text: m.type, sign: '' };
@@ -171,6 +171,7 @@ function printMovements({ item, movements, warehouse, startDate, endDate }) {
     const color = isIn ? '#16a34a' : '#dc2626';
     const qty   = isIn ? safeNum(m.quantityIn)  : safeNum(m.quantityOut);
     const wgt   = isIn ? safeNum(m.weightIn)     : safeNum(m.weightOut);
+    const bal   = safeNum(m.runningQty);
     return `<tr class="${idx % 2 === 0 ? 'even' : ''}">
       <td class="cen">${idx + 1}</td>
       <td>${fmtDate(m.date)}</td>
@@ -179,9 +180,9 @@ function printMovements({ item, movements, warehouse, startDate, endDate }) {
       <td class="mono">${m.reference || '—'}</td>
       <td>${m.season?.name ? `🌿 ${m.season.name}` : '—'}</td>
       <td>${m.warehouse === 'ramses' ? 'رمسيس' : 'أكتوبر'}</td>
-      <td class="cen num" style="color:${color};font-weight:700">${tp.sign}${qty.toLocaleString()}</td>
+      <td class="cen num" style="color:${color};font-weight:700">${tp.sign}${fmtQty(qty)}</td>
       <td class="cen num" style="color:${color}">${tp.sign}${fmt(wgt)}</td>
-      <td class="cen num">${fmt(safeNum(m.balanceQty))}</td>
+      <td class="cen num ${bal < 0 ? 'neg' : 'bal'}">${fmtQty(bal)}</td>
       <td>${m.createdBy?.name || '—'}</td>
     </tr>`;
   }).join('');
@@ -190,63 +191,111 @@ function printMovements({ item, movements, warehouse, startDate, endDate }) {
 <title>كشف حركة — ${item.code}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Cairo',Arial,sans-serif;font-size:11px;color:#111;direction:rtl;background:#fff}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px 10px;border-bottom:3px solid #1e40af;margin-bottom:10px}
-  .company{font-size:20px;font-weight:900;color:#1e40af}.subtitle{font-size:13px;color:#374151;margin-top:2px}
-  .meta{text-align:left;font-size:11px;color:#6b7280}.meta strong{display:block;font-size:14px;color:#1e40af;font-weight:700}
-  .info-bar{display:flex;gap:16px;padding:8px 18px;background:#f0f7ff;border-radius:6px;margin:0 0 10px;font-size:11px;flex-wrap:wrap}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Cairo',Arial,sans-serif;font-size:11px;color:#111;direction:rtl;background:#fff}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 16px 10px;border-bottom:3px solid #1e40af;margin-bottom:10px}
+  .company{font-size:19px;font-weight:900;color:#1e40af}.subtitle{font-size:12px;color:#374151;margin-top:2px}
+  .meta{text-align:left;font-size:11px;color:#6b7280}.meta strong{display:block;font-size:13px;color:#1e40af;font-weight:700}
+  .info-bar{display:flex;gap:14px;padding:6px 16px;background:#f0f7ff;border-radius:6px;margin:0 0 8px;font-size:11px;flex-wrap:wrap}
   .info-bar span{color:#374151}.info-bar b{color:#1e40af}
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 10px}
-  .stat{border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;text-align:center}
-  .stat .lbl{font-size:10px;color:#6b7280;margin-bottom:2px}.stat .val{font-size:15px;font-weight:800}
-  .stat.in .val{color:#16a34a}.stat.out .val{color:#dc2626}.stat.net .val{color:#1e40af}
-  table{width:100%;border-collapse:collapse;font-size:10.5px}
-  thead tr{background:#1e40af;color:#fff}th{padding:7px 5px;text-align:center;font-weight:700;border:1px solid #1e3a8a}
-  td{padding:6px 5px;border:1px solid #e5e7eb;vertical-align:middle}tr.even{background:#f9fafb}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:0 0 8px}
+  .stat{border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px;text-align:center}
+  .stat .lbl{font-size:9.5px;color:#6b7280;margin-bottom:1px}.stat .val{font-size:14px;font-weight:800}
+  .stat.opening .val{color:#6b7280}.stat.in .val{color:#16a34a}.stat.out .val{color:#dc2626}
+  .stat.closing .val{color:#1e40af}.stat.net .val{color:#7c3aed}
+  table{width:100%;border-collapse:collapse;font-size:10px}
+  thead tr{background:#1e40af;color:#fff}
+  th{padding:6px 4px;text-align:center;font-weight:700;border:1px solid #1e3a8a}
+  td{padding:5px 4px;border:1px solid #e5e7eb;vertical-align:middle}
+  tr.even{background:#f9fafb}
   .cen{text-align:center}.mono{font-family:monospace;color:#1d4ed8;font-weight:700}
   .num{font-variant-numeric:tabular-nums}
-  .badge{display:inline-block;padding:1px 7px;border-radius:999px;background:#dbeafe;color:#1e40af;font-size:9.5px;font-weight:600}
-  tfoot td{background:#e0f2fe;font-weight:700;padding:7px 5px;border:1px solid #bfdbfe}
-  .footer{margin-top:12px;display:flex;justify-content:space-between;padding:8px 18px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb}
-  @media print{@page{size:A4 landscape;margin:8mm}body{font-size:10px}}
+  .badge{display:inline-block;padding:1px 6px;border-radius:999px;background:#dbeafe;color:#1e40af;font-size:9px;font-weight:600}
+  .bal{color:#1e40af;font-weight:700}.neg{color:#dc2626;font-weight:700}
+  tfoot td{background:#e0f2fe;font-weight:700;padding:6px 4px;border:1px solid #bfdbfe}
+  .footer{margin-top:10px;display:flex;justify-content:space-between;padding:6px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb}
+  @media print{
+    @page{size:A4 landscape;margin:7mm}
+    body{font-size:9.5px}
+    .header{padding:8px 12px 8px}
+  }
 </style></head><body>
   <div class="header">
-    <div><div class="company">🏭 كشف حركة صنف</div><div class="subtitle">${item.code} — ${item.name} (${item.unit})</div></div>
+    <div>
+      <div class="company">🏭 كشف حركة صنف</div>
+      <div class="subtitle">${item.code} — ${item.name} (${item.unit})</div>
+    </div>
     <div class="meta"><strong>${dateStr}</strong><span>الوقت: ${timeStr}</span></div>
   </div>
   <div class="info-bar">
-    <span>المخزن: <b>${wLabel}</b></span><span>من: <b>${startDate || '—'}</b></span>
-    <span>إلى: <b>${endDate || '—'}</b></span><span>عدد الحركات: <b>${movements.length.toLocaleString()}</b></span>
+    <span>المخزن: <b>${wLabel}</b></span>
+    <span>من: <b>${startDate || '—'}</b></span>
+    <span>إلى: <b>${endDate || '—'}</b></span>
+    <span>عدد الحركات: <b>${movements.length.toLocaleString()}</b></span>
   </div>
   <div class="stats">
-    <div class="stat in"><div class="lbl">إجمالي الوارد</div><div class="val">${totalInQty.toLocaleString()} كرتون</div><div style="font-size:11px;color:#16a34a">${fmt(totalInWgt)} ك</div></div>
-    <div class="stat out"><div class="lbl">إجمالي الصادر</div><div class="val">${totalOutQty.toLocaleString()} كرتون</div><div style="font-size:11px;color:#dc2626">${fmt(totalOutWgt)} ك</div></div>
-    <div class="stat net"><div class="lbl">الصافي</div><div class="val">${(totalInQty - totalOutQty).toLocaleString()} كرتون</div><div style="font-size:11px;color:#1e40af">${fmt(totalInWgt - totalOutWgt)} ك</div></div>
+    <div class="stat opening">
+      <div class="lbl">رصيد أول المدة</div>
+      <div class="val">${fmtQty(openingQty)}</div>
+      <div style="font-size:10px;color:#6b7280">${fmt(openingWeight)} ك</div>
+    </div>
+    <div class="stat in">
+      <div class="lbl">إجمالي الوارد</div>
+      <div class="val">${fmtQty(periodTotals?.totalInQty ?? 0)}</div>
+      <div style="font-size:10px;color:#16a34a">${fmt(periodTotals?.totalInWeight ?? 0)} ك</div>
+    </div>
+    <div class="stat out">
+      <div class="lbl">إجمالي الصادر</div>
+      <div class="val">${fmtQty(periodTotals?.totalOutQty ?? 0)}</div>
+      <div style="font-size:10px;color:#dc2626">${fmt(periodTotals?.totalOutWeight ?? 0)} ك</div>
+    </div>
+    <div class="stat net">
+      <div class="lbl">صافي الحركة</div>
+      <div class="val">${fmtQty(safeNum(periodTotals?.totalInQty) - safeNum(periodTotals?.totalOutQty))}</div>
+      <div style="font-size:10px;color:#7c3aed">${fmt(safeNum(periodTotals?.totalInWeight) - safeNum(periodTotals?.totalOutWeight))} ك</div>
+    </div>
+    <div class="stat closing">
+      <div class="lbl">رصيد آخر المدة</div>
+      <div class="val ${closingQty < 0 ? 'neg' : ''}">${fmtQty(closingQty)}</div>
+      <div style="font-size:10px;color:#1e40af">${fmt(closingWeight)} ك</div>
+    </div>
   </div>
   <table>
-    <thead><tr><th>#</th><th>التاريخ</th><th>الوقت</th><th>النوع</th><th>المرجع</th><th>الموسم</th><th>المخزن</th><th>الكراتين</th><th>الوزن (ك)</th><th>الرصيد</th><th>بواسطة</th></tr></thead>
+    <thead>
+      <tr>
+        <th>#</th><th>التاريخ</th><th>الوقت</th><th>النوع</th>
+        <th>المرجع</th><th>الموسم</th><th>المخزن</th>
+        <th>الكراتين</th><th>الوزن (ك)</th><th>الرصيد</th><th>بواسطة</th>
+      </tr>
+    </thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr>
-      <td colspan="7" style="text-align:center">الإجمالي الصافي</td>
-      <td class="cen">${(totalInQty - totalOutQty).toLocaleString()}</td>
-      <td class="cen">${fmt(totalInWgt - totalOutWgt)}</td>
-      <td colspan="2"></td>
-    </tr></tfoot>
+    <tfoot>
+      <tr>
+        <td colspan="7" style="text-align:center;font-weight:700">رصيد آخر المدة</td>
+        <td class="cen">${fmtQty(closingQty)}</td>
+        <td class="cen">${fmt(closingWeight)}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tfoot>
   </table>
-  <div class="footer"><span>طُبع بواسطة نظام الإدارة</span><span>${dateStr} — ${timeStr}</span></div>
-  <script>window.onload=()=>{window.print();}</script>
+  <div class="footer">
+    <span>طُبع بواسطة نظام الإدارة</span>
+    <span>${dateStr} — ${timeStr}</span>
+  </div>
+  <script>window.onload = () => { window.print(); };</script>
 </body></html>`;
 
+  // ── طباعة عبر iframe مخفي في نفس الصفحة ──────────────────────────────────
   const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:-1;opacity:0;pointer-events:none';
+  iframe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;border:none;opacity:0;pointer-events:none';
   document.body.appendChild(iframe);
   iframe.contentDocument.write(html);
   iframe.contentDocument.close();
   iframe.contentWindow.focus();
   setTimeout(() => {
     iframe.contentWindow.print();
-    setTimeout(() => document.body.removeChild(iframe), 2000);
-  }, 500);
+    setTimeout(() => { try { document.body.removeChild(iframe); } catch (_) {} }, 2500);
+  }, 600);
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -264,19 +313,22 @@ export default function ItemMovementsPage() {
   const [selectedItem, setSelectedItem] = useState(
     initItemId ? { _id: initItemId, code: initItemCode, name: initItemName, unit: initItemUnit } : null
   );
-  const [movements,    setMovements]   = useState([]);
-  const [total,        setTotal]       = useState(0);
-  const [currentPage,  setCurrentPage] = useState(1);
-  const [hasMore,      setHasMore]     = useState(false);
-  const [loading,      setLoading]     = useState(false);
-  const [loadingMore,  setLoadingMore] = useState(false);
-  const [stockInfo,    setStockInfo]   = useState(null);
-  const [warehouse,    setWarehouse]   = useState(initWarehouse);
-  const [startDate,    setStartDate]   = useState(initStartDate);
-  const [endDate,      setEndDate]     = useState(initEndDate);
+  const [movements,    setMovements]    = useState([]);
+  const [total,        setTotal]        = useState(0);
+  const [currentPage,  setCurrentPage]  = useState(1);
+  const [hasMore,      setHasMore]      = useState(false);
+  const [loading,      setLoading]      = useState(false);
+  const [loadingMore,  setLoadingMore]  = useState(false);
+  const [stockInfo,    setStockInfo]    = useState(null);
+  const [warehouse,    setWarehouse]    = useState(initWarehouse);
+  const [startDate,    setStartDate]    = useState(initStartDate);
+  const [endDate,      setEndDate]      = useState(initEndDate);
+  const [invoicePath,  setInvoicePath]  = useState(null);
 
-  // ✅ Modal state لفتح الفاتورة في نفس الصفحة
-  const [invoicePath, setInvoicePath] = useState(null);
+  // حقول مهمة يرجعها الـ API للطباعة والإحصائيات
+  const [openingQty,    setOpeningQty]    = useState(0);
+  const [openingWeight, setOpeningWeight] = useState(0);
+  const [periodTotals,  setPeriodTotals]  = useState(null);
 
   const filtersRef = useRef({ warehouse, startDate, endDate, currentPage, selectedItem });
   filtersRef.current = { warehouse, startDate, endDate, currentPage, selectedItem };
@@ -295,39 +347,57 @@ export default function ItemMovementsPage() {
     setSearchParams(p, { replace: true });
   }, [setSearchParams]);
 
-  const loadMovements = async (itemId, overrides = {}) => {
+  // ── loadMovements — page 1 دايماً (reset) ────────────────────────────────
+  const loadMovements = useCallback(async (itemId, overrides = {}) => {
     const wh = overrides.warehouse  !== undefined ? overrides.warehouse  : filtersRef.current.warehouse;
     const sd = overrides.startDate  !== undefined ? overrides.startDate  : filtersRef.current.startDate;
     const ed = overrides.endDate    !== undefined ? overrides.endDate    : filtersRef.current.endDate;
 
-    setLoading(true); setMovements([]); setHasMore(false);
+    setLoading(true);
+    setMovements([]);
+    setHasMore(false);
+    setOpeningQty(0);
+    setOpeningWeight(0);
+    setPeriodTotals(null);
+
     try {
       const params = { page: 1 };
       if (wh) params.warehouse = wh;
       if (sd) params.startDate = sd;
       if (ed) params.endDate   = ed;
-      const { data } = await api.get(`/purchase/movements/${itemId}`, { params });
+
+      // المسار الجديد /api/items/:itemId/movements
+      const { data } = await api.get(`/items/${itemId}/movements`, { params });
       setMovements(data.movements);
       setTotal(data.total);
       setCurrentPage(data.page);
       setHasMore(data.hasMore);
+      setOpeningQty(safeNum(data.openingQty));
+      setOpeningWeight(safeNum(data.openingWeight));
+      setPeriodTotals(data.periodTotals);
     } catch {
       toast.error('خطأ في تحميل الحركات');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (initItemId) {
-      api.get(`/items/${initItemId}/stock`).then(({ data }) => {
-        setStockInfo({ ramses: data.stock?.ramses || { quantity: 0, weight: 0 }, october: data.stock?.october || { quantity: 0, weight: 0 } });
-      }).catch(() => {});
+      api.get(`/items/${initItemId}/stock`)
+        .then(({ data }) => {
+          setStockInfo({
+            ramses:  data.stock?.ramses  || { quantity: 0, weight: 0 },
+            october: data.stock?.october || { quantity: 0, weight: 0 },
+          });
+        })
+        .catch(() => {});
       loadMovements(initItemId);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── loadMore — الصفحات التالية ────────────────────────────────────────────
   const loadMore = useCallback(async () => {
     const { selectedItem: item, currentPage: cp, warehouse: wh, startDate: sd, endDate: ed } = filtersRef.current;
     if (!item) return;
@@ -337,13 +407,16 @@ export default function ItemMovementsPage() {
       if (wh) params.warehouse = wh;
       if (sd) params.startDate = sd;
       if (ed) params.endDate   = ed;
-      const { data } = await api.get(`/purchase/movements/${item._id}`, { params });
-      setMovements(prev => {
-        const ids = new Set(prev.map(m => m._id));
-        return [...prev, ...data.movements.filter(m => !ids.has(m._id))];
+      const { data } = await api.get(`/items/${item._id}/movements`, { params });
+
+      setMovements((prev) => {
+        const ids = new Set(prev.map((m) => m._id));
+        return [...prev, ...data.movements.filter((m) => !ids.has(m._id))];
       });
       setCurrentPage(data.page);
       setHasMore(data.hasMore);
+      // نحدّث periodTotals بآخر قيمة (ثابتة من الـ API)
+      if (data.periodTotals) setPeriodTotals(data.periodTotals);
     } catch {
       toast.error('خطأ في تحميل المزيد');
     } finally {
@@ -353,26 +426,41 @@ export default function ItemMovementsPage() {
 
   const sentinelRef = useInfiniteScroll({ onLoadMore: loadMore, hasMore, loading: loadingMore, threshold: 0.8 });
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleItemSelect = async (item) => {
-    if (!item) { setSelectedItem(null); setMovements([]); setStockInfo(null); setTotal(0); syncUrl({ selectedItem: null }); return; }
+    if (!item) {
+      setSelectedItem(null); setMovements([]); setStockInfo(null);
+      setTotal(0); setOpeningQty(0); setOpeningWeight(0); setPeriodTotals(null);
+      syncUrl({ selectedItem: null });
+      return;
+    }
     setSelectedItem(item);
     syncUrl({ selectedItem: item });
-    api.get(`/items/${item._id}/stock`).then(({ data }) => {
-      setStockInfo({ ramses: data.stock?.ramses || { quantity: 0, weight: 0 }, october: data.stock?.october || { quantity: 0, weight: 0 } });
-    }).catch(() => {});
+    api.get(`/items/${item._id}/stock`)
+      .then(({ data }) => setStockInfo({
+        ramses:  data.stock?.ramses  || { quantity: 0, weight: 0 },
+        october: data.stock?.october || { quantity: 0, weight: 0 },
+      }))
+      .catch(() => {});
     loadMovements(item._id);
   };
 
-  const handleWarehouseChange = (val) => { setWarehouse(val); syncUrl({ warehouse: val }); if (selectedItem) loadMovements(selectedItem._id, { warehouse: val }); };
+  const handleWarehouseChange = (val) => {
+    setWarehouse(val);
+    syncUrl({ warehouse: val });
+    if (selectedItem) loadMovements(selectedItem._id, { warehouse: val });
+  };
   const handleStartDateChange = (val) => { setStartDate(val); syncUrl({ startDate: val }); };
   const handleEndDateChange   = (val) => { setEndDate(val);   syncUrl({ endDate: val }); };
-  const handleFilter = () => { if (selectedItem) loadMovements(selectedItem._id); };
+  const handleFilter          = () => { if (selectedItem) loadMovements(selectedItem._id); };
 
-  // ✅ حساب الإحصائيات من quantityIn/Out بدل quantity
-  const totalInQty  = movements.reduce((s, m) => s + safeNum(m.quantityIn),  0);
-  const totalOutQty = movements.reduce((s, m) => s + safeNum(m.quantityOut), 0);
-  const totalInWgt  = movements.reduce((s, m) => s + safeNum(m.weightIn),    0);
-  const totalOutWgt = movements.reduce((s, m) => s + safeNum(m.weightOut),   0);
+  // ── حساب إحصائيات من periodTotals (الفترة كاملة) ─────────────────────────
+  const totalInQty    = safeNum(periodTotals?.totalInQty);
+  const totalOutQty   = safeNum(periodTotals?.totalOutQty);
+  const totalInWgt    = safeNum(periodTotals?.totalInWeight);
+  const totalOutWgt   = safeNum(periodTotals?.totalOutWeight);
+  const closingQty    = openingQty    + totalInQty    - totalOutQty;
+  const closingWeight = openingWeight + totalInWgt    - totalOutWgt;
 
   return (
     <div>
@@ -383,11 +471,13 @@ export default function ItemMovementsPage() {
       <div className="mb-5 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">حركات الأصناف</h1>
-          <p className="text-gray-500 text-sm mt-0.5">تتبع حركة أي صنف في جميع المخازن</p>
+          <p className="text-gray-500 text-sm mt-0.5">تتبع حركة أي صنف في جميع المخازن مع رصيد تراكمي صحيح</p>
         </div>
         {selectedItem && movements.length > 0 && (
-          <button onClick={() => printMovements({ item: selectedItem, movements, warehouse, startDate, endDate })}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+          <button
+            onClick={() => printMovements({ item: selectedItem, movements, warehouse, startDate, endDate, openingQty, openingWeight, periodTotals })}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+          >
             🖨️ طباعة الكشف
           </button>
         )}
@@ -398,12 +488,15 @@ export default function ItemMovementsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-gray-600 mb-1">اختار الصنف</label>
-            <ItemSearch onSelect={handleItemSelect} placeholder="ابحث بالكود أو الاسم..."
-              defaultValue={initItemId ? `${initItemCode} — ${initItemName}` : ''} />
+            <ItemSearch
+              onSelect={handleItemSelect}
+              placeholder="ابحث بالكود أو الاسم..."
+              defaultValue={initItemId ? `${initItemCode} — ${initItemName}` : ''}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">المخزن</label>
-            <select className="input-field" value={warehouse} onChange={e => handleWarehouseChange(e.target.value)}>
+            <select className="input-field" value={warehouse} onChange={(e) => handleWarehouseChange(e.target.value)}>
               <option value="">الكل</option>
               <option value="ramses">رمسيس</option>
               <option value="october">أكتوبر</option>
@@ -411,11 +504,11 @@ export default function ItemMovementsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">من تاريخ</label>
-            <input type="date" className="input-field" value={startDate} onChange={e => handleStartDateChange(e.target.value)} />
+            <input type="date" className="input-field" value={startDate} onChange={(e) => handleStartDateChange(e.target.value)} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">إلى تاريخ</label>
-            <input type="date" className="input-field" value={endDate}   onChange={e => handleEndDateChange(e.target.value)} />
+            <input type="date" className="input-field" value={endDate}   onChange={(e) => handleEndDateChange(e.target.value)} />
           </div>
         </div>
         {selectedItem && (
@@ -431,7 +524,7 @@ export default function ItemMovementsPage() {
         )}
       </div>
 
-      {/* Stock Cards */}
+      {/* المخزون الحالي */}
       {selectedItem && stockInfo && (
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="card bg-blue-50 border border-blue-200">
@@ -439,7 +532,7 @@ export default function ItemMovementsPage() {
             <div className="flex gap-8">
               <div>
                 <p className={`text-3xl font-black ${stockInfo.ramses.quantity < 0 ? 'text-red-600' : 'text-blue-700'}`}>
-                  {stockInfo.ramses.quantity.toLocaleString()}
+                  {fmtQty(stockInfo.ramses.quantity)}
                 </p>
                 <p className="text-xs text-blue-400 mt-0.5">كرتون</p>
               </div>
@@ -456,7 +549,7 @@ export default function ItemMovementsPage() {
             <div className="flex gap-8">
               <div>
                 <p className={`text-3xl font-black ${stockInfo.october.quantity < 0 ? 'text-red-600' : 'text-purple-700'}`}>
-                  {stockInfo.october.quantity.toLocaleString()}
+                  {fmtQty(stockInfo.october.quantity)}
                 </p>
                 <p className="text-xs text-purple-400 mt-0.5">كرتون</p>
               </div>
@@ -471,25 +564,37 @@ export default function ItemMovementsPage() {
         </div>
       )}
 
-      {/* Summary Cards */}
-      {selectedItem && movements.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-4">
+      {/* إحصائيات الفترة */}
+      {selectedItem && periodTotals && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          <div className="card text-center bg-gray-50 border border-gray-200">
+            <p className="text-xs text-gray-500 font-medium mb-1">رصيد أول المدة</p>
+            <p className="text-lg font-bold text-gray-600">{fmtQty(openingQty)}</p>
+            <p className="text-xs text-gray-400">{fmt(openingWeight)} ك</p>
+          </div>
           <div className="card text-center bg-green-50 border border-green-200">
             <p className="text-xs text-green-600 font-medium mb-1">إجمالي الوارد</p>
-            <p className="text-xl font-bold text-green-700">{totalInQty.toLocaleString()} كرتون</p>
-            <p className="text-sm text-green-600">{fmt(totalInWgt)} ك</p>
+            <p className="text-lg font-bold text-green-700">{fmtQty(totalInQty)}</p>
+            <p className="text-xs text-green-500">{fmt(totalInWgt)} ك</p>
           </div>
           <div className="card text-center bg-red-50 border border-red-200">
             <p className="text-xs text-red-600 font-medium mb-1">إجمالي الصادر</p>
-            <p className="text-xl font-bold text-red-700">{totalOutQty.toLocaleString()} كرتون</p>
-            <p className="text-sm text-red-600">{fmt(totalOutWgt)} ك</p>
+            <p className="text-lg font-bold text-red-700">{fmtQty(totalOutQty)}</p>
+            <p className="text-xs text-red-400">{fmt(totalOutWgt)} ك</p>
+          </div>
+          <div className="card text-center bg-violet-50 border border-violet-200">
+            <p className="text-xs text-violet-600 font-medium mb-1">صافي الحركة</p>
+            <p className={`text-lg font-bold ${(totalInQty - totalOutQty) >= 0 ? 'text-violet-700' : 'text-red-600'}`}>
+              {fmtQty(totalInQty - totalOutQty)}
+            </p>
+            <p className="text-xs text-violet-400">{fmt(totalInWgt - totalOutWgt)} ك</p>
           </div>
           <div className="card text-center bg-blue-50 border border-blue-200">
-            <p className="text-xs text-blue-600 font-medium mb-1">الصافي</p>
-            <p className={`text-xl font-bold ${(totalInQty - totalOutQty) >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-              {(totalInQty - totalOutQty).toLocaleString()} كرتون
+            <p className="text-xs text-blue-600 font-medium mb-1">رصيد آخر المدة</p>
+            <p className={`text-lg font-bold ${closingQty < 0 ? 'text-red-600' : 'text-blue-700'}`}>
+              {fmtQty(closingQty)}
             </p>
-            <p className="text-sm text-blue-600">{fmt(totalInWgt - totalOutWgt)} ك</p>
+            <p className="text-xs text-blue-400">{fmt(closingWeight)} ك</p>
           </div>
         </div>
       )}
@@ -522,29 +627,29 @@ export default function ItemMovementsPage() {
               <thead>
                 <tr className="bg-gradient-to-l from-gray-50 to-blue-50/40 text-gray-600 border-b border-gray-200 text-xs">
                   <th className="text-center px-3 py-3.5 font-semibold">#</th>
-                  <th className="text-right px-3 py-3.5 font-semibold">التاريخ</th>
-                  <th className="text-right px-3 py-3.5 font-semibold">الوقت</th>
-                  <th className="text-right px-3 py-3.5 font-semibold">النوع</th>
-                  <th className="text-right px-3 py-3.5 font-semibold">المرجع</th>
-                  <th className="text-right px-3 py-3.5 font-semibold">الموسم</th>
-                  <th className="text-right px-3 py-3.5 font-semibold">المخزن</th>
-                  <th className="text-center px-3 py-3.5 font-semibold">وارد (ك)</th>
-                  <th className="text-center px-3 py-3.5 font-semibold">صادر (ك)</th>
-                  <th className="text-center px-3 py-3.5 font-semibold">الرصيد</th>
-                  <th className="text-right px-3 py-3.5 font-semibold">بواسطة</th>
+                  <th className="text-right  px-3 py-3.5 font-semibold">التاريخ</th>
+                  <th className="text-right  px-3 py-3.5 font-semibold">الوقت</th>
+                  <th className="text-right  px-3 py-3.5 font-semibold">النوع</th>
+                  <th className="text-right  px-3 py-3.5 font-semibold">المرجع</th>
+                  <th className="text-right  px-3 py-3.5 font-semibold">الموسم</th>
+                  <th className="text-right  px-3 py-3.5 font-semibold">المخزن</th>
+                  <th className="text-center px-3 py-3.5 font-semibold text-green-700">وارد (ك)</th>
+                  <th className="text-center px-3 py-3.5 font-semibold text-red-600">صادر (ك)</th>
+                  <th className="text-center px-3 py-3.5 font-semibold text-blue-700">الرصيد</th>
+                  <th className="text-right  px-3 py-3.5 font-semibold">بواسطة</th>
                   <th className="text-center px-3 py-3.5 font-semibold">فتح</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {movements.map((m, idx) => {
-                  const tp       = TYPE_LABELS[m.type] || { text: m.type, cls: 'bg-gray-100 text-gray-600', sign: '' };
-                  // ✅ استخدام quantityIn/Out بدل quantity لتفادي NaN
-                  const qIn      = safeNum(m.quantityIn);
-                  const qOut     = safeNum(m.quantityOut);
-                  const wIn      = safeNum(m.weightIn);
-                  const wOut     = safeNum(m.weightOut);
-                  const balQty   = safeNum(m.balanceQty);
-                  const inv      = getInvoicePath(m);
+                  const tp    = TYPE_LABELS[m.type] || { text: m.type, cls: 'bg-gray-100 text-gray-600', sign: '' };
+                  const qIn   = safeNum(m.quantityIn);
+                  const qOut  = safeNum(m.quantityOut);
+                  const wIn   = safeNum(m.weightIn);
+                  const wOut  = safeNum(m.weightOut);
+                  // runningQty يأتي من الـ API محسوباً بدقة
+                  const balQty = safeNum(m.runningQty);
+                  const inv    = getInvoicePath(m);
 
                   return (
                     <tr key={m._id} className="hover:bg-blue-50/30 transition-colors">
@@ -565,33 +670,28 @@ export default function ItemMovementsPage() {
                           ? <span className="text-blue-600 font-medium">رمسيس</span>
                           : <span className="text-purple-600 font-medium">أكتوبر</span>}
                       </td>
-                      {/* ✅ وارد */}
                       <td className="px-3 py-2.5 text-center text-xs">
                         {qIn > 0
-                          ? <span className="font-bold text-green-600">+{qIn.toLocaleString()}<br/><span className="font-normal text-green-500">{fmt(wIn)}ك</span></span>
+                          ? <span className="font-bold text-green-600">+{fmtQty(qIn)}<br/><span className="font-normal text-green-500 text-xs">{fmt(wIn)}ك</span></span>
                           : <span className="text-gray-200">—</span>}
                       </td>
-                      {/* ✅ صادر */}
                       <td className="px-3 py-2.5 text-center text-xs">
                         {qOut > 0
-                          ? <span className="font-bold text-red-500">-{qOut.toLocaleString()}<br/><span className="font-normal text-red-400">{fmt(wOut)}ك</span></span>
+                          ? <span className="font-bold text-red-500">-{fmtQty(qOut)}<br/><span className="font-normal text-red-400 text-xs">{fmt(wOut)}ك</span></span>
                           : <span className="text-gray-200">—</span>}
                       </td>
-                      {/* الرصيد */}
                       <td className="px-3 py-2.5 text-center text-xs">
                         <span className={`font-bold ${balQty < 0 ? 'text-red-600' : 'text-gray-700'}`}>
-                          {balQty.toLocaleString()}
+                          {fmtQty(balQty)}
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-gray-400 text-xs">{m.createdBy?.name || '—'}</td>
                       <td className="px-3 py-2.5 text-center">
-                        {/* ✅ فتح في Modal نفس الصفحة */}
                         {inv
                           ? <button
                               onClick={() => setInvoicePath(inv)}
-                              className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded-lg font-medium transition-colors border border-blue-200">
-                              فتح ←
-                            </button>
+                              className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded-lg font-medium transition-colors border border-blue-200"
+                            >فتح ←</button>
                           : <span className="text-gray-300 text-xs">—</span>}
                       </td>
                     </tr>

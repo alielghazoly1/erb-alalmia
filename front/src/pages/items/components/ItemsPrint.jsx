@@ -1,189 +1,111 @@
 // ─── pages/items/components/ItemsPrint.jsx ────────────────────────────────────
-// منطق الطباعة الاحترافية للأصناف
-// printWarehouse: 'ramses' | 'october' | 'all'
+// طباعة كشف الأصناف عبر iframe في نفس الصفحة (بدون window.open)
+// مُحسَّن لـ 100K+ صنف: A4 landscape، خط صغير، compact rows
 
 const fmt    = (n) => (n || 0).toLocaleString('eg-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtQty = (n) => (n || 0).toLocaleString('eg-EG');
 
-const warehouseLabel = { ramses: 'رمسيس', october: 'أكتوبر', all: 'جميع المخازن' };
+const WH_LABEL = { ramses: 'رمسيس', october: 'أكتوبر', all: 'جميع المخازن' };
 
 export function printItems(items, warehouse = 'all') {
-  const now   = new Date();
+  const now     = new Date();
   const dateStr = now.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
-  const rows = items.map((item, idx) => {
-    const ramQty = item.stock?.ramses?.quantity  ?? 0;
-    const ramWgt = item.stock?.ramses?.weight    ?? 0;
-    const octQty = item.stock?.october?.quantity ?? 0;
-    const octWgt = item.stock?.october?.weight   ?? 0;
-
-    // حسب المخزن المطلوب
-    const showRamses  = warehouse === 'all' || warehouse === 'ramses';
-    const showOctober = warehouse === 'all' || warehouse === 'october';
-
-    return `
-      <tr class="${idx % 2 === 0 ? 'even' : 'odd'}">
-        <td class="center">${idx + 1}</td>
-        <td class="code">${item.code}</td>
-        <td>${item.name}</td>
-        <td class="center">${item.category || '—'}</td>
-        <td class="center">${item.unit}</td>
-        ${showRamses ? `
-          <td class="center num ${ramQty > 0 ? 'pos' : ''}">${fmtQty(ramQty)}</td>
-          <td class="center num ${ramWgt > 0 ? 'pos' : ''}">${fmt(ramWgt)}</td>
-        ` : ''}
-        ${showOctober ? `
-          <td class="center num ${octQty > 0 ? 'pos' : ''}">${fmtQty(octQty)}</td>
-          <td class="center num ${octWgt > 0 ? 'pos' : ''}">${fmt(octWgt)}</td>
-        ` : ''}
-        ${warehouse === 'all' ? `
-          <td class="center num bold">${fmtQty(ramQty + octQty)}</td>
-          <td class="center num bold">${fmt(ramWgt + octWgt)}</td>
-        ` : ''}
-        <td class="center">
-          <span class="badge ${item.isRawMaterial ? 'raw' : 'product'}">
-            ${item.isRawMaterial ? 'خامة' : 'منتج'}
-          </span>
-        </td>
-      </tr>
-    `;
-  }).join('');
+  const showRamses  = warehouse === 'all' || warehouse === 'ramses';
+  const showOctober = warehouse === 'all' || warehouse === 'october';
+  const showTotal   = warehouse === 'all';
 
   const totalRamQty = items.reduce((s, i) => s + (i.stock?.ramses?.quantity  ?? 0), 0);
   const totalRamWgt = items.reduce((s, i) => s + (i.stock?.ramses?.weight    ?? 0), 0);
   const totalOctQty = items.reduce((s, i) => s + (i.stock?.october?.quantity ?? 0), 0);
   const totalOctWgt = items.reduce((s, i) => s + (i.stock?.october?.weight   ?? 0), 0);
 
-  const showRamses  = warehouse === 'all' || warehouse === 'ramses';
-  const showOctober = warehouse === 'all' || warehouse === 'october';
+  const rows = items.map((item, idx) => {
+    const ramQty = item.stock?.ramses?.quantity  ?? 0;
+    const ramWgt = item.stock?.ramses?.weight    ?? 0;
+    const octQty = item.stock?.october?.quantity ?? 0;
+    const octWgt = item.stock?.october?.weight   ?? 0;
+    return `<tr class="${idx % 2 === 0 ? 'even' : 'odd'}">
+      <td class="cen">${idx + 1}</td>
+      <td class="code">${item.code}</td>
+      <td>${item.name}</td>
+      <td class="cen">${item.category || '—'}</td>
+      <td class="cen">${item.unit}</td>
+      ${showRamses  ? `<td class="cen num ${ramQty > 0 ? 'pos' : ''}">${fmtQty(ramQty)}</td><td class="cen num ${ramWgt > 0 ? 'pos' : ''}">${fmt(ramWgt)}</td>` : ''}
+      ${showOctober ? `<td class="cen num ${octQty > 0 ? 'pos' : ''}">${fmtQty(octQty)}</td><td class="cen num ${octWgt > 0 ? 'pos' : ''}">${fmt(octWgt)}</td>` : ''}
+      ${showTotal   ? `<td class="cen num bold">${fmtQty(ramQty + octQty)}</td><td class="cen num bold">${fmt(ramWgt + octWgt)}</td>` : ''}
+      <td class="cen"><span class="badge ${item.isRawMaterial ? 'raw' : 'prod'}">${item.isRawMaterial ? 'خامة' : 'منتج'}</span></td>
+    </tr>`;
+  }).join('');
+
+  const theadCols = `
+    <th>م</th><th>الكود</th><th>الاسم</th><th>التصنيف</th><th>الوحدة</th>
+    ${showRamses  ? '<th colspan="2" class="wh-r">مخزن رمسيس<br/><span>كرتون / كيلو</span></th>'  : ''}
+    ${showOctober ? '<th colspan="2" class="wh-o">مخزن أكتوبر<br/><span>كرتون / كيلو</span></th>' : ''}
+    ${showTotal   ? '<th colspan="2" class="wh-t">الإجمالي<br/><span>كرتون / كيلو</span></th>'    : ''}
+    <th>النوع</th>
+  `;
 
   const footerCols = `
     <td></td><td></td><td></td><td></td><td></td>
-    ${showRamses  ? `<td class="center num bold">${fmtQty(totalRamQty)}</td><td class="center num bold">${fmt(totalRamWgt)}</td>` : ''}
-    ${showOctober ? `<td class="center num bold">${fmtQty(totalOctQty)}</td><td class="center num bold">${fmt(totalOctWgt)}</td>` : ''}
-    ${warehouse === 'all' ? `<td class="center num bold">${fmtQty(totalRamQty + totalOctQty)}</td><td class="center num bold">${fmt(totalRamWgt + totalOctWgt)}</td>` : ''}
+    ${showRamses  ? `<td class="cen bold">${fmtQty(totalRamQty)}</td><td class="cen bold">${fmt(totalRamWgt)}</td>` : ''}
+    ${showOctober ? `<td class="cen bold">${fmtQty(totalOctQty)}</td><td class="cen bold">${fmt(totalOctWgt)}</td>` : ''}
+    ${showTotal   ? `<td class="cen bold">${fmtQty(totalRamQty + totalOctQty)}</td><td class="cen bold">${fmt(totalRamWgt + totalOctWgt)}</td>` : ''}
     <td></td>
-  `;
-
-  const theadCols = `
-    <th>م</th>
-    <th>الكود</th>
-    <th>الاسم</th>
-    <th>التصنيف</th>
-    <th>الوحدة</th>
-    ${showRamses  ? '<th colspan="2" class="wh-ramses">مخزن رمسيس<br/><span>كرتون / كيلو</span></th>'  : ''}
-    ${showOctober ? '<th colspan="2" class="wh-oct">مخزن أكتوبر<br/><span>كرتون / كيلو</span></th>'   : ''}
-    ${warehouse === 'all' ? '<th colspan="2" class="wh-total">الإجمالي<br/><span>كرتون / كيلو</span></th>' : ''}
-    <th>النوع</th>
   `;
 
   const html = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <title>كشف الأصناف — ${warehouseLabel[warehouse]}</title>
+  <meta charset="UTF-8"/>
+  <title>كشف الأصناف — ${WH_LABEL[warehouse]}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Cairo', Arial, sans-serif;
-      font-size: 11px;
-      color: #1a1a2e;
-      background: #fff;
-      direction: rtl;
-    }
-    /* ── Header ── */
-    .print-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px 12px;
-      border-bottom: 3px solid #1e40af;
-      margin-bottom: 12px;
-    }
-    .print-header .company { font-size: 22px; font-weight: 900; color: #1e40af; }
-    .print-header .subtitle { font-size: 13px; color: #374151; margin-top: 2px; }
-    .print-header .meta { text-align: left; font-size: 11px; color: #6b7280; }
-    .print-header .meta strong { display: block; font-size: 15px; color: #1e40af; font-weight: 700; }
-    /* ── Stats Bar ── */
-    .stats-bar {
-      display: flex;
-      gap: 12px;
-      padding: 8px 20px;
-      background: #f0f7ff;
-      border-radius: 8px;
-      margin: 0 0 12px;
-      font-size: 12px;
-    }
-    .stat-item { display: flex; gap: 6px; align-items: center; }
-    .stat-item .label { color: #6b7280; }
-    .stat-item .value { font-weight: 700; color: #1e40af; }
-    /* ── Table ── */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 10.5px;
-    }
-    thead tr {
-      background: #1e40af;
-      color: white;
-    }
-    thead th {
-      padding: 8px 6px;
-      text-align: center;
-      font-weight: 700;
-      border: 1px solid #1e3a8a;
-    }
-    thead th span { font-size: 9px; font-weight: 400; opacity: .8; }
-    .wh-ramses  { background: #1d4ed8; }
-    .wh-oct     { background: #6d28d9; }
-    .wh-total   { background: #065f46; }
-    tbody tr.even { background: #f9fafb; }
-    tbody tr.odd  { background: #ffffff; }
-    tbody tr:hover { background: #eff6ff; }
-    td {
-      padding: 7px 6px;
-      border: 1px solid #e5e7eb;
-      vertical-align: middle;
-    }
-    .center { text-align: center; }
-    .code { font-family: monospace; font-weight: 700; color: #1d4ed8; font-size: 11px; }
-    .num  { font-variant-numeric: tabular-nums; }
-    .pos  { color: #1d4ed8; font-weight: 700; }
-    .bold { font-weight: 700; }
-    tfoot tr { background: #e0f2fe; }
-    tfoot td { font-weight: 700; padding: 8px 6px; border: 1px solid #bfdbfe; }
-    .badge { 
-      display: inline-block; 
-      padding: 2px 8px; 
-      border-radius: 999px; 
-      font-size: 9.5px; 
-      font-weight: 700; 
-    }
-    .badge.raw     { background: #fed7aa; color: #9a3412; }
-    .badge.product { background: #bfdbfe; color: #1e40af; }
-    /* ── Footer ── */
-    .print-footer {
-      margin-top: 16px;
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 20px;
-      font-size: 10px;
-      color: #9ca3af;
-      border-top: 1px solid #e5e7eb;
-    }
-    @media print {
-      body { font-size: 10px; }
-      @page { size: A4 landscape; margin: 10mm; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Cairo',Arial,sans-serif;font-size:10.5px;color:#1a1a2e;background:#fff;direction:rtl}
+
+    /* Header */
+    .hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 10px;border-bottom:3px solid #1e40af;margin-bottom:10px}
+    .hdr .company{font-size:20px;font-weight:900;color:#1e40af}
+    .hdr .sub{font-size:12px;color:#374151;margin-top:2px}
+    .hdr .meta{text-align:left;font-size:11px;color:#6b7280}
+    .hdr .meta strong{display:block;font-size:14px;color:#1e40af;font-weight:700}
+
+    /* Stats bar */
+    .stats{display:flex;gap:10px;padding:6px 16px;background:#f0f7ff;border-radius:6px;margin:0 0 8px;font-size:11px;flex-wrap:wrap}
+    .stats span{color:#374151}.stats b{color:#1e40af}
+
+    /* Table */
+    table{width:100%;border-collapse:collapse;font-size:10px}
+    thead tr{background:#1e40af;color:#fff}
+    th{padding:6px 4px;text-align:center;font-weight:700;border:1px solid #1e3a8a}
+    th span{font-size:8.5px;font-weight:400;opacity:.8}
+    .wh-r{background:#1d4ed8}.wh-o{background:#6d28d9}.wh-t{background:#065f46}
+    tr.even{background:#f9fafb}tr.odd{background:#fff}
+    td{padding:5px 4px;border:1px solid #e5e7eb;vertical-align:middle}
+    .cen{text-align:center}
+    .code{font-family:monospace;font-weight:700;color:#1d4ed8;font-size:10.5px}
+    .num{font-variant-numeric:tabular-nums}.pos{color:#1d4ed8;font-weight:700}
+    .bold{font-weight:700}
+    .badge{display:inline-block;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700}
+    .badge.raw{background:#fed7aa;color:#9a3412}.badge.prod{background:#bfdbfe;color:#1e40af}
+    tfoot tr{background:#e0f2fe}
+    tfoot td{font-weight:700;padding:6px 4px;border:1px solid #bfdbfe}
+    .footer{margin-top:10px;display:flex;justify-content:space-between;padding:6px 16px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb}
+
+    @media print{
+      @page{size:A4 landscape;margin:7mm}
+      body{font-size:9.5px}
+      .hdr{padding:8px 12px 8px}
     }
   </style>
 </head>
 <body>
-  <div class="print-header">
+  <div class="hdr">
     <div>
       <div class="company">🏭 شركة السيد</div>
-      <div class="subtitle">كشف الأصناف — ${warehouseLabel[warehouse]}</div>
+      <div class="sub">كشف الأصناف — ${WH_LABEL[warehouse]}</div>
     </div>
     <div class="meta">
       <strong>${dateStr}</strong>
@@ -191,52 +113,37 @@ export function printItems(items, warehouse = 'all') {
     </div>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat-item">
-      <span class="label">إجمالي الأصناف:</span>
-      <span class="value">${fmtQty(items.length)}</span>
-    </div>
-    ${showRamses ? `
-    <div class="stat-item">
-      <span class="label">مخزن رمسيس:</span>
-      <span class="value">${fmtQty(totalRamQty)} كرتون / ${fmt(totalRamWgt)} ك</span>
-    </div>` : ''}
-    ${showOctober ? `
-    <div class="stat-item">
-      <span class="label">مخزن أكتوبر:</span>
-      <span class="value">${fmtQty(totalOctQty)} كرتون / ${fmt(totalOctWgt)} ك</span>
-    </div>` : ''}
-    ${warehouse === 'all' ? `
-    <div class="stat-item">
-      <span class="label">الإجمالي الكلي:</span>
-      <span class="value">${fmtQty(totalRamQty + totalOctQty)} كرتون / ${fmt(totalRamWgt + totalOctWgt)} ك</span>
-    </div>` : ''}
+  <div class="stats">
+    <span>إجمالي الأصناف: <b>${fmtQty(items.length)}</b></span>
+    ${showRamses  ? `<span>رمسيس: <b>${fmtQty(totalRamQty)} كرتون / ${fmt(totalRamWgt)} ك</b></span>` : ''}
+    ${showOctober ? `<span>أكتوبر: <b>${fmtQty(totalOctQty)} كرتون / ${fmt(totalOctWgt)} ك</b></span>` : ''}
+    ${showTotal   ? `<span>الكلي: <b>${fmtQty(totalRamQty + totalOctQty)} كرتون / ${fmt(totalRamWgt + totalOctWgt)} ك</b></span>` : ''}
   </div>
 
   <table>
-    <thead>
-      <tr>${theadCols}</tr>
-    </thead>
+    <thead><tr>${theadCols}</tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot>
-      <tr>
-        <td colspan="3" class="bold" style="text-align:center">الإجمالي الكلي</td>
-        ${footerCols}
-      </tr>
-    </tfoot>
+    <tfoot><tr><td colspan="3" style="text-align:center">الإجمالي الكلي</td>${footerCols}</tr></tfoot>
   </table>
 
-  <div class="print-footer">
+  <div class="footer">
     <span>طُبع بواسطة نظام الإدارة</span>
     <span>${dateStr} — ${timeStr}</span>
   </div>
 
-  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };</script>
+  <script>window.onload = () => { window.print(); };</script>
 </body>
 </html>`;
 
-  const win = window.open('', '_blank', 'width=1200,height=800');
-  if (!win) { alert('افتح الـ popup blocker'); return; }
-  win.document.write(html);
-  win.document.close();
+  // ── طباعة عبر iframe مخفي (نفس الصفحة، بدون popup blocker) ───────────────
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;border:none;opacity:0;pointer-events:none';
+  document.body.appendChild(iframe);
+  iframe.contentDocument.write(html);
+  iframe.contentDocument.close();
+  iframe.contentWindow.focus();
+  setTimeout(() => {
+    iframe.contentWindow.print();
+    setTimeout(() => { try { document.body.removeChild(iframe); } catch (_) {} }, 2500);
+  }, 600);
 }
