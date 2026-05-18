@@ -27,6 +27,7 @@ export default function SupplierSummaryCards({ statement }) {
     totalPurchases = 0,
     totalReturns   = 0,
     totalPaid      = 0,
+    openingBalance = 0,
     balance        = 0,
   } = statement ?? {};
 

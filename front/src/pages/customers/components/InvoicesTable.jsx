@@ -3,7 +3,7 @@
 // يدعم الطباعة — أعمدة "فتح" مخفية في print
 // ────────────────────────────────────────────────────────────────────────────
 import { Link } from 'react-router-dom';
-import { toNum } from '../../../utils/fmt';
+import { toNum, fmtFixed } from '../../../utils/fmt';
 import StatusBadge from './StatusBadge';
 import SectionHeader from './SectionHeader';
 import StatementTablePagination from './StatementTablePagination';
@@ -70,7 +70,7 @@ export default function InvoicesTable({
                       })}
                     </td>
                     <td className="px-3 py-2 text-center font-semibold text-gray-800">
-                      {toNum(inv.totalAmount).toFixed(2)()}
+                      {fmtFixed(inv.totalAmount)}
                     </td>
                     <td className="px-3 py-2 text-center">
                       <StatusBadge status={inv.status} />

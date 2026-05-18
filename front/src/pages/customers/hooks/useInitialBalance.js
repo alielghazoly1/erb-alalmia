@@ -1,47 +1,39 @@
 // ─── useInitialBalance.js ────────────────────────────────────────────────────
-// Hook مخصص لتعديل الرصيد الابتدائي لعميل موجود
-// يفتح موديل مستقل بعيد عن فورم التعديل العادي
-// ────────────────────────────────────────────────────────────────────────────
 import { useState } from 'react';
-import api from '../../../services/api';
-import toast from 'react-hot-toast';
+import api          from '../../../services/api';
+import toast        from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { fetchCustomers } from '../../../store/slices/customerSlice';
 
 export function useInitialBalance() {
   const dispatch = useDispatch();
-
   const [isOpen,     setIsOpen]     = useState(false);
-  const [customer,   setCustomer]   = useState(null);  // العميل المختار
+  const [customer,   setCustomer]   = useState(null);
   const [amount,     setAmount]     = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  /** فتح موديل تعديل الرصيد لعميل معين */
   const open = (c) => {
     setCustomer(c);
-    setAmount('');
+    // pre-fill current opening balance (accepts negative = دائن)
+    const current = c.openingBalance ?? c.initialBalance ?? 0;
+    setAmount(String(Number(current)));
     setIsOpen(true);
   };
 
   const close = () => setIsOpen(false);
 
-  /**
-   * إرسال التعديل إلى الباك — يستدعي endpoint مخصص
-   * PATCH /customers/:id/initial-balance
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     const value = Number(amount);
-    if (isNaN(value) || value < 0)
-      return toast.error('أدخل مبلغ صحيح');
+    if (isNaN(value)) return toast.error('أدخل رقماً صحيحاً');
 
     setSubmitting(true);
     try {
       await api.patch(`/customers/${customer._id}/initial-balance`, {
-        initialBalance: value,
+        openingBalance: value,   // يقبل سالب (دائن) وموجب (مدين)
       });
-      toast.success('تم تعديل الرصيد الابتدائي');
-      dispatch(fetchCustomers()); // تحديث القائمة
+      toast.success(`تم تعديل الرصيد الابتدائي إلى ${value} ج.م`);
+      dispatch(fetchCustomers());
       setIsOpen(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'حدث خطأ');
@@ -50,9 +42,5 @@ export function useInitialBalance() {
     }
   };
 
-  return {
-    isOpen, customer, amount, submitting,
-    open, close,
-    setAmount, handleSubmit,
-  };
+  return { isOpen, customer, amount, submitting, open, close, setAmount, handleSubmit };
 }

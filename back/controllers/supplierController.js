@@ -383,27 +383,47 @@ const getSupplierTimeline = async (req, res) => {
       ? Buffer.from(JSON.stringify({ date: lastRow.date, id: lastRow.id })).toString('base64')
       : null;
 
+    const openingBal    = round2(safeNum(supplier.openingBalance));
     const runningBefore = cursor
-      ? parseFloat(req.query.runningBefore || '0')
-      : safeNum(supplier.openingBalance);
+      ? round2(parseFloat(req.query.runningBefore || '0'))
+      : openingBal;
 
     let running = runningBefore;
     const rowsWithBalance = pageRows.map(r => {
-      if (r.rowType === 'invoice') running += r.amount;
-      else                         running -= r.amount;
-      return { ...r, runningBalance: running };
+      const amt = round2(safeNum(r.amount));   // ← Decimal → number
+      if (r.rowType === 'invoice') running = round2(running + amt);
+      else                         running = round2(running - amt);
+      return { ...r, amount: amt, runningBalance: running };
     });
+
+    // الرصيد الابتدائي كأول صف
+    const openingRow = (!cursor && openingBal !== 0) ? [{
+      _id:            'opening',
+      id:             'opening',
+      rowType:        'opening',
+      amount:         openingBal,
+      runningBalance: openingBal,
+      date:           supplier.createdAt || new Date(0),
+      docNumber:      'رصيد ابتدائي',
+      invoiceNumber:  null,
+    }] : [];
 
     const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
 
+    // balance يشمل الرصيد الابتدائي
+    const trueBalance = round2(openingBal + totalPurchases - totalReturns - totalPaid);
+
     res.json({
-      supplier:    { ...supplier, _id: supplier.id },
+      supplier:    { ...supplier, _id: supplier.id, openingBalance: openingBal },
       seasons:     seasons.map(n),
-      totals: { totalPurchases, totalReturns, totalPaid,
-                netPurchases: totalPurchases - totalReturns,
-                balance:      totalPurchases - totalReturns - totalPaid },
+      totals: {
+        totalPurchases, totalReturns, totalPaid,
+        openingBalance:  openingBal,
+        netPurchases:    round2(totalPurchases - totalReturns),
+        balance:         trueBalance,
+      },
       counts:      { invoices: invCount, returns: retCount, payments: payCount, total: totalRows },
-      rows:        rowsWithBalance,
+      rows:        [...openingRow, ...rowsWithBalance],
       nextCursor,
       hasMore,
       runningAtEnd: running,

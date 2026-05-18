@@ -6,7 +6,10 @@ const { recordReturn, deleteTreasuryEntries } = require('../utils/treasuryHelper
 const { updateStock, createStockMovement } = require('../utils/stockHelper');
 const { nextNumber }   = require('../utils/counterHelper');
 
-const calcItemTotal = (qty, wt, pr) => (Number(qty)||0) * (Number(wt)||0) * (Number(pr)||0);
+const calcItemTotalWeight = (qty, wt, tw = null) =>
+  tw != null ? round3(safeNum(tw)) : round3(safeNum(qty) * safeNum(wt));
+const calcItemTotal = (qty, wt, pr, tw = null) =>
+  round2(calcItemTotalWeight(qty, wt, tw) * safeNum(pr));
 
 const invoiceIncludes = () => ({
   items:      { include: { item: { select: { code: true, name: true, defaultWeight: true } } } },
@@ -69,11 +72,14 @@ const createReturn = async (req, res) => {
 
     if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
-    const recalcItems   = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
+    const recalcItems   = items.map(i => {
+      const tw = calcItemTotalWeight(i.quantity, i.weight, i.totalWeight ?? null);
+      return { ...i, _tw: tw, total: calcItemTotal(i.quantity, i.weight, i.price, tw) };
+    });
     const activeSeason  = await prisma.season.findFirst({ where: { isActive: true } });
     const invoiceNumber = await nextNumber('RET', 'RET');
-    const totalAmount   = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight   = recalcItems.reduce((s, i) => s + safeNum(i.quantity) * safeNum(i.weight), 0);
+    const totalAmount   = round2(recalcItems.reduce((s, i) => s + i.total, 0));
+    const totalWeight   = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
 
     const returnInv = await prisma.returnInvoice.create({
       data: {
@@ -142,9 +148,12 @@ const updateReturn = async (req, res) => {
       await deleteTreasuryEntries(returnInv.id, 'ReturnInvoice');
     }
 
-    const recalcItems = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
-    const totalAmount = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight = recalcItems.reduce((s, i) => s + safeNum(i.quantity) * safeNum(i.weight), 0);
+    const recalcItems = items.map(i => {
+      const tw = calcItemTotalWeight(i.quantity, i.weight, i.totalWeight ?? null);
+      return { ...i, _tw: tw, total: calcItemTotal(i.quantity, i.weight, i.price, tw) };
+    });
+    const totalAmount = round2(recalcItems.reduce((s, i) => s + i.total, 0));
+    const totalWeight = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
     const newWarehouse = warehouse || returnInv.warehouse;
 
     // ── حذف الأصناف القديمة وإضافة الجديدة ─────────────────────────────────

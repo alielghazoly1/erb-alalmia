@@ -380,11 +380,19 @@ export function useSaleInvoiceForm() {
       const qty = parseFloat(r.quantity) || 0;
       const uw  = parseFloat(r.weight)   || 0;
       const pr  = parseFloat(r.price)    || 0;
-      const tw  = r._totalWeight != null ? parseFloat(r._totalWeight) : r3(qty * uw);
+      // الوزن الكلي: إما ما دخله المستخدم يدوياً أو qty × uw
+      const tw  = r._totalWeight != null
+        ? Math.round(parseFloat(r._totalWeight) * 1000) / 1000
+        : Math.round(qty * uw * 1000) / 1000;
       return {
-        item: r.item, itemCode: r.itemCode, itemName: r.itemName,
-        quantity: qty, weight: uw, price: pr,
-        total: r2(tw * pr),
+        item:        r.item,
+        itemCode:    r.itemCode,
+        itemName:    r.itemName,
+        quantity:    qty,
+        weight:      uw,
+        totalWeight: tw,      // ← الوزن الكلي الدقيق للـ backend
+        price:       pr,
+        total:       Math.round(tw * pr * 100) / 100,
       };
     });
 

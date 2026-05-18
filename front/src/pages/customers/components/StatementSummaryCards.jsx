@@ -24,10 +24,11 @@ function SummaryCard({ label, value, prefix = '', suffix = '', color = 'gray', b
 
 export default function StatementSummaryCards({ statement }) {
   const {
-    totalSales   = 0,
-    totalReturns = 0,
-    totalPaid    = 0,
-    balance      = 0,
+    totalSales     = 0,
+    totalReturns   = 0,
+    totalPaid      = 0,
+    openingBalance = 0,
+    balance        = 0,
   } = statement ?? {};
 
   const bal = toNum(balance);

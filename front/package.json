@@ -29,7 +29,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "cross-env CI=false react-scripts build",
+    "build": "cross-env CI=false craco build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron": "electron .",
@@ -74,22 +74,27 @@
       "owner": "alielghazoly1",
       "repo": "erb-alalamia"
     },
-   "extraResources": [
-  {
-    "from": "../new-back",
-    "to": "backend",
-    "filter": [
-      "**/*",
-      "!.env",
-      "!mongo_data/**",
-      "!prisma/migrations/**",
-      "!node_modules/.cache/**"
-    ]
-  }
-],
+    "extraResources": [
+      {
+        "from": "../back",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!mongo_data/**",
+          "!prisma/migrations/**",
+          "!node_modules/.cache/**",
+          "!*.log"
+        ]
+      },
+      {
+        "from": "../back/node_modules",
+        "to": "backend/node_modules"
+      }
+    ],
     "files": [
       "build/**/*",
-      "public/electron.js"
+      "public/electron.js",
+      "public/preload.js"
     ],
     "directories": {
       "buildResources": "public"

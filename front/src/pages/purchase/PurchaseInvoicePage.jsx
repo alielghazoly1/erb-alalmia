@@ -14,8 +14,12 @@ const newRow = () => ({
   saved: false, editing: false,
 });
 
-const calcTotal = (q, w, p) =>
-  (parseFloat(q)||0) * (parseFloat(w)||0) * (parseFloat(p)||0);
+const r2 = (v) => Math.round((parseFloat(v)||0) * 100) / 100;
+const r3 = (v) => Math.round((parseFloat(v)||0) * 1000) / 1000;
+const calcTotalWeight = (q, w, tw = null) =>
+  tw != null ? r3(parseFloat(tw)) : r3((parseFloat(q)||0) * (parseFloat(w)||0));
+const calcTotal = (q, w, p, tw = null) =>
+  r2(calcTotalWeight(q, w, tw) * (parseFloat(p)||0));
 
 const statusLabel = {
   pending:   { text: 'معلق',   cls: 'bg-yellow-100 text-yellow-700' },
@@ -272,8 +276,8 @@ export default function PurchaseInvoicePage() {
   };
 
   const savedRows   = rows.filter(r => r.saved);
-  const totalAmount = savedRows.reduce((s,r) => s + calcTotal(r.quantity,r.weight,r.price), 0);
-  const totalWeight = savedRows.reduce((s,r) => s + (parseFloat(r.quantity)||0)*(parseFloat(r.weight)||0), 0);
+  const totalAmount = r2(savedRows.reduce((s,r) => s + calcTotal(r.quantity,r.weight,r.price,r._totalWeight), 0));
+  const totalWeight = r3(savedRows.reduce((s,r) => s + calcTotalWeight(r.quantity,r.weight,r._totalWeight), 0));
   const totalQty    = savedRows.reduce((s,r) => s + (parseFloat(r.quantity)||0), 0);
 
   const handleSubmit = async () => {
@@ -282,11 +286,15 @@ export default function PurchaseInvoicePage() {
     if (docError) { toast.error(docError); return; }
     if (savedRows.length === 0) { toast.error('أضف صنف واحد على الأقل'); return; }
     setSaving(true);
-    const itemsPayload = savedRows.map(r => ({
-      item: r.item, itemCode: r.itemCode, itemName: r.itemName,
-      quantity: Number(r.quantity), weight: Number(r.weight), price: Number(r.price),
-      total: calcTotal(r.quantity,r.weight,r.price),
-    }));
+    const itemsPayload = savedRows.map(r => {
+      const tw = calcTotalWeight(r.quantity, r.weight, r._totalWeight);
+      return {
+        item: r.item, itemCode: r.itemCode, itemName: r.itemName,
+        quantity: parseFloat(r.quantity)||0, weight: parseFloat(r.weight)||0,
+        price: parseFloat(r.price)||0, totalWeight: tw,
+        total: r2(tw * (parseFloat(r.price)||0)),
+      };
+    });
     const base = {
       docNumber: docNumber.trim(), date,
       supplierId: supplier._id || supplier, supplierCode: supplier.code, supplierName: supplier.name,
@@ -457,7 +465,7 @@ export default function PurchaseInvoicePage() {
                     <td className="px-3 py-2.5 text-center text-gray-400 text-xs">{parseFloat(row.weight).toFixed(3)}</td>
                     <td className="px-3 py-2.5 text-center font-medium">{((parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0)).toFixed(3)} ك</td>
                     <td className="px-3 py-2.5 text-center">{parseFloat(row.price).toFixed(2)}</td>
-                    <td className="px-3 py-2.5 text-center font-semibold">{calcTotal(row.quantity,row.weight,row.price).toFixed(2)}</td>
+                    <td className="px-3 py-2.5 text-center font-semibold">{calcTotal(row.quantity,row.weight,row.price,row._totalWeight).toFixed(2)}</td>
                     <td className="px-3 py-2.5">
                       <button onClick={() => handleEditRow(row.id)} className="text-blue-500 text-xs p-1 rounded hover:bg-blue-50">✏️</button>
                       <button onClick={() => handleDeleteRow(row.id)} className="text-red-400 text-xs p-1 rounded hover:bg-red-50">🗑️</button>
@@ -517,7 +525,7 @@ export default function PurchaseInvoicePage() {
             </div>
             <div className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200">
               <p className="text-xs text-gray-400 mb-0.5">الإجمالي</p>
-              <p className="text-xl font-bold text-blue-600">{calcTotal(row.quantity,row.weight,row.price).toFixed(2)} ج.م</p>
+              <p className="text-xl font-bold text-blue-600">{calcTotal(row.quantity,row.weight,row.price,row._totalWeight).toFixed(2)} ج.م</p>
               {row.quantity && row.weight && (
                 <p className="text-xs text-gray-400">{row.quantity} × {row.weight} ك = {((parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0)).toFixed(3)} ك</p>
               )}

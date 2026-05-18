@@ -210,13 +210,14 @@ function CustomerRow({
               >
                 تعديل
               </button>
-              {/* تعديل الرصيد الابتدائي — مستقل عن فورم التعديل العادي */}
-              {/* <button
+              {/* تعديل الرصيد الابتدائي */}
+              <button
                 onClick={() => onEditBalance(c)}
-                className="text-amber-600 hover:underline text-xs"
+                className="text-amber-600 hover:bg-amber-50 hover:text-amber-700 text-xs px-2 py-0.5 rounded border border-amber-200 transition-colors"
+                title="تعديل الرصيد الابتدائي"
               >
-                رصيد
-              </button> */}
+                💰 رصيد
+              </button>
               {/* <button
                 onClick={() => onDelete(c._id)}
                 className="text-red-500 hover:underline text-xs"

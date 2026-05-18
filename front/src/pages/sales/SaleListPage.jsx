@@ -3,7 +3,7 @@
 // ✅ فتح الفاتورة في Modal بنفس الصفحة بدون خروج
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   fetchSaleInvoices,
@@ -17,7 +17,6 @@ import { useSaleFilters }    from './hooks/useSaleFilters';
 import SaleFilters           from './components/SaleFilters';
 import SaleTable             from './components/SaleTable';
 import api                   from '../../services/api';
-import InvoicePrintView      from './components/InvoicePrintView';
 
 // ── Inline Confirm Dialog ─────────────────────────────────────────────────────
 function ConfirmDialog({ open, message, onConfirm, onCancel, withInput, inputLabel, inputValue, onInputChange }) {
@@ -40,60 +39,6 @@ function ConfirmDialog({ open, message, onConfirm, onCancel, withInput, inputLab
 }
 
 // ── Invoice Detail Modal (نفس الصفحة) ────────────────────────────────────────
-function InvoiceModal({ invoiceId, onClose }) {
-  const [invoice, setInvoice] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!invoiceId) return;
-    setLoading(true);
-    api.get(`/sales/${invoiceId}`)
-      .then(({ data }) => setInvoice(data))
-      .catch(() => toast.error('خطأ في تحميل الفاتورة'))
-      .finally(() => setLoading(false));
-  }, [invoiceId]);
-
-  if (!invoiceId) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center overflow-auto py-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden">
-        {/* شريط العنوان */}
-        <div className="flex items-center justify-between px-5 py-3 bg-blue-600 text-white">
-          <h2 className="font-bold text-lg">تفاصيل الفاتورة</h2>
-          <button onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-500 transition-colors text-xl font-bold">
-            ×
-          </button>
-        </div>
-        <div className="overflow-auto max-h-[85vh]">
-          {loading ? (
-            <div className="flex items-center justify-center py-20 text-blue-500">
-              <svg className="animate-spin w-10 h-10 mr-3" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              جاري التحميل...
-            </div>
-          ) : invoice ? (
-            <InvoicePrintView
-              invoice={{
-                ...invoice,
-                customerName: invoice.customerName || invoice.customer?.name,
-                customerCode: invoice.customerCode || invoice.customer?.code,
-              }}
-              onBack={onClose}
-              backLabel="إغلاق"
-              embedded
-            />
-          ) : (
-            <div className="py-20 text-center text-gray-400">تعذّر تحميل الفاتورة</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function SaleListPage() {
@@ -108,8 +53,7 @@ export default function SaleListPage() {
   // Infinite scroll sentinel ref
   const sentinelRef = useRef(null);
 
-  // Modal state
-  const [viewInvoiceId, setViewInvoiceId] = useState(null);
+  const navigate = useNavigate();
 
   // Confirm dialog state
   const [dialog, setDialog]         = useState({ open: false, type: null, id: null });
@@ -155,7 +99,7 @@ export default function SaleListPage() {
   const handleApprove = (id) => setDialog({ open: true, type: 'approve', id });
   const handleSuspend = (id) => { setSuspendReason(''); setDialog({ open: true, type: 'suspend', id }); };
   const handleCancel  = (id) => setDialog({ open: true, type: 'cancel', id });
-  const handleView    = (id) => setViewInvoiceId(id);
+  const handleView    = (id) => navigate(`/sales/${id}`, { state: { backTo: '/sales' } });
 
   const handleConfirm = async () => {
     const { type, id } = dialog;
@@ -189,9 +133,6 @@ export default function SaleListPage() {
 
   return (
     <div>
-      {/* Invoice Modal */}
-      <InvoiceModal invoiceId={viewInvoiceId} onClose={() => setViewInvoiceId(null)} />
-
       {/* Confirm Dialog */}
       <ConfirmDialog
         open={dialog.open} message={cfg.message} withInput={cfg.withInput}

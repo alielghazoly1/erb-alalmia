@@ -2,7 +2,7 @@
 // جدول المرتجعات داخل كشف الحساب
 // ────────────────────────────────────────────────────────────────────────────
 import { Link } from 'react-router-dom';
-import { toNum } from '../../../utils/fmt';
+import { toNum, fmtFixed } from '../../../utils/fmt';
 import SectionHeader from './SectionHeader';
 import StatementTablePagination from './StatementTablePagination';
 
@@ -57,7 +57,7 @@ export default function ReturnsTable({
                   {new Date(r.date).toLocaleDateString('ar-EG')}
                 </td>
                 <td className="px-3 py-2 text-center text-orange-600 font-medium">
-                  - {toNum(r.totalAmount).toFixed(2)()}
+                  - {fmtFixed(r.totalAmount)}
                 </td>
                 <td className="px-3 py-2 text-center print:hidden">
                   <div className="flex gap-1 justify-center">

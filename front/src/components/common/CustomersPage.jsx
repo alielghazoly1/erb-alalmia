@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { toNum } from '../../utils/fmt';
+import { toNum, fmtFixed } from '../../utils/fmt';
 import { useDispatch, useSelector } from 'react-redux';
+import InitialBalanceModal from './InitialBalanceModal';
 import {
-  fetchCustomers, createCustomer,
+  fetchCustomers, createCustomer, updateCustomerBalance,
   updateCustomer, deleteCustomer,
   fetchCustomerStatement, fetchCustomerAllSeasons,
   clearStatement,
@@ -62,8 +63,21 @@ export default function CustomersPage() {
     toast.success('تم الحذف');
   };
 
+  const handleSaveBalance = async (id, amount) => {
+    await dispatch(updateCustomerBalance({ id, openingBalance: amount }));
+    dispatch(fetchCustomers());
+  };
+
   return (
     <div>
+      {balanceEntity && (
+        <InitialBalanceModal
+          entity={balanceEntity}
+          entityType="customer"
+          onSave={handleSaveBalance}
+          onClose={() => setBalanceEntity(null)}
+        />
+      )}
       {/* الهيدر */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -191,16 +205,16 @@ export default function CustomersPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-blue-50 rounded-lg p-3 text-center">
                 <p className="text-xs text-blue-600 mb-1">إجمالي المبيعات</p>
-                <p className="text-lg font-bold text-blue-700">{toNum(statement.totalSales).toFixed(2)()}</p>
+                <p className="text-lg font-bold text-blue-700">{fmtFixed(statement.totalSales)}</p>
               </div>
               <div className="bg-green-50 rounded-lg p-3 text-center">
                 <p className="text-xs text-green-600 mb-1">إجمالي المدفوع</p>
-                <p className="text-lg font-bold text-green-700">{toNum(statement.totalPaid).toFixed(2)()}</p>
+                <p className="text-lg font-bold text-green-700">{fmtFixed(statement.totalPaid)}</p>
               </div>
               <div className={`rounded-lg p-3 text-center ${statement.balance > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
                 <p className={`text-xs mb-1 ${statement.balance > 0 ? 'text-red-600' : 'text-gray-500'}`}>الرصيد المتبقي</p>
                 <p className={`text-lg font-bold ${statement.balance > 0 ? 'text-red-700' : 'text-gray-700'}`}>
-                  {toNum(statement.balance).toFixed(2)()}
+                  {fmtFixed(statement.balance)}
                 </p>
               </div>
             </div>
@@ -214,7 +228,7 @@ export default function CustomersPage() {
                     <div key={inv._id} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100">
                       <span className="font-mono text-blue-600">{inv.invoiceNumber}</span>
                       <span className="text-gray-500">{new Date(inv.date).toLocaleDateString('ar-EG')}</span>
-                      <span className="font-medium">{toNum(inv.totalAmount).toFixed(2)()} ج.م</span>
+                      <span className="font-medium">{fmtFixed(inv.totalAmount)} ج.م</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                         inv.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                       }`}>{inv.status === 'approved' ? 'مُوافق' : 'معلق'}</span>
@@ -232,7 +246,7 @@ export default function CustomersPage() {
                   {statement.payments.map(p => (
                     <div key={p._id} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100">
                       <span className="text-gray-500">{new Date(p.date).toLocaleDateString('ar-EG')}</span>
-                      <span className="text-green-600 font-medium">+{toNum(p.amount).toFixed(2)()} ج.م</span>
+                      <span className="text-green-600 font-medium">+{fmtFixed(p.amount)} ج.م</span>
                       <span className="text-xs text-gray-400">{
                         { cash: 'نقدي', instapay: 'انستاباي', transfer: 'تحويل', check: 'شيك' }[p.paymentMethod]
                       }</span>
@@ -252,10 +266,10 @@ export default function CustomersPage() {
                       <span className={`font-medium ${s.season.isActive ? 'text-blue-600' : 'text-gray-700'}`}>
                         {s.season.name} {s.season.isActive && '(الحالي)'}
                       </span>
-                      <span className="text-gray-500">مبيعات: {toNum(s.totalSales).toFixed(2)()}</span>
-                      <span className="text-green-600">مدفوع: {toNum(s.totalPaid).toFixed(2)()}</span>
+                      <span className="text-gray-500">مبيعات: {fmtFixed(s.totalSales)}</span>
+                      <span className="text-green-600">مدفوع: {fmtFixed(s.totalPaid)}</span>
                       <span className={`font-bold ${s.balance > 0 ? 'text-red-600' : 'text-gray-500'}`}>
-                        باقي: {toNum(s.balance).toFixed(2)()}
+                        باقي: {fmtFixed(s.balance)}
                       </span>
                     </div>
                   ))}

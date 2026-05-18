@@ -1,3 +1,4 @@
+import { toNum } from '../../../utils/fmt';
 // ─── components/BalanceBadge.jsx ────────────────────────────────────────────
 // Badge لعرض الرصيد المستحق — أحمر لو في رصيد، أخضر لو مفيش
 // مشترك بين CustomerStatementPage وغيرها

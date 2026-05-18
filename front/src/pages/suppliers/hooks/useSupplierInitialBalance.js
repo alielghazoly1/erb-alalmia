@@ -17,7 +17,9 @@ export function useSupplierInitialBalance() {
 
   const open = (s) => {
     setSupplier(s);
-    setAmount('');
+    // pre-fill with current opening balance
+    const current = s.openingBalance ?? s.initialBalance ?? 0;
+    setAmount(String(Number(current)));
     setIsOpen(true);
   };
 
@@ -30,12 +32,12 @@ export function useSupplierInitialBalance() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const value = Number(amount);
-    if (isNaN(value) || value < 0) return toast.error('أدخل مبلغ صحيح');
+    if (isNaN(value)) return toast.error('أدخل رقماً صحيحاً');
 
     setSubmitting(true);
     try {
       await api.patch(`/suppliers/${supplier._id}/initial-balance`, {
-        initialBalance: value,
+        openingBalance: value,
       });
       toast.success('تم تعديل الرصيد الابتدائي');
       dispatch(fetchSuppliers());

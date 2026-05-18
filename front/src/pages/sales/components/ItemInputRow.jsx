@@ -1,6 +1,27 @@
+// ─── ItemInputRow.jsx ─────────────────────────────────────────────────────────
+// صف إدخال صنف واحد — يدعم الإدخال العادي والإدخال بالوزن الكلي
+// المبدأ: لو المستخدم دخل وزن كلي → نحسب الإجمالي من (وزن كلي × سعر) مباشرة
+//         لو المستخدم دخل عدد     → نحسب الإجمالي من (عدد × وزن/وحدة × سعر)
 import { memo } from 'react';
 import ItemSearch from '../../../components/common/ItemSearch';
-import { calcTotal } from '../hooks/useSaleInvoiceForm';
+
+const r2 = (v) => Math.round((parseFloat(v) || 0) * 100) / 100;
+const r3 = (v) => Math.round((parseFloat(v) || 0) * 1000) / 1000;
+
+/** يحسب الوزن الكلي والإجمالي بدقة من بيانات الصف */
+const calcRowTotals = (row, totalWeightInputValue) => {
+  const qty = parseFloat(row.quantity)  || 0;
+  const uw  = parseFloat(row.weight)    || 0;
+  const pr  = parseFloat(row.price)     || 0;
+  const twInput = parseFloat(totalWeightInputValue) || 0;
+
+  // الأولوية: وزن كلي مدخل يدوياً > عدد × وزن/وحدة
+  const tw = twInput > 0 ? twInput : r3(qty * uw);
+  return {
+    totalWeight: tw,
+    total: r2(tw * pr),
+  };
+};
 
 const ItemInputRow = memo(function ItemInputRow({
   row, totalWeightInput,
@@ -8,15 +29,27 @@ const ItemInputRow = memo(function ItemInputRow({
   onItemSelect, onUpdateRow, onTotalWeightChange,
   onKeyDown, onSaveRow, onCancelRow,
 }) {
+  const twInputVal = totalWeightInput[row.id] || '';
+  const { totalWeight, total } = calcRowTotals(row, twInputVal);
+  const hasTwInput = parseFloat(twInputVal) > 0;
+
   return (
-    <div className={`rounded-xl border-2 p-3 sticky bottom-0 z-10 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] ${row.editing ? 'border-amber-400 bg-amber-50/95' : 'border-green-200 bg-green-50/95'}`}>
+    <div className={`rounded-xl border-2 p-3 sticky bottom-0 z-10 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] ${
+      row.editing ? 'border-amber-400 bg-amber-50/95' : 'border-green-200 bg-green-50/95'
+    }`}>
+
+      {/* item info header */}
       {row.itemName && (
         <p className="text-xs text-green-600 mt-0.5 font-medium truncate">✓ {row.itemName}</p>
       )}
       {row.availableQty !== undefined && (
-        <p className={`text-xs mt-0.5 ${row.availableQty <= 0 ? 'text-orange-500' : row.availableQty <= 5 ? 'text-amber-600' : 'text-green-600'}`}>
+        <p className={`text-xs mt-0.5 ${
+          row.availableQty <= 0 ? 'text-orange-500' : row.availableQty <= 5 ? 'text-amber-600' : 'text-green-600'
+        }`}>
           {row.availableQty <= 0 ? '⚠️' : row.availableQty <= 5 ? '🟡' : '🟢'}{' '}
-          {row.availableQty <= 0 ? `سيُباع بالسالب (${row.availableQty} كرتون)` : `متاح: ${row.availableQty} كرتون`}
+          {row.availableQty <= 0
+            ? `سيُباع بالسالب (${row.availableQty} كرتون)`
+            : `متاح: ${row.availableQty} كرتون`}
         </p>
       )}
       <p className="text-xs font-semibold text-gray-500 mb-2">
@@ -24,6 +57,7 @@ const ItemInputRow = memo(function ItemInputRow({
       </p>
 
       <div className="grid grid-cols-12 gap-2 items-end">
+
         {/* الصنف */}
         <div className="col-span-5">
           <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
@@ -40,23 +74,28 @@ const ItemInputRow = memo(function ItemInputRow({
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-500 mb-1">
             العدد{row.weight && <span className="text-blue-400 mr-1">×{row.weight}ك</span>}
+            {hasTwInput && <span className="text-xs text-orange-400 mr-1">(محسوب)</span>}
           </label>
-          <input ref={el => (qtyRefs.current[row.id] = el)}
+          <input
+            ref={el => (qtyRefs.current[row.id] = el)}
             type="number" min="0" step="0.001"
-            className="input-field text-center font-bold text-base"
-            placeholder="0" value={row.quantity}
+            className={`input-field text-center font-bold text-base ${hasTwInput ? 'bg-orange-50/50 text-orange-600' : ''}`}
+            placeholder="0"
+            value={row.quantity}
             onChange={e => onUpdateRow(row.id, 'quantity', e.target.value)}
             onKeyDown={e => onKeyDown(e, row.id, 'quantity')}
           />
         </div>
 
-        {/* الوزن */}
+        {/* الوزن/وحدة */}
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-500 mb-1">وزن/وحدة</label>
-          <input ref={el => (wtRefs.current[row.id] = el)}
+          <input
+            ref={el => (wtRefs.current[row.id] = el)}
             type="number" min="0" step="0.001"
             className="input-field text-center"
-            placeholder="22.680" value={row.weight}
+            placeholder="22.680"
+            value={row.weight}
             onChange={e => onUpdateRow(row.id, 'weight', e.target.value)}
             onKeyDown={e => onKeyDown(e, row.id, 'weight')}
           />
@@ -65,10 +104,12 @@ const ItemInputRow = memo(function ItemInputRow({
         {/* السعر */}
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-500 mb-1">السعر/ك</label>
-          <input ref={el => (prRefs.current[row.id] = el)}
+          <input
+            ref={el => (prRefs.current[row.id] = el)}
             type="number" min="0" step="0.01"
             className="input-field text-center"
-            placeholder="0.00" value={row.price}
+            placeholder="0.00"
+            value={row.price}
             onChange={e => onUpdateRow(row.id, 'price', e.target.value)}
             onKeyDown={e => onKeyDown(e, row.id, 'price')}
           />
@@ -78,12 +119,7 @@ const ItemInputRow = memo(function ItemInputRow({
         <div className="col-span-1 flex flex-col items-center gap-1">
           <p className="text-xs text-gray-400">الإجمالي</p>
           <p className="text-sm font-bold text-green-600 leading-tight">
-            { (() => {
-                const tw = row._totalWeight ?? ((parseFloat(row.quantity)||0) * (parseFloat(row.weight)||0));
-                const total = tw * (parseFloat(row.price)||0);
-                return Math.round(total * 100) / 100;
-              })()
-            }
+            {total.toFixed(0)}
           </p>
         </div>
       </div>
@@ -91,14 +127,21 @@ const ItemInputRow = memo(function ItemInputRow({
       {/* الوزن الكلي + زر الإضافة */}
       <div className="flex items-center gap-2 mt-2">
         <div className="flex-1">
-          <input type="number" min="0" step="0.001"
-            className="input-field text-center text-xs bg-blue-50/50 py-1.5"
+          <input
+            type="number" min="0" step="0.001"
+            className={`input-field text-center text-xs py-1.5 ${hasTwInput ? 'bg-blue-100 border-blue-400' : 'bg-blue-50/50'}`}
             placeholder="أو أدخل الوزن الكلي (يحسب العدد)"
-            value={totalWeightInput[row.id] || ''}
+            value={twInputVal}
             onChange={e => onTotalWeightChange(row.id, e.target.value)}
           />
+          {hasTwInput && (
+            <p className="text-xs text-blue-500 mt-0.5 text-center">
+              وزن كلي: {totalWeight.toFixed(3)} ك → إجمالي: {total.toFixed(2)} ج.م
+            </p>
+          )}
         </div>
-        <button onClick={() => onSaveRow(row.id)}
+        <button
+          onClick={() => onSaveRow(row.id)}
           className="btn-primary px-5 py-2 text-sm"
           disabled={!row.item || !row.quantity || !row.weight || !row.price}
         >

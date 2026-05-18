@@ -399,29 +399,49 @@ const getCustomerTimeline = async (req, res) => {
       ? Buffer.from(JSON.stringify({ date: lastRow.date, id: lastRow.id })).toString('base64')
       : null;
 
-    // ── running balance: نحسبه من الأول لو cursor = null ──────────────────
-    // لو cursor موجود (صفحة 2+)، الـ runningBefore بييجي في الـ request
+    // ── running balance ────────────────────────────────────────────────────
+    // الأول صف = الرصيد الابتدائي (لو cursor = null فقط)
+    const openingBal    = round2(safeNum(customer.openingBalance));
     const runningBefore = cursor
-      ? parseFloat(req.query.runningBefore || '0')
-      : safeNum(customer.openingBalance);
+      ? round2(parseFloat(req.query.runningBefore || '0'))
+      : openingBal;
 
     let running = runningBefore;
     const rowsWithBalance = pageRows.map(r => {
-      if (r.rowType === 'invoice') running += r.amount;
-      else                         running -= r.amount;
-      return { ...r, runningBalance: running };
+      const amt = round2(safeNum(r.amount));   // ← Decimal → number
+      if (r.rowType === 'invoice') running = round2(running + amt);
+      else                         running = round2(running - amt);
+      return { ...r, amount: amt, runningBalance: running };
     });
+
+    // الرصيد الابتدائي يظهر كأول صف في الصفحة الأولى
+    const openingRow = (!cursor && openingBal !== 0) ? [{
+      _id:            'opening',
+      id:             'opening',
+      rowType:        'opening',
+      amount:         openingBal,
+      runningBalance: openingBal,
+      date:           customer.createdAt || new Date(0),
+      docNumber:      'رصيد ابتدائي',
+      invoiceNumber:  null,
+    }] : [];
 
     const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
 
+    // balance يشمل الرصيد الابتدائي
+    const trueBalance = round2(openingBal + totalSales - totalReturns - totalPaid);
+
     res.json({
-      customer:    { ...customer, _id: customer.id },
+      customer:    { ...customer, _id: customer.id, openingBalance: openingBal },
       seasons:     seasons.map(n),
-      totals: { totalSales, totalReturns, totalPaid,
-                netSales:  totalSales - totalReturns,
-                balance:   totalSales - totalReturns - totalPaid },
+      totals: {
+        totalSales, totalReturns, totalPaid,
+        openingBalance: openingBal,
+        netSales:       round2(totalSales - totalReturns),
+        balance:        trueBalance,
+      },
       counts:      { invoices: invCount, returns: retCount, payments: payCount, total: totalRows },
-      rows:        rowsWithBalance,
+      rows:        [...openingRow, ...rowsWithBalance],
       nextCursor,
       hasMore,
       runningAtEnd: running,

@@ -182,7 +182,13 @@ function SupplierRow({
               >
                 تعديل
               </button>
-              {/* <button onClick={() => onEditBalance(s)} className="text-amber-600 hover:underline text-xs">رصيد</button> */}
+              <button
+                onClick={() => onEditBalance(s)}
+                className="text-amber-600 hover:bg-amber-50 hover:text-amber-700 text-xs px-2 py-0.5 rounded border border-amber-200 transition-colors"
+                title="تعديل الرصيد الابتدائي"
+              >
+                💰 رصيد
+              </button>
               {/* <button onClick={() => onDelete(s._id)} className="text-red-500 hover:underline text-xs">حذف</button> */}
             </>
           )}

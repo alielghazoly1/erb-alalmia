@@ -1,5 +1,5 @@
 // components/common/PaymentModal.jsx
-import { toNum } from '../../pages/sales/hooks/useSaleInvoiceForm';
+import { toNum } from '../../utils/fmt';
 /**
  * موديل الدفع المشترك بين العملاء والموردين
  * Props:

@@ -47,20 +47,48 @@ export default function SaleInvoicePage() {
 
   const form = useSaleInvoiceForm();
 
-  // ── view mode render ──────────────────────────────────────────────────────
+  // ── view mode: عرض الفاتورة في صفحة بـ URL مستقل ──────────────────────────
   if (isViewMode) {
-    if (!existingInvoice)
-      return <div className="text-center py-20 text-gray-400">جاري تحميل الفاتورة...</div>;
+    if (!existingInvoice) return (
+      <div className="flex flex-col items-center justify-center py-32 text-gray-400 gap-4">
+        <svg className="animate-spin w-10 h-10 text-blue-400" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+        <p>جاري تحميل الفاتورة...</p>
+      </div>
+    );
     return (
-      <InvoicePrintView
-        invoice={{
-          ...existingInvoice,
-          customerName: existingInvoice.customerName || existingInvoice.customer?.name,
-          customerCode: existingInvoice.customerCode || existingInvoice.customer?.code,
-        }}
-        onBack={handleBack}
-        backLabel={backLabel}
-      />
+      <div>
+        {/* شريط العودة */}
+        <div className="flex items-center justify-between mb-4 print:hidden">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors font-medium"
+          >
+            ← {backLabel}
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 font-mono">{existingInvoice.invoiceNumber}</span>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              🖨️ طباعة
+            </button>
+          </div>
+        </div>
+        <InvoicePrintView
+          invoice={{
+            ...existingInvoice,
+            customerName: existingInvoice.customerName || existingInvoice.customer?.name,
+            customerCode: existingInvoice.customerCode || existingInvoice.customer?.code,
+          }}
+          onBack={handleBack}
+          backLabel={backLabel}
+          embedded
+        />
+      </div>
     );
   }
 

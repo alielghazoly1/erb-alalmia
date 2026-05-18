@@ -76,6 +76,19 @@ export const updateCustomer = createAsyncThunk(
 );
 
 /** حذف (soft delete) عميل */
+/** تعديل الرصيد الابتدائي للعميل */
+ const updateCustomerBalance = createAsyncThunk(
+  'customers/updateBalance',
+  async ({ id, openingBalance }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.patch(`/customers/${id}/initial-balance`, { openingBalance });
+      return { id, openingBalance: data.openingBalance ?? openingBalance };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'خطأ في تحديث الرصيد');
+    }
+  },
+);
+
 export const deleteCustomer = createAsyncThunk(
   'customers/delete',
   async (id, { rejectWithValue }) => {
@@ -146,6 +159,11 @@ const customerSlice = createSlice({
         if (idx !== -1) s.list[idx] = { ...s.list[idx], ...payload };
       })
 
+      // ── updateCustomerBalance ──────────────────────────────────
+      .addCase(updateCustomerBalance.fulfilled, (s, { payload: { id, openingBalance } }) => {
+        const c = s.list.find(x => x._id === id || x.id === id);
+        if (c) c.openingBalance = openingBalance;
+      })
       // ── deleteCustomer ──────────────────────────────────────────
       .addCase(deleteCustomer.fulfilled, (s, { payload: id }) => {
         s.list = s.list.filter((c) => c._id !== id);
@@ -154,4 +172,5 @@ const customerSlice = createSlice({
 });
 
 export const { clearStatement, updateCustomerInList } = customerSlice.actions;
+export { updateCustomerBalance };
 export default customerSlice.reducer;

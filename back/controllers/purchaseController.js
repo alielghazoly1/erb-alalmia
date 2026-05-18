@@ -190,21 +190,20 @@ const createPurchaseInvoice = async (req, res) => {
     if (!items?.length)
       return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
-    const recalcItems = items.map((i) => ({
-      ...i,
-      total: calcItemTotal(i.quantity, i.weight, i.price),
-    }));
+    const recalcItems = items.map((i) => {
+      const tw = i.totalWeight != null
+        ? round3(safeNum(i.totalWeight))
+        : round3(safeNum(i.quantity) * safeNum(i.weight));
+      return { ...i, _tw: tw, total: round2(tw * safeNum(i.price)) };
+    });
 
     const [activeSeason, invoiceNumber] = await Promise.all([
       prisma.season.findFirst({ where: { isActive: true } }),
       nextNumber('PUR', 'PUR'),
     ]);
 
-    const totalAmount = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight = recalcItems.reduce(
-      (s, i) => s + safeNum(i.quantity) * safeNum(i.weight),
-      0
-    );
+    const totalAmount = round2(recalcItems.reduce((s, i) => s + i.total, 0));
+    const totalWeight = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
 
     const invoice = await prisma.purchaseInvoice.create({
       data: {
@@ -430,47 +429,47 @@ const cancelPurchaseInvoice = async (req, res) => {
 // ── GET ITEM MOVEMENTS (paginated) ────────────────────────────────────────────
 const MOV_PAGE_SIZE = 100;
 
-const getItemMovements = async (req, res) => {
-  try {
-    const { itemId } = req.params;
-    const { warehouse, startDate, endDate, page = 1 } = req.query;
-    const pageNum = Math.max(1, parseInt(page, 10));
-    const skip = (pageNum - 1) * MOV_PAGE_SIZE;
+// const getItemMovements = async (req, res) => {
+//   try {
+//     const { itemId } = req.params;
+//     const { warehouse, startDate, endDate, page = 1 } = req.query;
+//     const pageNum = Math.max(1, parseInt(page, 10));
+//     const skip = (pageNum - 1) * MOV_PAGE_SIZE;
 
-    const where = { itemId };
-    if (warehouse) where.warehouse = warehouse;
-    if (startDate || endDate) {
-      where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
-      if (endDate)
-        where.date.lte = new Date(new Date(endDate).setHours(23, 59, 59));
-    }
+//     const where = { itemId };
+//     if (warehouse) where.warehouse = warehouse;
+//     if (startDate || endDate) {
+//       where.date = {};
+//       if (startDate) where.date.gte = new Date(startDate);
+//       if (endDate)
+//         where.date.lte = new Date(new Date(endDate).setHours(23, 59, 59));
+//     }
 
-    const [total, movements] = await Promise.all([
-      prisma.stockMovement.count({ where }),
-      prisma.stockMovement.findMany({
-        where,
-        include: {
-          createdBy: { select: { name: true } },
-          season: { select: { name: true } },
-        },
-        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-        skip,
-        take: MOV_PAGE_SIZE,
-      }),
-    ]);
+//     const [total, movements] = await Promise.all([
+//       prisma.stockMovement.count({ where }),
+//       prisma.stockMovement.findMany({
+//         where,
+//         include: {
+//           createdBy: { select: { name: true } },
+//           season: { select: { name: true } },
+//         },
+//         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+//         skip,
+//         take: MOV_PAGE_SIZE,
+//       }),
+//     ]);
 
-    res.json({
-      movements: movements.map(norm),
-      total,
-      page: pageNum,
-      pageSize: MOV_PAGE_SIZE,
-      hasMore: skip + movements.length < total,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.json({
+//       movements: movements.map(norm),
+//       total,
+//       page: pageNum,
+//       pageSize: MOV_PAGE_SIZE,
+//       hasMore: skip + movements.length < total,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 const norm = (x) => ({ ...x, _id: x.id });
 
@@ -483,5 +482,5 @@ module.exports = {
   approvePurchaseInvoice,
   suspendPurchaseInvoice,
   cancelPurchaseInvoice,
-  getItemMovements,
+  // getItemMovements,
 };

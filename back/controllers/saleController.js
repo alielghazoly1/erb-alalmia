@@ -6,8 +6,14 @@ const { getStockQty, updateStock, createStockMovement } = require('../utils/stoc
 const { audit }             = require('../utils/auditHelper');
 const { nextNumber }        = require('../utils/counterHelper');
 
-const calcItemTotal       = (qty, wt, pr) => round2(safeNum(qty) * safeNum(wt) * safeNum(pr));
-const calcItemTotalWeight = (qty, wt)     => round3(safeNum(qty) * safeNum(wt));
+// لو الـ frontend بعت totalWeight مباشرة → نستخدمه عشان نتجنب أخطاء الفاصلة العائمة
+const calcItemTotalWeight = (qty, wt, totalWt = null) =>
+  totalWt != null ? round3(safeNum(totalWt)) : round3(safeNum(qty) * safeNum(wt));
+
+const calcItemTotal = (qty, wt, pr, totalWt = null) => {
+  const tw = calcItemTotalWeight(qty, wt, totalWt);
+  return round2(tw * safeNum(pr));
+};
 
 // ── GET all ───────────────────────────────────────────────────────────────────
 const getSaleInvoices = async (req, res) => {
@@ -172,10 +178,14 @@ const createSaleInvoice = async (req, res) => {
       }
     }
 
-    const recalcItems   = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
+    const recalcItems   = items.map(i => ({
+      ...i,
+      _tw:   calcItemTotalWeight(i.quantity, i.weight, i.totalWeight ?? null),
+      total: calcItemTotal(i.quantity, i.weight, i.price, i.totalWeight ?? null),
+    }));
     const invoiceNumber = await nextNumber('SAL', 'SAL');
-    const totalAmount   = recalcItems.reduce((s, i) => s + i.total, 0);
-    const totalWeight   = recalcItems.reduce((s, i) => s + calcItemTotalWeight(i.quantity, i.weight), 0);
+    const totalAmount   = round2(recalcItems.reduce((s, i) => s + i.total, 0));
+    const totalWeight   = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
 
     const invoice = await prisma.saleInvoice.create({
       data: {
@@ -334,11 +344,13 @@ const approveSaleInvoice = async (req, res) => {
 
     for (const saleItem of invoice.items) {
       const tw = calcItemTotalWeight(saleItem.quantity, saleItem.weight);
-      await updateStock(saleItem.itemId, invoice.warehouse, invoice.seasonId, { quantity: -saleItem.quantity, weight: -tw });
+      const stockQtyDelta = -safeNum(saleItem.quantity);
+      const stockWtDelta  = -tw;
+      await updateStock(saleItem.itemId, invoice.warehouse, invoice.seasonId, { quantity: stockQtyDelta, weight: stockWtDelta });
       await prisma.item.update({ where: { id: saleItem.itemId }, data: { lastSalePrice: saleItem.price } });
       await createStockMovement({
         itemId: saleItem.itemId, itemCode: saleItem.itemCode, itemName: saleItem.itemName,
-        type: 'sale_out', quantity: saleItem.quantity, weight: tw, price: saleItem.price,
+        type: 'sale_out', quantity: safeNum(saleItem.quantity), weight: tw, price: saleItem.price,
         warehouse: invoice.warehouse, reference: invoice.invoiceNumber,
         referenceModel: 'SaleInvoice', referenceId: invoice.id,
         seasonId: invoice.seasonId || null, createdById: req.user.id, date: invoice.date,
