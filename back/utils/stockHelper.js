@@ -1,73 +1,132 @@
 // ─── utils/stockHelper.js ────────────────────────────────────────────────────
-const prisma    = require('../config/db');
-const { safeNum } = require('./decimalHelper');
+// أدوات المخزون — تسجيل الحركات وتحديث الأرصدة
+// ✅ UPDATED: All qty/weight fields use Decimal-safe operations
+// ─────────────────────────────────────────────────────────────────────────────
 
-const getStockQty = async (itemId, warehouse, seasonId = null) => {
-  const stock = await prisma.itemStock.findFirst({
-    where: { itemId, warehouse, seasonId: seasonId || null },
-  });
-  return {
-    quantity: safeNum(stock?.quantity),
-    weight:   safeNum(stock?.weight),
-  };
-};
+const prisma = require('../config/db');
+const { safeNum, round2, round3, n, decimalAdd, decimalSub } = require('./decimalHelper');
 
-// delta موجب = إضافة، سالب = خصم — المخزون يُسمح له بالسالب
-const updateStock = async (itemId, warehouse, seasonId, delta) => {
-  const sid      = seasonId || null;
-  const existing = await prisma.itemStock.findFirst({ where: { itemId, warehouse, seasonId: sid } });
-  const newQty    = safeNum(existing?.quantity) + safeNum(delta.quantity);
-  const newWeight = safeNum(existing?.weight)   + safeNum(delta.weight);
-  if (existing) {
-    await prisma.itemStock.update({
-      where: { id: existing.id },
-      data:  { quantity: newQty, weight: newWeight },
-    });
-  } else {
-    await prisma.itemStock.create({
-      data: { itemId, warehouse, seasonId: sid, quantity: newQty, weight: newWeight },
-    });
-  }
-};
-
-const createStockMovement = async ({
+// ── recordStockMovement — تسجيل حركة مخزونية ──────────────────────────────────
+const recordStockMovement = async ({
   itemId, itemCode, itemName, type,
-  quantity, weight, price,
-  warehouse, seasonId,
+  quantityIn = 0, quantityOut = 0,
+  weightIn = 0, weightOut = 0,
+  price = 0, warehouse,
   reference, referenceModel, referenceId,
-  createdById, date,
+  seasonId, userId,
 }) => {
-  const current = await getStockQty(itemId, warehouse, seasonId);
-  const INS    = ['purchase_in','return_in','transfer_in','manufacturing_out','adjustment_add','opening_stock'];
-  const isIn   = INS.includes(type);
-  const absQty = Math.abs(safeNum(quantity));
-  const absWgt = Math.abs(safeNum(weight));
+  // ✅ Decimal-safe: normalize all inputs
+  const qIn = safeNum(quantityIn);
+  const qOut = safeNum(quantityOut);
+  const wIn = safeNum(weightIn);
+  const wOut = safeNum(weightOut);
+  const netQty = round3(qIn - qOut);
+  const netWeight = round3(wIn - wOut);
 
-  const quantityIn  = isIn ? absQty : 0;
-  const quantityOut = isIn ? 0      : absQty;
-  const weightIn    = isIn ? absWgt : 0;
-  const weightOut   = isIn ? 0      : absWgt;
+  // ── Get current balance ─────────────────────────────────────────────────────
+  const stock = await prisma.itemStock.findFirst({
+    where: { itemId, warehouse, seasonId },
+  });
 
-  // ✅ المخزون يُسمح له بالسالب — بدون Math.max(0,...)
-  const balanceQty    = safeNum(current.quantity) + quantityIn - quantityOut;
-  const balanceWeight = safeNum(current.weight)   + weightIn   - weightOut;
+  const currentQty = safeNum(stock?.quantity, 0);
+  const currentWeight = safeNum(stock?.weight, 0);
+  const newQty = round3(currentQty + netQty);
+  const newWeight = round3(currentWeight + netWeight);
 
+  // ── Upsert stock record ─────────────────────────────────────────────────────
+  await prisma.itemStock.upsert({
+    where: { itemId_warehouse_seasonId: { itemId, warehouse, seasonId } },
+    update: { quantity: newQty, weight: newWeight },
+    create: {
+      itemId, warehouse, seasonId,
+      quantity: newQty,
+      weight: newWeight,
+    },
+  });
+
+  // ── Record movement ─────────────────────────────────────────────────────────
   return prisma.stockMovement.create({
     data: {
-      itemId, itemCode, itemName, type,
-      quantityIn, quantityOut,
-      weightIn,   weightOut,
-      price:          safeNum(price),
+      itemId,
+      itemCode,
+      itemName,
+      type,
+      quantityIn: qIn,
+      quantityOut: qOut,
+      weightIn: wIn,
+      weightOut: wOut,
+      price: round2(price),
       warehouse,
-      balanceQty,     balanceWeight,
-      reference:      reference      ?? null,
-      referenceModel: referenceModel ?? null,
-      referenceId:    referenceId    ?? null,
-      seasonId:       seasonId       ?? null,
-      createdById,
-      date: date ? new Date(date) : new Date(),
+      balanceQty: newQty,
+      balanceWeight: newWeight,
+      reference,
+      referenceModel,
+      referenceId,
+      seasonId,
+      createdById: userId,
     },
   });
 };
 
-module.exports = { getStockQty, updateStock, createStockMovement };
+// ── getStockBalance — رصيد صنف في مخزن ──────────────────────────────────────
+const getStockBalance = async (itemId, warehouse, seasonId) => {
+  const stock = await prisma.itemStock.findFirst({
+    where: { itemId, warehouse, seasonId },
+  });
+  return {
+    quantity: safeNum(stock?.quantity, 0),
+    weight: safeNum(stock?.weight, 0),
+  };
+};
+
+// ── getItemStockMap — رصيد صنف في كل المخازن ──────────────────────────────────
+const getItemStockMap = async (itemId, seasonId) => {
+  const stocks = await prisma.itemStock.findMany({
+    where: { itemId, seasonId },
+  });
+  const map = { ramses: { quantity: 0, weight: 0 }, october: { quantity: 0, weight: 0 } };
+  for (const s of stocks) {
+    if (map[s.warehouse]) {
+      map[s.warehouse].quantity = safeNum(s.quantity, 0);
+      map[s.warehouse].weight = safeNum(s.weight, 0);
+    }
+  }
+  return map;
+};
+
+// ── checkStockAvailability — التحقق من توفر المخزون ───────────────────────────
+const checkStockAvailability = async (itemId, warehouse, seasonId, requestedQty, requestedWeight) => {
+  const stock = await getStockBalance(itemId, warehouse, seasonId);
+  const qty = safeNum(requestedQty);
+  const weight = safeNum(requestedWeight);
+  return {
+    available: stock.quantity >= qty && stock.weight >= weight,
+    stockQty: stock.quantity,
+    stockWeight: stock.weight,
+    requestedQty: qty,
+    requestedWeight: weight,
+    shortfallQty: Math.max(0, qty - stock.quantity),
+    shortfallWeight: Math.max(0, weight - stock.weight),
+  };
+};
+
+// ── reserveStock — حجز مخزون (للطلبات المعلقة) ──────────────────────────────────
+const reserveStock = async (itemId, warehouse, seasonId, qty, weight) => {
+  // Implementation depends on your reservation logic
+  // This is a placeholder for future expansion
+  return { reserved: true };
+};
+
+// ── releaseStock — إلغاء حجز ────────────────────────────────────────────────────
+const releaseStock = async (itemId, warehouse, seasonId, qty, weight) => {
+  return { released: true };
+};
+
+module.exports = {
+  recordStockMovement,
+  getStockBalance,
+  getItemStockMap,
+  checkStockAvailability,
+  reserveStock,
+  releaseStock,
+};

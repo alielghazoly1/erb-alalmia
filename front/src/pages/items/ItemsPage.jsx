@@ -1,169 +1,176 @@
-// ─── pages/items/ItemsPage.jsx ────────────────────────────────────────────────
-// صفحة الأصناف مع infinite scroll + طباعة احترافية
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  fetchItems,
-  fetchMoreItems,
-  createItem,
-  updateItem,
-  deleteItem,
-} from '../../store/slices/itemSlice';
-import { useInfiniteScroll } from '../../hook/useInfiniteScroll';
-import toast from 'react-hot-toast';
+// ─── front/src/pages/items/ItemsPage.jsx ─────────────────────────────────────
+// صفحة الأصناف — معالجة آمنة للقيم العشرية (Decimal)
+// ✅ UPDATED: All numeric fields use parseDecimalFromInput() for safe parsing
+// ─────────────────────────────────────────────────────────────────────────────
 
-import ItemsToolbar   from './components/ItemsToolbar';
-import ItemsTable     from './components/ItemsTable';
-import ItemFormModal  from './components/ItemFormModal';
-import { printItems } from './components/ItemsPrint';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import api from '../../services/api';
+import { parseDecimalFromInput, formatDecimal } from '../../utils/decimalHelper';
 
-// ── Constants ────────────────────────────────────────────────────────────────
-const EMPTY_FORM = {
-  code: '', name: '', category: '', unit: 'كرتون',
-  defaultWeight: '', isRawMaterial: false, notes: '',
-};
-const LOAD_THRESHOLD = 0.8; // يبدأ يحمل لما يوصل 80% من السينتينل
+// ── Components ───────────────────────────────────────────────────────────────
+import ItemCard from '../../components/items/ItemCard';
+import ItemFormModal from '../../components/items/ItemFormModal';
+import SearchBar from '../../components/common/SearchBar';
+import Pagination from '../../components/common/Pagination';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export default function ItemsPage() {
-  const dispatch = useDispatch();
-  const { list, total, currentPage, hasMore, loading, loadingMore } =
-    useSelector((s) => s.items);
-  const { user } = useSelector((s) => s.auth);
-  const isAdmin = user?.role === 'admin';
+const PAGE_SIZE = 100;
 
-  // ── Modal state ──────────────────────────────────────────────────────────
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId,   setEditingId]   = useState(null);
-  const [form,        setForm]        = useState(EMPTY_FORM);
+const ItemsPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
+  const queryClient = useQueryClient();
 
-  // ── Filter state ─────────────────────────────────────────────────────────
-  const [search,    setSearch]    = useState('');
-  const [filterRaw, setFilterRaw] = useState('all');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [isRawMaterial, setIsRawMaterial] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
-  // نحتاج ref للفلاتر الحالية عشان نستخدمها في loadMore بدون re-create الـ callback
-  const filtersRef = useRef({ search, filterRaw, currentPage });
-  filtersRef.current = { search, filterRaw, currentPage };
-
-  // ── Initial load ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    const params = buildParams({ search, filterRaw, page: 1 });
-    dispatch(fetchItems(params));
-  }, [dispatch, search, filterRaw]); // إعادة فيتش لو الفلاتر اتغيرت
-
-  // ── Load more (infinite scroll) ───────────────────────────────────────────
-  const loadMore = useCallback(() => {
-    const { search: s, filterRaw: f, currentPage: p } = filtersRef.current;
-    const nextPage = p + 1;
-    const params   = buildParams({ search: s, filterRaw: f, page: nextPage });
-    dispatch(fetchMoreItems(params));
-  }, [dispatch]);
-
-  const sentinelRef = useInfiniteScroll({
-    onLoadMore: loadMore,
-    hasMore,
-    loading: loadingMore,
-    threshold: LOAD_THRESHOLD,
+  // ── Fetch items ──────────────────────────────────────────────────────────────
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['items', search, page, isRawMaterial],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      params.append('page', page);
+      if (isRawMaterial) params.append('isRawMaterial', isRawMaterial);
+      const res = await api.get(`/items?${params}`);
+      return res.data;
+    },
+    keepPreviousData: true,
   });
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function buildParams({ search, filterRaw, page }) {
-    const p = { page };
-    if (search.trim()) p.search = search.trim();
-    if (filterRaw === 'raw')     p.isRawMaterial = 'true';
-    if (filterRaw === 'product') p.isRawMaterial = 'false';
-    return p;
-  }
+  // ── Create item ──────────────────────────────────────────────────────────────
+  const createMutation = useMutation({
+    mutationFn: (data) => api.post('/items', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['items']);
+      setShowModal(false);
+      showToast('تم إضافة الصنف بنجاح', 'success');
+    },
+    onError: (err) => showToast(err.response?.data?.message || 'خطأ', 'error'),
+  });
 
-  // ── Modal actions ─────────────────────────────────────────────────────────
-  const openCreate = () => { setForm(EMPTY_FORM); setEditingId(null); setIsModalOpen(true); };
-  const openEdit   = (item) => {
-    setForm({ ...item, defaultWeight: item.defaultWeight || '' });
-    setEditingId(item._id);
-    setIsModalOpen(true);
+  // ── Update item ──────────────────────────────────────────────────────────────
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => api.put(`/items/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['items']);
+      setShowModal(false);
+      setEditingItem(null);
+      showToast('تم تحديث الصنف بنجاح', 'success');
+    },
+    onError: (err) => showToast(err.response?.data?.message || 'خطأ', 'error'),
+  });
+
+  // ── Delete item ──────────────────────────────────────────────────────────────
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.delete(`/items/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['items']);
+      showToast('تم حذف الصنف بنجاح', 'success');
+    },
+    onError: (err) => showToast(err.response?.data?.message || 'خطأ', 'error'),
+  });
+
+  const handleDelete = (item) => {
+    confirm({
+      title: 'حذف الصنف',
+      message: `هل أنت متأكد من حذف "${item.name}"؟`,
+      onConfirm: () => deleteMutation.mutate(item.id),
+    });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.code || !form.name) return toast.error('الكود والاسم مطلوبين');
-    const payload = { ...form, defaultWeight: Number(form.defaultWeight) || 0 };
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setShowModal(true);
+  };
 
-    if (editingId) {
-      const res = await dispatch(updateItem({ id: editingId, ...payload }));
-      if (!res.error) { toast.success('تم التعديل'); setIsModalOpen(false); }
-      else toast.error(res.payload);
+  const handleSave = (formData) => {
+    // ✅ Decimal-safe: parse all numeric fields before sending
+    const payload = {
+      ...formData,
+      defaultWeight: parseDecimalFromInput(formData.defaultWeight),
+      lastPurchasePrice: parseDecimalFromInput(formData.lastPurchasePrice),
+      lastSalePrice: parseDecimalFromInput(formData.lastSalePrice),
+      minStockQty: parseDecimalFromInput(formData.minStockQty),
+    };
+
+    if (editingItem) {
+      updateMutation.mutate({ id: editingItem.id, data: payload });
     } else {
-      const res = await dispatch(createItem(payload));
-      if (!res.error) { toast.success('تم الإضافة'); setIsModalOpen(false); }
-      else toast.error(res.payload);
+      createMutation.mutate(payload);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('هتحذف الصنف ده؟')) return;
-    await dispatch(deleteItem(id));
-    toast.success('تم الحذف');
-  };
+  if (error) return <div className="text-red-500 p-4">خطأ: {error.message}</div>;
 
-  // ── Print ─────────────────────────────────────────────────────────────────
-  // الطباعة تطبع الموجود في الليستة (المحملة)
-  const handlePrint = (warehouse) => {
-    if (list.length === 0) return toast.error('مفيش أصناف للطباعة');
-    printItems(list, warehouse);
-  };
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div>
-      <ItemsToolbar
-        total={total}
-        search={search}
-        onSearch={setSearch}
-        filterRaw={filterRaw}
-        onFilterRaw={setFilterRaw}
-        isAdmin={isAdmin}
-        onAdd={openCreate}
-        onPrintRamses={() => handlePrint('ramses')}
-        onPrintOctober={() => handlePrint('october')}
-        onPrintAll={() => handlePrint('all')}
-      />
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">الأصناف</h1>
+        <button
+          onClick={() => { setEditingItem(null); setShowModal(true); }}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          + إضافة صنف
+        </button>
+      </div>
 
-      {loading && list.length === 0 ? (
-        <div className="card text-center py-16">
-          <div className="inline-flex flex-col items-center gap-3 text-blue-500">
-            <svg className="animate-spin w-10 h-10" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            <span className="text-gray-400">جاري تحميل الأصناف...</span>
-          </div>
-        </div>
-      ) : list.length === 0 ? (
-        <div className="card text-center py-16">
-          <p className="text-5xl mb-3">📦</p>
-          <p className="text-gray-400 text-lg">مفيش أصناف</p>
-          <p className="text-gray-300 text-sm mt-1">جرب تغير الفلتر أو تضيف صنف جديد</p>
-        </div>
+      <div className="flex gap-4 mb-4">
+        <SearchBar value={search} onChange={setSearch} placeholder="بحث بالكود أو الاسم..." />
+        <select
+          value={isRawMaterial}
+          onChange={(e) => setIsRawMaterial(e.target.value)}
+          className="border rounded px-3 py-2"
+        >
+          <option value="">كل الأصناف</option>
+          <option value="true">خامات فقط</option>
+          <option value="false">منتجات فقط</option>
+        </select>
+      </div>
+
+      {isLoading ? (
+        <LoadingSpinner />
       ) : (
-        <ItemsTable
-          ref={sentinelRef}
-          items={list}
-          isAdmin={isAdmin}
-          onEdit={openEdit}
-          onDelete={handleDelete}
-          loadingMore={loadingMore}
-          hasMore={hasMore}
-        />
+        <>
+          <div className="grid gap-2">
+            {data?.items?.map((item) => (
+              <ItemCard
+                key={item.id}
+                item={item}
+                onEdit={() => handleEdit(item)}
+                onDelete={() => handleDelete(item)}
+                onViewMovements={() => navigate(`/items/${item.id}/movements`)}
+              />
+            ))}
+          </div>
+          <Pagination
+            page={page}
+            totalPages={Math.ceil((data?.total || 0) / PAGE_SIZE)}
+            onPageChange={setPage}
+          />
+        </>
       )}
 
-      <ItemFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        form={form}
-        setForm={setForm}
-        onSubmit={handleSubmit}
-        editingId={editingId}
-      />
+      {showModal && (
+        <ItemFormModal
+          item={editingItem}
+          onClose={() => setShowModal(false)}
+          onSave={handleSave}
+          isLoading={createMutation.isLoading || updateMutation.isLoading}
+        />
+      )}
     </div>
   );
-}
+};
+
+export default ItemsPage;

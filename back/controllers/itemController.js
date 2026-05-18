@@ -1,5 +1,8 @@
 // ─── controllers/itemController.js ───────────────────────────────────────────
 // الأصناف — بيرجع stock من ItemStock table مباشرة في كل response
+// ✅ UPDATED: All Float fields now use Decimal — handled via safeNum()
+// ─────────────────────────────────────────────────────────────────────────────
+
 const prisma = require('../config/db');
 const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 
@@ -10,7 +13,7 @@ const enrichWithStock = async (items) => {
   if (!items.length) return items;
   const ids = items.map(i => i.id);
   const stocks = await prisma.itemStock.findMany({
-    where:  { itemId: { in: ids } },
+    where: { itemId: { in: ids } },
     select: { itemId: true, warehouse: true, quantity: true, weight: true },
   });
   const stockMap = {};
@@ -22,7 +25,7 @@ const enrichWithStock = async (items) => {
     ...item,
     _id: item.id,
     stock: {
-      ramses:  stockMap[item.id]?.ramses  ?? { quantity: 0, weight: 0 },
+      ramses: stockMap[item.id]?.ramses ?? { quantity: 0, weight: 0 },
       october: stockMap[item.id]?.october ?? { quantity: 0, weight: 0 },
     },
   }));
@@ -33,12 +36,12 @@ const getItems = async (req, res) => {
   try {
     const { search, isRawMaterial, page = 1 } = req.query;
     const pageNum = Math.max(1, parseInt(page, 10));
-    const skip    = (pageNum - 1) * PAGE_SIZE;
-    const s       = search?.trim() || '';
-    const isNum   = /^\d+$/.test(s);
+    const skip = (pageNum - 1) * PAGE_SIZE;
+    const s = search?.trim() || '';
+    const isNum = /^\d+$/.test(s);
 
     const conditions = ['"isActive" = true'];
-    const params     = [];
+    const params = [];
     let pi = 1;
 
     if (s) {
@@ -105,17 +108,20 @@ const createItem = async (req, res) => {
   try {
     const exists = await prisma.item.findUnique({ where: { code: req.body.code } });
     if (exists) return res.status(400).json({ message: 'كود الصنف موجود بالفعل' });
+
+    // ✅ Decimal-safe: use safeNum() for all numeric inputs
     const item = await prisma.item.create({
       data: {
-        code:              req.body.code,
-        name:              req.body.name,
-        category:          req.body.category,
-        unit:              req.body.unit           || 'كرتون',
-        defaultWeight:     req.body.defaultWeight  || 0,
-        lastPurchasePrice: req.body.lastPurchasePrice || 0,
-        lastSalePrice:     req.body.lastSalePrice  || 0,
-        isRawMaterial:     req.body.isRawMaterial  || false,
-        notes:             req.body.notes,
+        code: req.body.code,
+        name: req.body.name,
+        category: req.body.category,
+        unit: req.body.unit || 'كرتون',
+        defaultWeight: safeNum(req.body.defaultWeight),
+        lastPurchasePrice: safeNum(req.body.lastPurchasePrice),
+        lastSalePrice: safeNum(req.body.lastSalePrice),
+        minStockQty: safeNum(req.body.minStockQty),  // ✅ Now Decimal
+        isRawMaterial: req.body.isRawMaterial || false,
+        notes: req.body.notes,
       },
     });
     const [enriched] = await enrichWithStock([item]);
@@ -127,9 +133,18 @@ const createItem = async (req, res) => {
 const updateItem = async (req, res) => {
   try {
     const allowed = ['code','name','category','unit','defaultWeight',
-                     'lastPurchasePrice','lastSalePrice','isRawMaterial','isActive','notes'];
+      'lastPurchasePrice','lastSalePrice','minStockQty','isRawMaterial','isActive','notes'];
     const data = {};
-    allowed.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
+    allowed.forEach(k => { 
+      if (req.body[k] !== undefined) {
+        // ✅ Decimal-safe: numeric fields use safeNum()
+        if (['defaultWeight','lastPurchasePrice','lastSalePrice','minStockQty'].includes(k)) {
+          data[k] = safeNum(req.body[k]);
+        } else {
+          data[k] = req.body[k];
+        }
+      }
+    });
     const item = await prisma.item.update({ where: { id: req.params.id }, data });
     const [enriched] = await enrichWithStock([item]);
     res.json(enriched);
@@ -157,10 +172,11 @@ const getItemStock = async (req, res) => {
     for (const s of stocks) stockMap[s.warehouse] = { quantity: s.quantity, weight: s.weight };
     res.json({
       _id: item.id, code: item.code, name: item.name, unit: item.unit,
-      stock:             stockMap,
-      defaultWeight:     item.defaultWeight,
+      stock: stockMap,
+      defaultWeight: item.defaultWeight,
       lastPurchasePrice: item.lastPurchasePrice,
-      lastSalePrice:     item.lastSalePrice,
+      lastSalePrice: item.lastSalePrice,
+      minStockQty: item.minStockQty,  // ✅ Decimal returned as-is (normalized by n())
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
