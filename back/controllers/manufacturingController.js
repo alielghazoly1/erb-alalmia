@@ -10,6 +10,7 @@
 
 const prisma = require('../config/db');
 const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
+const { getStockQty, updateStock, createStockMovement } = require('../utils/stockHelper');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,9 +18,10 @@ const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 
 /** يولّد رقم الأمر (MFG-SEASON-00001) */
 const generateOrderNumber = async (seasonId, seasonCode) => {
+  const prefix = 'MFG';
   const counter = await prisma.seasonCounter.upsert({
-    where:  { seasonId },
-    create: { seasonId, value: 1, startFrom: 1 },
+    where:  { seasonId_prefix: { seasonId, prefix } },
+    create: { seasonId, prefix, value: 1, startFrom: 1 },
     update: { value: { increment: 1 } },
   });
   const num = counter.startFrom + counter.value - 1;
@@ -82,12 +84,12 @@ const getOrders = async (req, res) => {
       prisma.manufacturingOrder.findMany({
         where,
         include: {
-          createdBy:      { select: { name: true } },
-          approvedBy:     { select: { name: true } },
-          worker:         { select: { name: true, code: true } },
-          season:         { select: { name: true, isActive: true } },
-          rawMaterials:   { select: { itemName: true, totalWeight: true, quantity: true } },
-          outputProducts: { select: { itemName: true, totalWeight: true, quantity: true } },
+          createdBy:     { select: { name: true } },
+          approvedBy:    { select: { name: true } },
+          worker:        { select: { name: true, code: true, scope: true } },
+          season:        { select: { name: true, isActive: true } },
+          rawMaterials:  { select: { itemName: true, totalWeight: true, quantity: true } },
+          outputProducts:{ select: { itemName: true, totalWeight: true, quantity: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -134,12 +136,20 @@ const createOrder = async (req, res) => {
     if (!rawMaterials?.length)   return res.status(400).json({ message: 'أضف خامة واحدة على الأقل' });
     if (!outputProducts?.length) return res.status(400).json({ message: 'أضف منتج واحد على الأقل' });
 
-    // فحص المخزون للخامات
+    // الموسم — لازم يتحدد أول لأن المخزون مربوط بالموسم
+    const season = seasonId
+      ? await prisma.season.findUnique({ where: { id: seasonId }, select: { id: true, name: true } })
+      : await prisma.season.findFirst({ where: { isActive: true }, select: { id: true, name: true } });
+    if (!season) {
+      return res.status(400).json({ message: 'مفيش موسم نشط — فعّل موسم أو حدد موسم' });
+    }
+
+    // فحص المخزون للخامات (بالموسم الصح)
     for (const raw of rawMaterials) {
       const dbItem = await prisma.item.findUnique({ where: { id: raw.item }, select: { name: true } });
       if (!dbItem) return res.status(404).json({ message: `الصنف ${raw.itemCode} مش موجود` });
 
-      const { quantity: avail } = await getStockQty(raw.item, warehouse, null);
+      const { quantity: avail } = await getStockQty(raw.item, warehouse, season.id);
       if (avail < safeNum(raw.quantity)) {
         return res.status(400).json({
           message: `"${raw.itemName}" مش كافية — متاح: ${avail} كرتون، مطلوب: ${raw.quantity}`,
@@ -153,14 +163,6 @@ const createOrder = async (req, res) => {
       const w = await prisma.worker.findUnique({ where: { id: workerId }, select: { name: true } });
       if (!w) return res.status(404).json({ message: 'المعلم مش موجود' });
       workerName = w.name;
-    }
-
-    // الموسم
-    const season = seasonId
-      ? await prisma.season.findUnique({ where: { id: seasonId }, select: { id: true, name: true } })
-      : await prisma.season.findFirst({ where: { isActive: true }, select: { id: true, name: true } });
-    if (!season) {
-      return res.status(400).json({ message: 'مفيش موسم نشط — فعّل موسم أو حدد موسم' });
     }
 
     const seasonCode  = season.name.replace(/\s+/g, '').slice(0, 6);
@@ -318,20 +320,37 @@ const approveOrder = async (req, res) => {
 
     const wh = order.warehouse;
 
-    // نقص المخزون للخامات وزيادة المنتجات
-    for (const r of order.rawMaterials) {
-      await updateStock(r.itemId, wh, order.seasonId, { quantity: -r.quantity, weight: -r.totalWeight });
-      await createStockMovement({ itemId: r.itemId, itemCode: r.itemCode, itemName: r.itemName, type: 'manufacturing_out', quantity: r.quantity, weight: r.totalWeight, warehouse: wh, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
-    }
-    for (const p of order.outputProducts) {
-      await updateStock(p.itemId, wh, order.seasonId, { quantity: +p.quantity, weight: +p.totalWeight });
-      await createStockMovement({ itemId: p.itemId, itemCode: p.itemCode, itemName: p.itemName, type: 'manufacturing_in', quantity: p.quantity, weight: p.totalWeight, warehouse: wh, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
-    }
+    // ── تنفيذ داخل transaction لضمان الـ consistency ──────────────────────
+    const approved = await prisma.$transaction(async (_tx) => {
+      // نقص المخزون للخامات وزيادة المنتجات
+      for (const r of order.rawMaterials) {
+        await updateStock(r.itemId, wh, order.seasonId, { quantity: -safeNum(r.quantity), weight: -safeNum(r.totalWeight) });
+        await createStockMovement({
+          itemId: r.itemId, itemCode: r.itemCode, itemName: r.itemName,
+          type: 'manufacturing_out',
+          quantity: r.quantity, weight: r.totalWeight,
+          warehouse: wh, reference: order.orderNumber,
+          referenceModel: 'ManufacturingOrder', referenceId: order.id,
+          seasonId: order.seasonId, createdById: req.user.id, date: order.date,
+        });
+      }
+      for (const p of order.outputProducts) {
+        await updateStock(p.itemId, wh, order.seasonId, { quantity: +safeNum(p.quantity), weight: +safeNum(p.totalWeight) });
+        await createStockMovement({
+          itemId: p.itemId, itemCode: p.itemCode, itemName: p.itemName,
+          type: 'manufacturing_in',
+          quantity: p.quantity, weight: p.totalWeight,
+          warehouse: wh, reference: order.orderNumber,
+          referenceModel: 'ManufacturingOrder', referenceId: order.id,
+          seasonId: order.seasonId, createdById: req.user.id, date: order.date,
+        });
+      }
 
-    const approved = await prisma.manufacturingOrder.update({
-      where:   { id: order.id },
-      data:    { status: 'approved', approvedById: req.user.id, approvedAt: new Date() },
-      include: orderIncludes(),
+      return prisma.manufacturingOrder.update({
+        where:   { id: order.id },
+        data:    { status: 'approved', approvedById: req.user.id, approvedAt: new Date() },
+        include: orderIncludes(),
+      });
     });
 
     return res.json({ message: 'تم الموافقة ✅', order: n(approved) });
@@ -494,8 +513,8 @@ const setSeasonStartNumber = async (req, res) => {
     }
 
     await prisma.seasonCounter.upsert({
-      where:  { seasonId },
-      create: { seasonId, startFrom: Number(startFrom), value: 0 },
+      where:  { seasonId_prefix: { seasonId, prefix: 'MFG' } },
+      create: { seasonId, prefix: 'MFG', startFrom: Number(startFrom), value: 0 },
       update: { startFrom: Number(startFrom), value: 0 },
     });
 

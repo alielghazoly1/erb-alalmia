@@ -1,38 +1,48 @@
-// ─── SupplierStatementModal.jsx ───────────────────────────────────────────────
-// كشف الحساب السريع للمورد — totals كل موسم بس (له / عليه / إجمالي المواسم)
-// بدون أي تفاصيل فواتير أو مرتجعات أو مدفوعات
+// ─── pages/suppliers/components/SupplierStatementModal.jsx ───────────────────
+// كشف الحساب السريع للمورد — totals كل موسم (توريد / مدفوع / رصيد)
 // ─────────────────────────────────────────────────────────────────────────────
-import { useMemo }  from 'react';
-import { Link }     from 'react-router-dom';
-import Modal        from '../../../components/common/Modal';
+import { useMemo } from 'react';
+import { Link }    from 'react-router-dom';
+import Modal       from '../../../components/common/Modal';
 
-const fmt = (n) => n != null
-  ? Number(n).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  : '0.00';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const fmt = (n) =>
+  n != null
+    ? Number(n).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function SupplierStatementModal({ isOpen, onClose, supplier, seasons, loading }) {
+
+  // ── إجمالي كل المواسم ────────────────────────────────────────────────────
   const totals = useMemo(() => ({
-    purchases: (seasons || []).reduce((s, r) => s + (r.totalPurchases || 0), 0),
-    paid:      (seasons || []).reduce((s, r) => s + (r.totalPaid      || 0), 0),
-    returns:   (seasons || []).reduce((s, r) => s + (r.totalReturns   || 0), 0),
-    balance:   (seasons || []).reduce((s, r) => s + (r.balance        || 0), 0),
+    purchases: (seasons || []).reduce((acc, r) => acc + (r.totalPurchases || 0), 0),
+    paid:      (seasons || []).reduce((acc, r) => acc + (r.totalPaid      || 0), 0),
+    returns:   (seasons || []).reduce((acc, r) => acc + (r.totalReturns   || 0), 0),
+    balance:   (seasons || []).reduce((acc, r) => acc + (r.balance        || 0), 0),
   }), [seasons]);
 
+  // ── المواسم اللي عندها أي نشاط أو رصيد ابتدائي ───────────────────────────
   const activeSeasons = (seasons || []).filter(
-    s => s.totalPurchases || s.totalPaid || s.totalReturns
+    (s) => s.totalPurchases || s.totalPaid || s.totalReturns || s.openingBalance,
   );
 
+  // ── render ────────────────────────────────────────────────────────────────
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`كشف حساب — ${supplier?.name || ''}`}>
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>⏳ جاري التحميل...</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+          ⏳ جاري التحميل...
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* ── إجمالي كل المواسم ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-            <TotalCard label="إجمالي التوريد"  value={totals.purchases}            color="blue"  />
-            <TotalCard label="إجمالي المدفوع"  value={totals.paid + totals.returns} color="green" />
+            <TotalCard label="إجمالي التوريد"  value={totals.purchases}                  color="blue"  />
+            <TotalCard label="إجمالي المدفوع"  value={totals.paid + totals.returns}      color="green" />
             <TotalCard
               label={totals.balance > 0 ? '⚠️ مستحق للمورد' : '✅ له'}
               value={Math.abs(totals.balance)}
@@ -76,7 +86,7 @@ export default function SupplierStatementModal({ isOpen, onClose, supplier, seas
   );
 }
 
-// ── كارت الإجمالي ──────────────────────────────────────────────────────────────
+// ── كارت الإجمالي ─────────────────────────────────────────────────────────────
 function TotalCard({ label, value, color }) {
   const palette = {
     blue:  { bg: '#eff6ff', text: '#1d4ed8', label: '#3b82f6' },
@@ -85,6 +95,7 @@ function TotalCard({ label, value, color }) {
     teal:  { bg: '#f0fdfa', text: '#0f766e', label: '#14b8a6' },
   };
   const c = palette[color] || palette.blue;
+
   return (
     <div style={{ background: c.bg, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
       <p style={{ fontSize: '11px', color: c.label, marginBottom: '4px' }}>{label}</p>
@@ -94,7 +105,7 @@ function TotalCard({ label, value, color }) {
   );
 }
 
-// ── صف موسم واحد ───────────────────────────────────────────────────────────────
+// ── صف موسم واحد ──────────────────────────────────────────────────────────────
 function SeasonRow({ data: s }) {
   const isActive  = s.season.isActive;
   const hasDebt   = s.balance > 0;
@@ -102,11 +113,13 @@ function SeasonRow({ data: s }) {
 
   return (
     <div style={{
-      border: `1px solid ${isActive ? '#93c5fd' : '#e2e8f0'}`,
+      border:       `1px solid ${isActive ? '#93c5fd' : '#e2e8f0'}`,
       borderRadius: '8px',
-      padding: '10px 12px',
-      background: isActive ? '#eff6ff' : '#f8fafc',
+      padding:      '10px 12px',
+      background:   isActive ? '#eff6ff' : '#f8fafc',
     }}>
+
+      {/* اسم الموسم + الرصيد */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '13px', fontWeight: 600, color: isActive ? '#1d4ed8' : '#374151' }}>
@@ -129,13 +142,18 @@ function SeasonRow({ data: s }) {
         </span>
       </div>
 
-      <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: '#64748b' }}>
+      {/* توريد / رصيد ابتدائي / مرتجعات / مدفوع */}
+      <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: '#64748b', flexWrap: 'wrap' }}>
+        {s.openingBalance !== 0 && (
+          <span>رصيد أولي: <b style={{ color: '#7c3aed' }}>{fmt(s.openingBalance)}</b></span>
+        )}
         <span>توريد: <b style={{ color: '#1d4ed8' }}>{fmt(s.totalPurchases)}</b></span>
         {s.totalReturns > 0 && (
           <span>مرتجع: <b style={{ color: '#ea580c' }}>{fmt(s.totalReturns)}</b></span>
         )}
         <span>مدفوع: <b style={{ color: '#15803d' }}>{fmt(s.totalPaid)}</b></span>
       </div>
+
     </div>
   );
 }

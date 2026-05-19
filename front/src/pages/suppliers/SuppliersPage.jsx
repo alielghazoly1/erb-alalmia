@@ -1,52 +1,60 @@
 // ─── pages/suppliers/SuppliersPage.jsx ───────────────────────────────────────
 // الصفحة الرئيسية لإدارة الموردين — orchestrator نظيف
 // كل المنطق موزع على hooks مستقلة — الصفحة نفسها قصيرة وواضحة
-// ────────────────────────────────────────────────────────────────────────────
-import { useEffect }          from 'react';
+// ─────────────────────────────────────────────────────────────────────────────
+import { useEffect }               from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import toast                        from 'react-hot-toast';
+
 import { fetchSuppliers, deleteSupplier } from '../../store/slices/supplierSlice';
-import toast from 'react-hot-toast';
-import { fmt } from './supplierUtils';
+import { useSelectedSeason }              from '../../hook/Useselectedseason';
+import { fmt }                            from './supplierUtils';
 
-// Hooks
-import { useSupplierFilters }       from './hooks/useSupplierFilters';
-import { useSupplierForm }          from './hooks/useSupplierForm';
+import { useSupplierFilters }        from './hooks/useSupplierFilters';
+import { useSupplierForm }           from './hooks/useSupplierForm';
 import { useSupplierInitialBalance } from './hooks/useSupplierInitialBalance';
-import { useSupplierStatement }     from './hooks/useSupplierStatement';
+import { useSupplierStatement }      from './hooks/useSupplierStatement';
 
+import SupplierFilters             from './components/SupplierFilters';
+import SupplierTable               from './components/SupplierTable';
+import SupplierFormModal           from './components/SupplierFormModal';
+import SupplierStatementModal      from './components/SupplierStatementModal';
+import SupplierInitialBalanceModal from './components/SupplierInitialBalanceModal';
 
-// Components
-import SupplierFilters              from './components/SupplierFilters';
-import SupplierTable                from './components/SupplierTable';
-import SupplierFormModal            from './components/SupplierFormModal';
-import SupplierStatementModal       from './components/SupplierStatementModal';
-import SupplierInitialBalanceModal  from './components/SupplierInitialBalanceModal';
-
-
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function SuppliersPage() {
-  const dispatch = useDispatch();
+  const dispatch  = useDispatch();
+  const seasonId  = useSelectedSeason();
+
   const { list, loading } = useSelector((s) => s.suppliers);
   const { user }          = useSelector((s) => s.auth);
   const isAdmin           = user?.role === 'admin';
 
-  // ── تحميل الموردين عند الدخول ────────────────────────────────────────────
-  useEffect(() => { dispatch(fetchSuppliers()); }, [dispatch]);
+  // ── تحميل الموردين — يعيد التحميل عند تغيير الموسم ──────────────────────
+  useEffect(() => {
+    dispatch(fetchSuppliers(seasonId ? { seasonId } : {}));
+  }, [dispatch, seasonId]);
 
   // ── Hooks ─────────────────────────────────────────────────────────────────
-  const filters     = useSupplierFilters(list);
-  const form        = useSupplierForm();
-const initBalance = useSupplierInitialBalance(() =>
-  dispatch(fetchSuppliers({ seasonId: undefined }))
-);  const statement   = useSupplierStatement();
+  const filters  = useSupplierFilters(list);
+  const form     = useSupplierForm();
+  const statement = useSupplierStatement();
+
+  // بعد حفظ الرصيد: نعيد التحميل بالموسم الحالي عشان الـ totals تتحدث
+  const initBalance = useSupplierInitialBalance(() =>
+    dispatch(fetchSuppliers(seasonId ? { seasonId } : {})),
+  );
 
   // ── حذف المورد ───────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm('هتحذف المورد ده؟')) return;
-    await dispatch(deleteSupplier(id));
-    toast.success('تم الحذف');
+    const res = await dispatch(deleteSupplier(id));
+    if (!res.error) toast.success('تم الحذف');
+    else toast.error(res.payload);
   };
 
+  // ── render ────────────────────────────────────────────────────────────────
   return (
     <div>
 
@@ -58,11 +66,15 @@ const initBalance = useSupplierInitialBalance(() =>
             {filters.filtered.length} مورد
             {filters.onlyDebtors && ' (عليهم فلوس)'}
             {' • '}المستحق له:{' '}
-            <span className={`font-bold ml-1 ${filters.totals.owedToUs > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+            <span className={`font-bold ml-1 ${
+              filters.totals.owedToUs > 0 ? 'text-blue-600' : 'text-gray-400'
+            }`}>
               {fmt(filters.totals.owedToUs)} ج.م
             </span>
             {' • '}المستحق عليه:{' '}
-            <span className={`font-bold ml-1 ${filters.totals.owedByUs > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+            <span className={`font-bold ml-1 ${
+              filters.totals.owedByUs > 0 ? 'text-red-600' : 'text-gray-400'
+            }`}>
               {fmt(filters.totals.owedByUs)} ج.م
             </span>
           </p>

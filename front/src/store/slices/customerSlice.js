@@ -1,14 +1,14 @@
-// ─── customerSlice.js ────────────────────────────────────────────────────────
+// ─── store/slices/customerSlice.js ───────────────────────────────────────────
 // Redux Slice للعملاء — كل الـ async thunks + state management
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // Async Thunks
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 
-/** جلب كل العملاء — الفلترة تتم في الفرونت عبر useCustomerFilters */
+/** جلب كل العملاء مع أرصدتهم — يقبل { seasonId } اختياري */
 export const fetchCustomers = createAsyncThunk(
   'customers/fetchAll',
   async (params = {}, { rejectWithValue }) => {
@@ -21,7 +21,7 @@ export const fetchCustomers = createAsyncThunk(
   },
 );
 
-/** كشف حساب عميل لموسم معين (أو الموسم النشط لو ما فيش) */
+/** كشف حساب عميل لموسم معين */
 export const fetchCustomerStatement = createAsyncThunk(
   'customers/statement',
   async ({ customerId, seasonId }, { rejectWithValue }) => {
@@ -36,7 +36,7 @@ export const fetchCustomerStatement = createAsyncThunk(
   },
 );
 
-/** كشف العميل عبر كل المواسم */
+/** كشف العميل عبر كل المواسم — يرجع { customer, seasons: [...] } */
 export const fetchCustomerAllSeasons = createAsyncThunk(
   'customers/allSeasons',
   async (customerId, { rejectWithValue }) => {
@@ -44,7 +44,7 @@ export const fetchCustomerAllSeasons = createAsyncThunk(
       const { data } = await api.get(`/customers/${customerId}/all-seasons`);
       return data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+      return rejectWithValue(err.response?.data?.message || 'خطأ في جلب المواسم');
     }
   },
 );
@@ -75,20 +75,27 @@ export const updateCustomer = createAsyncThunk(
   },
 );
 
-/** حذف (soft delete) عميل */
-/** تعديل الرصيد الابتدائي للعميل */
- const updateCustomerBalance = createAsyncThunk(
+/**
+ * تعديل الرصيد الابتدائي للعميل في موسم محدد.
+ * seasonId مطلوب — الـ backend يرفض الطلب بدونه.
+ */
+export const updateCustomerBalance = createAsyncThunk(
   'customers/updateBalance',
-  async ({ id, openingBalance }, { rejectWithValue }) => {
+  async ({ id, openingBalance, seasonId }, { rejectWithValue }) => {
     try {
-      const { data } = await api.patch(`/customers/${id}/initial-balance`, { openingBalance });
-      return { id, openingBalance: data.openingBalance ?? openingBalance };
+      if (!seasonId) return rejectWithValue('يجب تحديد الموسم أولاً');
+      const { data } = await api.patch(`/customers/${id}/initial-balance`, {
+        openingBalance,
+        seasonId,
+      });
+      return { id, openingBalance: data.openingBalance ?? openingBalance, seasonId };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'خطأ في تحديث الرصيد');
     }
   },
 );
 
+/** حذف عميل (soft delete) */
 export const deleteCustomer = createAsyncThunk(
   'customers/delete',
   async (id, { rejectWithValue }) => {
@@ -101,18 +108,18 @@ export const deleteCustomer = createAsyncThunk(
   },
 );
 
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // Slice
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const customerSlice = createSlice({
   name: 'customers',
   initialState: {
-    list:             [],       // قائمة العملاء كاملة
-    statement:        null,     // كشف الحساب للعميل المختار
-    allSeasons:       [],       // كشف كل المواسم للعميل المختار
-    loading:          false,    // تحميل القائمة
-    statementLoading: false,    // تحميل الكشف
+    list:             [],    // قائمة العملاء مع أرصدتهم المحسوبة
+    statement:        null,  // كشف الحساب للعميل المختار (موسم واحد)
+    allSeasons:       [],    // كشف كل المواسم للعميل المختار
+    loading:          false,
+    statementLoading: false,
     error:            null,
   },
   reducers: {
@@ -121,7 +128,7 @@ const customerSlice = createSlice({
       state.statement  = null;
       state.allSeasons = [];
     },
-    /** تحديث عميل واحد في القائمة مباشرةً (من خارج الـ slice لو لزم) */
+    /** تحديث عميل واحد في القائمة مباشرةً */
     updateCustomerInList(state, action) {
       const idx = state.list.findIndex((c) => c._id === action.payload._id);
       if (idx !== -1) state.list[idx] = { ...state.list[idx], ...action.payload };
@@ -129,42 +136,41 @@ const customerSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ── fetchCustomers ──────────────────────────────────────────
-      .addCase(fetchCustomers.pending,   (s) => { s.loading = true; s.error = null; })
-      .addCase(fetchCustomers.fulfilled, (s, { payload }) => { s.loading = false; s.list = payload; })
+      // ── fetchCustomers ────────────────────────────────────────────────────
+      .addCase(fetchCustomers.pending,   (s)            => { s.loading = true;  s.error = null; })
+      .addCase(fetchCustomers.fulfilled, (s, { payload }) => { s.loading = false; s.list  = payload; })
       .addCase(fetchCustomers.rejected,  (s, { payload }) => { s.loading = false; s.error = payload; })
 
-      // ── fetchCustomerStatement ──────────────────────────────────
-      .addCase(fetchCustomerStatement.pending,   (s) => { s.statementLoading = true; })
-      .addCase(fetchCustomerStatement.fulfilled, (s, { payload }) => {
-        s.statementLoading = false;
-        s.statement = payload;
-      })
-      .addCase(fetchCustomerStatement.rejected,  (s) => { s.statementLoading = false; })
+      // ── fetchCustomerStatement ────────────────────────────────────────────
+      .addCase(fetchCustomerStatement.pending,   (s)            => { s.statementLoading = true; })
+      .addCase(fetchCustomerStatement.fulfilled, (s, { payload }) => { s.statementLoading = false; s.statement = payload; })
+      .addCase(fetchCustomerStatement.rejected,  (s)            => { s.statementLoading = false; })
 
-      // ── fetchCustomerAllSeasons ─────────────────────────────────
+      // ── fetchCustomerAllSeasons ───────────────────────────────────────────
+      // payload = { customer, seasons: [...] } — نحتاج seasons فقط
       .addCase(fetchCustomerAllSeasons.fulfilled, (s, { payload }) => {
-        s.allSeasons = payload;
+        s.allSeasons = payload?.seasons ?? [];
       })
 
-      // ── createCustomer ──────────────────────────────────────────
-      // نضيف العميل الجديد في أول القائمة مباشرةً بدون refetch
+      // ── createCustomer ────────────────────────────────────────────────────
       .addCase(createCustomer.fulfilled, (s, { payload }) => {
         s.list.unshift(payload);
       })
 
-      // ── updateCustomer ──────────────────────────────────────────
+      // ── updateCustomer ────────────────────────────────────────────────────
       .addCase(updateCustomer.fulfilled, (s, { payload }) => {
         const idx = s.list.findIndex((c) => c._id === payload._id);
         if (idx !== -1) s.list[idx] = { ...s.list[idx], ...payload };
       })
 
-      // ── updateCustomerBalance ──────────────────────────────────
+      // ── updateCustomerBalance — نحدث openingBalance في القائمة فقط ────────
+      // الـ balance المحسوب (totalSales + ...) سيتحدث عند fetchCustomers التالي
       .addCase(updateCustomerBalance.fulfilled, (s, { payload: { id, openingBalance } }) => {
-        const c = s.list.find(x => x._id === id || x.id === id);
-        if (c) c.openingBalance = openingBalance;
+        const customer = s.list.find((c) => c._id === id || c.id === id);
+        if (customer) customer.openingBalance = openingBalance;
       })
-      // ── deleteCustomer ──────────────────────────────────────────
+
+      // ── deleteCustomer ────────────────────────────────────────────────────
       .addCase(deleteCustomer.fulfilled, (s, { payload: id }) => {
         s.list = s.list.filter((c) => c._id !== id);
       });
@@ -172,5 +178,4 @@ const customerSlice = createSlice({
 });
 
 export const { clearStatement, updateCustomerInList } = customerSlice.actions;
-export { updateCustomerBalance };
 export default customerSlice.reducer;

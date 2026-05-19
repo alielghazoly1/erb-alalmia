@@ -229,7 +229,7 @@ model Item {
   updatedAt         DateTime                   @updatedAt
   deletedAt         DateTime?
   stocks            ItemStock[]
-  outputs           ManufacturingOutput[]
+  outputProducts    ManufacturingOutput[]
   rawMaterials      ManufacturingRawMaterial[]
   priceListLinks    PriceListItemLink[]
   purchaseItems     PurchaseInvoiceItem[]
@@ -678,11 +678,10 @@ model ManufacturingOrder {
   createdBy    User                       @relation("ManufacturingCreatedBy", fields: [createdById], references: [id])
   season       Season?                    @relation(fields: [seasonId], references: [id])
   worker       Worker?                    @relation(fields: [workerId], references: [id])
-  outputs      ManufacturingOutput[]
+  outputProducts ManufacturingOutput[]
   rawMaterials ManufacturingRawMaterial[]
 
   @@unique([seasonId, orderNumber])
-  @@index([seasonId, status, createdAt(sort: Desc)])
   @@index([seasonId, warehouse, date(sort: Desc)])
   @@index([workerId, seasonId, date(sort: Desc)])
   @@map("manufacturing_orders")

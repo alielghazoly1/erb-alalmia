@@ -76,7 +76,7 @@ export default function ManufacturingPage() {
 
   // ── computed ─────────────────────────────────────────────────────────────────
   const filteredWorkers = workers.filter(
-    w => w.isActive !== false && (w.warehouse === warehouse || w.warehouse === 'both'),
+    w => w.isActive !== false && (w.scope === warehouse || w.scope === 'both'),
   );
   const isApprovedEdit = isEdit && existingStatus === 'approved';
   const whLabel        = warehouse === 'ramses' ? 'رمسيس' : 'أكتوبر';

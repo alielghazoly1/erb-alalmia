@@ -1,15 +1,15 @@
-// ─── hooks/useSupplierStatement.js ───────────────────────────────────────────
+// ─── pages/suppliers/hooks/useSupplierStatement.js ───────────────────────────
 // Hook مسؤول عن جلب بيانات كشف الحساب السريع لمورد
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 import { useState, useCallback } from 'react';
-import api from '../../../services/api';
-import toast from 'react-hot-toast';
+import api                       from '../../../services/api';
+import toast                     from 'react-hot-toast';
 
 export function useSupplierStatement() {
-  const [isOpen,    setIsOpen]    = useState(false);
-  const [supplier,  setSupplier]  = useState(null);
-  const [seasons,   setSeasons]   = useState([]);
-  const [loading,   setLoading]   = useState(false);
+  const [isOpen,   setIsOpen]   = useState(false);
+  const [supplier, setSupplier] = useState(null);
+  const [seasons,  setSeasons]  = useState([]);
+  const [loading,  setLoading]  = useState(false);
 
   const open = useCallback(async (s) => {
     setSupplier(s);
@@ -18,9 +18,10 @@ export function useSupplierStatement() {
     setLoading(true);
     try {
       const { data } = await api.get(`/suppliers/${s._id}/all-seasons`);
-      setSeasons(data);
+      // الـ backend يرجع { supplier, seasons: [...] } — نحتاج seasons فقط
+      setSeasons(data?.seasons ?? []);
     } catch {
-      toast.error('خطأ في تحميل البيانات');
+      toast.error('خطأ في تحميل بيانات المورد');
     } finally {
       setLoading(false);
     }

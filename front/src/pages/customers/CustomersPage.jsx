@@ -1,9 +1,11 @@
-// ─── CustomersPage.jsx ───────────────────────────────────────────────────────
-// الصفحة الرئيسية لإدارة العملاء — مجرد orchestrator يجمع الـ hooks والمكوّنات
+// ─── pages/customers/CustomersPage.jsx ───────────────────────────────────────
+// الصفحة الرئيسية لإدارة العملاء — orchestrator يجمع الـ hooks والمكوّنات
 // كل المنطق موزع على hooks مستقلة — الصفحة نفسها نظيفة وقصيرة
-// ────────────────────────────────────────────────────────────────────────────
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+// ─────────────────────────────────────────────────────────────────────────────
+import { useEffect, useState }        from 'react';
+import { useDispatch, useSelector }    from 'react-redux';
+import toast                           from 'react-hot-toast';
+
 import {
   fetchCustomers,
   deleteCustomer,
@@ -11,37 +13,42 @@ import {
   fetchCustomerAllSeasons,
   clearStatement,
 } from '../../store/slices/customerSlice';
-import toast from 'react-hot-toast';
-import { fmt } from './customerUtils';
 
-// Hooks
-import { useCustomerFilters } from './hooks/useCustomerFilters';
-import { useCustomerForm }    from './hooks/useCustomerForm';
-import { useInitialBalance }  from './hooks/useInitialBalance';
+import { useSelectedSeason }    from '../../hook/Useselectedseason';
+import { useCustomerFilters }   from './hooks/useCustomerFilters';
+import { useCustomerForm }      from './hooks/useCustomerForm';
+import { useInitialBalance }    from './hooks/useInitialBalance';
 
-// Components
-import CustomerFilters        from './components/CustomerFilters';
-import CustomerTable          from './components/CustomerTable';
-import CustomerFormModal      from './components/CustomerFormModal';
-import CustomerStatementModal from './components/CustomerStatementModal';
-import InitialBalanceModal    from './components/InitialBalanceModal';
-import { useState } from 'react';
+import CustomerFilters          from './components/CustomerFilters';
+import CustomerTable            from './components/CustomerTable';
+import CustomerFormModal        from './components/CustomerFormModal';
+import CustomerStatementModal   from './components/CustomerStatementModal';
+import InitialBalanceModal      from './components/InitialBalanceModal';
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function CustomersPage() {
-  const dispatch = useDispatch();
+  const dispatch  = useDispatch();
+  const seasonId  = useSelectedSeason();
+
   const { list, loading } = useSelector((s) => s.customers);
   const { user }          = useSelector((s) => s.auth);
   const isAdmin           = user?.role === 'admin';
 
-  // ── تحميل العملاء عند الدخول ─────────────────────────────────────────────
-  useEffect(() => { dispatch(fetchCustomers()); }, [dispatch]);
+  // ── تحميل العملاء — يعيد التحميل عند تغيير الموسم ───────────────────────
+  useEffect(() => {
+    dispatch(fetchCustomers(seasonId ? { seasonId } : {}));
+  }, [dispatch, seasonId]);
 
   // ── Hooks ─────────────────────────────────────────────────────────────────
-  const filters     = useCustomerFilters(list);
-  const form        = useCustomerForm();
-const initBalance = useInitialBalance(() =>
-  dispatch(fetchCustomers({ seasonId: undefined }))
-);
+  const filters = useCustomerFilters(list);
+  const form    = useCustomerForm();
+
+  // بعد حفظ الرصيد: نعيد تحميل القائمة بالموسم الحالي عشان الـ totals تتحدث
+  const initBalance = useInitialBalance(() =>
+    dispatch(fetchCustomers(seasonId ? { seasonId } : {})),
+  );
+
   // ── حالة موديل الكشف السريع ───────────────────────────────────────────────
   const [statementCustomer, setStatementCustomer] = useState(null);
   const [isStatementOpen,   setIsStatementOpen]   = useState(false);
@@ -50,7 +57,7 @@ const initBalance = useInitialBalance(() =>
   const openStatement = (customer) => {
     setStatementCustomer(customer);
     dispatch(clearStatement());
-    dispatch(fetchCustomerStatement({ customerId: customer._id }));
+    dispatch(fetchCustomerStatement({ customerId: customer._id, seasonId }));
     dispatch(fetchCustomerAllSeasons(customer._id));
     setIsStatementOpen(true);
   };
@@ -58,10 +65,12 @@ const initBalance = useInitialBalance(() =>
   // ── حذف العميل ───────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm('هتحذف العميل ده؟')) return;
-    await dispatch(deleteCustomer(id));
-    toast.success('تم الحذف');
+    const res = await dispatch(deleteCustomer(id));
+    if (!res.error) toast.success('تم الحذف');
+    else toast.error(res.payload);
   };
 
+  // ── render ────────────────────────────────────────────────────────────────
   return (
     <div>
 
@@ -73,8 +82,12 @@ const initBalance = useInitialBalance(() =>
             {filters.filtered.length} عميل
             {filters.onlyDebtors && ' (عليهم فلوس)'}
             {' • '}إجمالي الديون:{' '}
-            <span className={`font-bold mr-1 ${filters.totals.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-              {fmt(filters.totals.balance)} ج.م
+            <span className={`font-bold mr-1 ${
+              filters.totals.balance > 0 ? 'text-red-600' : 'text-green-600'
+            }`}>
+              {filters.totals.balance?.toLocaleString('ar-EG', {
+                minimumFractionDigits: 2, maximumFractionDigits: 2,
+              })} ج.م
             </span>
           </p>
         </div>

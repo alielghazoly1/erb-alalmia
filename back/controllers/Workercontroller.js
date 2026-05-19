@@ -238,7 +238,7 @@ const getWorkerOrders = async (req, res) => {
         orderNumber: true,
         docNumber:   true,
         date:        true,
-        scope:       true,
+        warehouse:   true,
         status:      true,
         notes:       true,
         season:      { select: { name: true } },
