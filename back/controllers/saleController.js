@@ -1,4 +1,11 @@
 // ─── controllers/saleController.js ───────────────────────────────────────────
+// ✅ FIXED: cancelSaleInvoice — يرجع المخزون ويحذف TreasuryEntries
+// ✅ FIXED: updateSaleInvoice — يفحص المخزون للأصناف الجديدة
+// ✅ FIXED: createSaleInvoice — docNumber check آمن مع null seasonId
+// ✅ FIXED: Season Balance — approved فقط تؤثر على الرصيد
+// ✅ FIXED: N+1 Queries — batch fetch للأصناف والمخزون في createSaleInvoice
+'use strict';
+
 const prisma                = require('../config/db');
 const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const { recordSaleInvoice, deleteTreasuryEntries } = require('../utils/treasuryHelper');
@@ -70,7 +77,6 @@ const getSaleInvoiceById = async (req, res) => {
     const { id } = req.params;
     const notDeleted = { deletedAt: null };
 
-    // بنحاول نجيب بـ id أو invoiceNumber أو docNumber
     let invoice = await prisma.saleInvoice.findFirst({
       where: { id, ...notDeleted },
       include: invoiceIncludes(),
@@ -108,8 +114,13 @@ const checkDocNumber = async (req, res) => {
     }
 
     const where = { docNumber, deletedAt: null };
-    if (targetSeason) where.seasonId = targetSeason.id;
-    if (excludeId)    where.id = { not: excludeId };
+    // ✅ FIXED: صريح مع null — بدل undefined اللي Prisma بتتجاهله
+    if (targetSeason?.id) {
+      where.seasonId = targetSeason.id;
+    } else {
+      where.seasonId = null;
+    }
+    if (excludeId) where.id = { not: excludeId };
 
     const exists = await prisma.saleInvoice.findFirst({ where, select: { invoiceNumber: true, seasonId: true } });
 
@@ -154,25 +165,40 @@ const createSaleInvoice = async (req, res) => {
 
     const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
 
-    const docExists = await prisma.saleInvoice.findFirst({
-      where: { docNumber, seasonId: activeSeason?.id, deletedAt: null },
-    });
+    // ✅ FIXED: docNumber check آمن مع null seasonId
+    const docCheckWhere = { docNumber, deletedAt: null };
+    if (activeSeason?.id) {
+      docCheckWhere.seasonId = activeSeason.id;
+    } else {
+      docCheckWhere.seasonId = null;
+    }
+    const docExists = await prisma.saleInvoice.findFirst({ where: docCheckWhere });
     if (docExists)
       return res.status(400).json({ message: `رقم المستند "${docNumber}" موجود بالفعل في الموسم الحالي (${docExists.invoiceNumber})` });
 
     if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
-    // التحقق من صلاحية البيع بالسالب — role=admin دايماً مسموح
     const isAdmin = req.user?.role === 'admin';
     const permsArr = req.user?.permissions || [];
     const negativeAllowed = isAdmin || permsArr.some(p => p.permission === 'sale_allow_negative' && p.granted === true);
 
-    // فحص المخزون
+    // ✅ FIXED: N+1 → Batch fetch للأصناف والمخزون دفعة واحدة
+    const itemIds = items.map(i => i.item);
+    const [dbItems, stockBalances] = await Promise.all([
+      prisma.item.findMany({ where: { id: { in: itemIds } } }),
+      negativeAllowed ? [] : prisma.itemStock.findMany({
+        where: { itemId: { in: itemIds }, warehouse, seasonId: activeSeason?.id ?? null },
+      }),
+    ]);
+
+    const itemMap  = new Map(dbItems.map(i => [i.id, i]));
+    const stockMap = new Map(stockBalances.map(s => [s.itemId, s]));
+
     for (const saleItem of items) {
-      const dbItem = await prisma.item.findUnique({ where: { id: saleItem.item } });
+      const dbItem = itemMap.get(saleItem.item);
       if (!dbItem) return res.status(404).json({ message: `الصنف ${saleItem.itemCode} مش موجود` });
       if (!negativeAllowed) {
-        const { quantity: stockQty } = await getStockQty(saleItem.item, warehouse, activeSeason?.id);
+        const stockQty = safeNum(stockMap.get(saleItem.item)?.quantity, 0);
         if (stockQty < saleItem.quantity)
           return res.status(400).json({ message: `المخزون مش كافي للصنف "${saleItem.itemName}" — متاح: ${stockQty} كرتون` });
       }
@@ -223,7 +249,7 @@ const createSaleInvoice = async (req, res) => {
   }
 };
 
-// ── UPDATE (pending فقط) ──────────────────────────────────────────────────────
+// ── UPDATE (pending أو approved) ──────────────────────────────────────────────
 const updateSaleInvoice = async (req, res) => {
   try {
     const invoice = await prisma.saleInvoice.findUnique({ where: { id: req.params.id }, include: { items: true } });
@@ -232,9 +258,11 @@ const updateSaleInvoice = async (req, res) => {
 
     const wasApproved = invoice.status === 'approved';
     if (wasApproved) {
-      // نرجع المخزون قبل التعديل
       for (const item of invoice.items) {
-        const tw = calcItemTotalWeight(item.quantity, item.weight);
+        const pr = safeNum(item.price);
+        const tw = pr > 0
+          ? round3(safeNum(item.total) / pr)
+          : calcItemTotalWeight(item.quantity, item.weight);
         await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, { quantity: item.quantity, weight: tw });
       }
       await prisma.stockMovement.deleteMany({ where: { referenceId: invoice.id } });
@@ -245,16 +273,34 @@ const updateSaleInvoice = async (req, res) => {
 
     if (docNumber && docNumber !== invoice.docNumber) {
       const docExists = await prisma.saleInvoice.findFirst({
-        where: { docNumber, seasonId: invoice.seasonId, id: { not: invoice.id }, deletedAt: null },
+        where: { docNumber, seasonId: invoice.seasonId ?? null, id: { not: invoice.id }, deletedAt: null },
       });
       if (docExists) return res.status(400).json({ message: 'رقم المستند موجود بالفعل في هذا الموسم' });
     }
 
-    const recalcItems = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
-    const totalAmount = round2(recalcItems.reduce((s, i) => s + safeNum(i.total), 0));
-    const totalWeight = round3(recalcItems.reduce((s, i) => s + calcItemTotalWeight(i.quantity, i.weight), 0));
+    // ✅ FIXED: فحص المخزون للأصناف الجديدة
+    const isAdmin = req.user?.role === 'admin';
+    const permsArr = req.user?.permissions || [];
+    const negativeAllowed = isAdmin || permsArr.some(p => p.permission === 'sale_allow_negative' && p.granted === true);
 
-    // حذف الأصناف القديمة وإضافة الجديدة
+    if (!negativeAllowed) {
+      for (const saleItem of items) {
+        const { quantity: stockQty } = await getStockQty(saleItem.item, invoice.warehouse, invoice.seasonId);
+        // الكمية الموجودة في الفاتورة القديمة تُضاف مؤقتاً (تم إرجاعها فوق لو كانت approved)
+        if (stockQty < saleItem.quantity) {
+          return res.status(400).json({ message: `المخزون مش كافي للصنف "${saleItem.itemName}" — متاح: ${stockQty} كرتون` });
+        }
+      }
+    }
+
+    const recalcItems = items.map(i => ({
+      ...i,
+      _tw:   calcItemTotalWeight(i.quantity, i.weight, i.totalWeight ?? null),
+      total: calcItemTotal(i.quantity, i.weight, i.price, i.totalWeight ?? null),
+    }));
+    const totalAmount = round2(recalcItems.reduce((s, i) => s + safeNum(i.total), 0));
+    const totalWeight = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
+
     await prisma.saleInvoiceItem.deleteMany({ where: { invoiceId: invoice.id } });
 
     const updated = await prisma.saleInvoice.update({
@@ -288,7 +334,10 @@ const forceEditSaleInvoice = async (req, res) => {
       for (const item of invoice.items) {
         const dbItem = await prisma.item.findUnique({ where: { id: item.itemId } });
         if (!dbItem) continue;
-        const tw = calcItemTotalWeight(item.quantity, item.weight);
+        const pr = safeNum(item.price);
+        const tw = pr > 0
+          ? round3(safeNum(item.total) / pr)
+          : calcItemTotalWeight(item.quantity, item.weight);
         await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, { quantity: item.quantity, weight: tw });
       }
       await prisma.stockMovement.deleteMany({ where: { referenceId: invoice.id } });
@@ -299,14 +348,18 @@ const forceEditSaleInvoice = async (req, res) => {
 
     if (docNumber && docNumber !== invoice.docNumber) {
       const docExists = await prisma.saleInvoice.findFirst({
-        where: { docNumber, seasonId: invoice.seasonId, id: { not: invoice.id }, deletedAt: null },
+        where: { docNumber, seasonId: invoice.seasonId ?? null, id: { not: invoice.id }, deletedAt: null },
       });
       if (docExists) return res.status(400).json({ message: 'رقم المستند موجود بالفعل في هذا الموسم' });
     }
 
-    const recalcItems = items.map(i => ({ ...i, total: calcItemTotal(i.quantity, i.weight, i.price) }));
+    const recalcItems = items.map(i => ({
+      ...i,
+      _tw:   calcItemTotalWeight(i.quantity, i.weight, i.totalWeight ?? null),
+      total: calcItemTotal(i.quantity, i.weight, i.price, i.totalWeight ?? null),
+    }));
     const totalAmount = round2(recalcItems.reduce((s, i) => s + safeNum(i.total), 0));
-    const totalWeight = round3(recalcItems.reduce((s, i) => s + calcItemTotalWeight(i.quantity, i.weight), 0));
+    const totalWeight = round3(recalcItems.reduce((s, i) => s + i._tw, 0));
 
     await prisma.saleInvoiceItem.deleteMany({ where: { invoiceId: invoice.id } });
 
@@ -343,7 +396,11 @@ const approveSaleInvoice = async (req, res) => {
     if (invoice.status === 'cancelled') return res.status(400).json({ message: 'الفاتورة ملغية' });
 
     for (const saleItem of invoice.items) {
-      const tw = calcItemTotalWeight(saleItem.quantity, saleItem.weight);
+      // نستخدم total ÷ price لاستخلاص الوزن الكلي الدقيق المخزّن في الـ DB
+      const pr = safeNum(saleItem.price);
+      const tw = pr > 0
+        ? round3(safeNum(saleItem.total) / pr)
+        : calcItemTotalWeight(saleItem.quantity, saleItem.weight);
       const stockQtyDelta = -safeNum(saleItem.quantity);
       const stockWtDelta  = -tw;
       await updateStock(saleItem.itemId, invoice.warehouse, invoice.seasonId, { quantity: stockQtyDelta, weight: stockWtDelta });
@@ -386,13 +443,38 @@ const suspendSaleInvoice = async (req, res) => {
 };
 
 // ── CANCEL (Hard Delete) ──────────────────────────────────────────────────────
+// ✅ FIXED: يرجع المخزون ويحذف TreasuryEntries قبل الحذف
 const cancelSaleInvoice = async (req, res) => {
   try {
-    const invoice = await prisma.saleInvoice.findUnique({ where: { id: req.params.id } });
+    const invoice = await prisma.saleInvoice.findUnique({
+      where:   { id: req.params.id },
+      include: { items: true },
+    });
     if (!invoice) return res.status(404).json({ message: 'الفاتورة مش موجودة' });
-    if (invoice.status === 'approved') return res.status(400).json({ message: 'مينفعش تلغي فاتورة موافق عليها — عدّلها الأول' });
 
-    await audit(req.user, 'invoice_cancelled', 'SaleInvoice', invoice.id, invoice.invoiceNumber, { customerName: invoice.customerName, docNumber: invoice.docNumber, totalAmount: invoice.totalAmount });
+    // ✅ لو الفاتورة معتمدة — نرجع المخزون ونحذف حركات الخزينة والمخزون
+    if (invoice.status === 'approved') {
+      for (const item of invoice.items) {
+        const pr = safeNum(item.price);
+        const tw = pr > 0
+          ? round3(safeNum(item.total) / pr)
+          : calcItemTotalWeight(item.quantity, item.weight);
+        // delta موجب = إرجاع للمخزون
+        await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, {
+          quantity: safeNum(item.quantity),
+          weight:   tw,
+        });
+      }
+      await prisma.stockMovement.deleteMany({ where: { referenceId: invoice.id } });
+      await deleteTreasuryEntries(invoice.id, 'SaleInvoice');
+    }
+
+    await audit(req.user, 'invoice_cancelled', 'SaleInvoice', invoice.id, invoice.invoiceNumber, {
+      customerName: invoice.customerName,
+      docNumber:    invoice.docNumber,
+      totalAmount:  invoice.totalAmount,
+      wasApproved:  invoice.status === 'approved',
+    });
     await prisma.saleInvoice.delete({ where: { id: invoice.id } });
     res.json({ message: 'تم الحذف النهائي' });
   } catch (err) { res.status(500).json({ message: err.message }); }

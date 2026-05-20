@@ -1,5 +1,6 @@
 // ─── utils/stockHelper.js ─────────────────────────────────────────────────────
 // أدوات المخزون — تسجيل الحركات وتحديث الأرصدة
+// ✅ FIXED: Race Condition — updateStock الآن atomic باستخدام raw SQL
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -34,35 +35,73 @@ const getStockQty = (itemId, warehouse, seasonId) =>
 
 // ── updateStock ───────────────────────────────────────────────────────────────
 /**
- * يحدّث رصيد الصنف في المخزن بـ delta (موجب = إضافة، سالب = خصم).
+ * ✅ FIXED: Race Condition — يحدّث رصيد الصنف بشكل ATOMIC باستخدام raw SQL.
+ * عمليات القراءة-ثم-الكتابة القديمة كانت تسبب lost update عند التزامن.
+ * الحل: UPDATE atomic في خطوة واحدة، ثم INSERT إذا لم يوجد الصف.
+ *
  * @param {string} itemId
  * @param {string} warehouse
  * @param {string|null} seasonId
  * @param {{ quantity: number, weight: number }} delta
  */
 const updateStock = async (itemId, warehouse, seasonId, delta) => {
-  const current   = await getStockBalance(itemId, warehouse, seasonId);
-  const newQty    = round3(current.quantity + safeNum(delta.quantity));
-  const newWeight = round3(current.weight   + safeNum(delta.weight));
+  const dQty = round3(safeNum(delta.quantity));
+  const dWt  = round3(safeNum(delta.weight));
 
-  await prisma.itemStock.upsert({
-    where:  { itemId_warehouse_seasonId: { itemId, warehouse, seasonId } },
-    update: { quantity: newQty, weight: newWeight },
-    create: { itemId, warehouse, seasonId, quantity: newQty, weight: newWeight },
-  });
+  if (seasonId) {
+    // محاولة UPDATE atomic أولاً — explicit ::uuid cast عشان Prisma بيبعت text
+    const updated = await prisma.$executeRaw`
+      UPDATE item_stocks
+      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+          "updatedAt" = NOW()
+      WHERE "itemId"   = ${itemId}::uuid
+        AND warehouse  = ${warehouse}::"Warehouse"
+        AND "seasonId" = ${seasonId}::uuid
+    `;
+
+    // لو الصف مش موجود نعمل INSERT
+    if (updated === 0) {
+      await prisma.$executeRaw`
+        INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
+        VALUES (gen_random_uuid(), ${itemId}::uuid, ${warehouse}::"Warehouse", ${seasonId}::uuid,
+                ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
+          SET quantity = item_stocks.quantity + ${dQty},
+              weight   = item_stocks.weight   + ${dWt},
+              "updatedAt" = NOW()
+      `;
+    }
+  } else {
+    // بدون seasonId — نستخدم نفس الطريقة لكن مع IS NULL
+    const updated = await prisma.$executeRaw`
+      UPDATE item_stocks
+      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+          "updatedAt" = NOW()
+      WHERE "itemId"  = ${itemId}::uuid
+        AND warehouse = ${warehouse}::"Warehouse"
+        AND "seasonId" IS NULL
+    `;
+
+    if (updated === 0) {
+      await prisma.$executeRaw`
+        INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
+        VALUES (gen_random_uuid(), ${itemId}::uuid, ${warehouse}::"Warehouse", NULL,
+                ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
+          SET quantity = item_stocks.quantity + ${dQty},
+              weight   = item_stocks.weight   + ${dWt},
+              "updatedAt" = NOW()
+      `;
+    }
+  }
 };
 
 // ── createStockMovement ───────────────────────────────────────────────────────
 /**
  * يسجّل حركة مخزونية — يُستخدم بعد updateStock مباشرةً.
  * يقرأ الرصيد الجديد من DB ليضعه في balanceQty / balanceWeight.
- *
- * @param {{
- *   itemId, itemCode, itemName, type,
- *   quantity, weight, price,
- *   warehouse, reference, referenceModel, referenceId,
- *   seasonId, createdById, date
- * }} params
  */
 const createStockMovement = async ({
   itemId, itemCode, itemName, type,
@@ -118,17 +157,10 @@ const recordStockMovement = async ({
   const netQty   = round3(qIn - qOut);
   const netWeight= round3(wIn - wOut);
 
-  const stock       = await prisma.itemStock.findFirst({ where: { itemId, warehouse, seasonId } });
-  const currentQty  = safeNum(stock?.quantity, 0);
-  const currentWt   = safeNum(stock?.weight,   0);
-  const newQty      = round3(currentQty  + netQty);
-  const newWeight   = round3(currentWt   + netWeight);
+  // ✅ Atomic update بدل read-then-write
+  await updateStock(itemId, warehouse, seasonId, { quantity: netQty, weight: netWeight });
 
-  await prisma.itemStock.upsert({
-    where:  { itemId_warehouse_seasonId: { itemId, warehouse, seasonId } },
-    update: { quantity: newQty, weight: newWeight },
-    create: { itemId, warehouse, seasonId, quantity: newQty, weight: newWeight },
-  });
+  const balance = await getStockBalance(itemId, warehouse, seasonId);
 
   return prisma.stockMovement.create({
     data: {
@@ -137,7 +169,7 @@ const recordStockMovement = async ({
       weightIn: wIn,   weightOut: wOut,
       price: round2(price),
       warehouse,
-      balanceQty: newQty, balanceWeight: newWeight,
+      balanceQty: balance.quantity, balanceWeight: balance.weight,
       reference, referenceModel, referenceId,
       seasonId,
       createdById: userId,

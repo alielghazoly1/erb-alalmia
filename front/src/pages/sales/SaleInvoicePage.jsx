@@ -100,10 +100,17 @@ export default function SaleInvoicePage() {
           invoiceNumber: form.editingInvoice ? form.editingInvoice.invoiceNumber : `[مسودة] ${form.docNumber}`,
           docNumber: form.docNumber, date: form.date, warehouse: form.warehouse,
           customerName: form.customer?.name, customerCode: form.customer?.code,
-          items: form.savedRows.map(r => ({
-            itemCode: r.itemCode, itemName: r.itemName,
-            quantity: Number(r.quantity), weight: Number(r.weight), price: Number(r.price),
-          })),
+          items: form.savedRows.map(r => {
+            const qty = Number(r.quantity) || 0;
+            const wt  = Number(r.weight)   || 0;
+            const tw  = r._totalWeight != null ? Number(r._totalWeight) : Math.round(qty * wt * 1000) / 1000;
+            return {
+              itemCode: r.itemCode, itemName: r.itemName,
+              quantity: qty, weight: wt, price: Number(r.price),
+              totalWeight: tw,
+              total: Math.round(tw * (Number(r.price) || 0) * 100) / 100,
+            };
+          }),
           totalAmount: form.totalAmount,
           paymentMethod: form.paymentMethod,
           cashAmount: form.cashAmount, instapayAmount: form.instapayAmount, paidAmount: form.paidAmount,

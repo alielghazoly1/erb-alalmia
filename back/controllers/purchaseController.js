@@ -286,10 +286,13 @@ const forceEditPurchaseInvoice = async (req, res) => {
           .json({ message: 'رقم المستند موجود في هذا الموسم' });
     }
 
-    const recalcItems = items.map((i) => ({
-      ...i,
-      total: calcItemTotal(i.quantity, i.weight, i.price),
-    }));
+    // ← يدعم totalWeight من الـ frontend كما في createPurchaseInvoice
+    const recalcItems = items.map((i) => {
+      const tw = i.totalWeight != null
+        ? round3(safeNum(i.totalWeight))
+        : round3(safeNum(i.quantity) * safeNum(i.weight));
+      return { ...i, _tw: tw, total: round2(tw * safeNum(i.price)) };
+    });
 
     await prisma.purchaseInvoiceItem.deleteMany({
       where: { invoiceId: invoice.id },
@@ -300,11 +303,8 @@ const forceEditPurchaseInvoice = async (req, res) => {
       data: {
         docNumber: docNumber || invoice.docNumber,
         date: date ? new Date(date) : invoice.date,
-        totalAmount: recalcItems.reduce((s, i) => s + i.total, 0),
-        totalWeight: recalcItems.reduce(
-          (s, i) => s + safeNum(i.quantity) * safeNum(i.weight),
-          0
-        ),
+        totalAmount: round2(recalcItems.reduce((s, i) => s + i.total, 0)),
+        totalWeight: round3(recalcItems.reduce((s, i) => s + i._tw,   0)),
         notes: notes ?? invoice.notes,
         status: 'pending',
         approvedById: null,

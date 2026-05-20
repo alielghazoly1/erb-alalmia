@@ -247,14 +247,22 @@ export function useSaleInvoiceForm() {
     };
     setCustomer(c);
     setCustomerError(false);
-    const loaded = data.items.map(item => ({
-      id: Date.now() + Math.random(),
-      item: item.item?._id || item.item,
-      itemCode: item.itemCode, itemName: item.itemName,
-      unit: item.unit || '', unitWeight: item.weight,
-      quantity: String(item.quantity), weight: String(item.weight),
-      price: String(item.price), saved: true, editing: false,
-    }));
+    const loaded = data.items.map(item => {
+      // نحسب totalWeight من الـ DB أو من qty × wt كـ fallback
+      const storedTW = item.totalWeight != null
+        ? parseFloat(item.totalWeight)
+        : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
+      return {
+        id: Date.now() + Math.random(),
+        item: item.item?._id || item.item,
+        itemCode: item.itemCode, itemName: item.itemName,
+        unit: item.unit || '', unitWeight: parseFloat(item.weight),
+        quantity: String(item.quantity), weight: String(item.weight),
+        price: String(item.price),
+        _totalWeight: storedTW,   // ← نحفظه عشان الحسابات تكون صح عند التعديل
+        saved: true, editing: false,
+      };
+    });
     setRows([...loaded, newRow()]);
     setTotalWeightInput({});
     customerKey.current += 1;

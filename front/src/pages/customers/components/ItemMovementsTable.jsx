@@ -104,7 +104,6 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
                 <td className="px-3 py-2 text-center print:hidden">
                   <Link
                     to={isSale ? `/sales/${m.invoiceId}` : `/returns/${m.invoiceId}`}
-                    target="_blank"
                     className="text-blue-500 hover:underline text-xs"
                   >
                     فتح

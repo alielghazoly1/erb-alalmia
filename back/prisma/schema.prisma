@@ -986,6 +986,7 @@ enum RefundMethod {
   bank
   credit_note
   none
+  mixed
 }
 
 /// نوع الخزينة

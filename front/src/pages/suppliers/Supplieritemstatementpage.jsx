@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { useReactToPrint } from 'react-to-print';
 import api from '../../services/api';
 import SupplierSearch from '../../components/common/SupplierSearch';
@@ -25,7 +26,10 @@ export default function SupplierItemStatementPage() {
   const [item,     setItem]     = useState(null);
   const [data,     setData]     = useState(null);
   const [loading,  setLoading]  = useState(false);
-  const [seasonFilter, setSeasonFilter] = useState('');
+  const { selectedSeasonId, activeSeason } = useSelector((s) => s.season);
+  const defaultSeasonId = selectedSeasonId || activeSeason?._id || '';
+
+  const [seasonFilter, setSeasonFilter] = useState(defaultSeasonId);
   const [seasons,      setSeasons]      = useState([]);
 
   const printRef   = useRef(null);

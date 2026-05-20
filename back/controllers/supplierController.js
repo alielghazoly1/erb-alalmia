@@ -375,36 +375,100 @@ const getSupplierTimeline = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// ── GET /api/suppliers/:supplierId/item-statement ─────────────────────────────
+// ── GET /api/suppliers/:supplierId/item/:itemId ───────────────────────────────
 const getSupplierItemStatement = async (req, res) => {
   try {
-    const { supplierId }     = req.params;
-    const { itemId, seasonId } = req.query;
+    const { supplierId, itemId } = req.params;
+    const { seasonId }           = req.query;
     if (!itemId) return res.status(400).json({ message: 'itemId مطلوب' });
 
-    const where = { supplierId, items: { some: { itemId } } };
-    if (seasonId) where.seasonId = seasonId;
+    const [supplier, item] = await Promise.all([
+      prisma.supplier.findUnique({ where: { id: supplierId }, select: SUPPLIER_SELECT }),
+      prisma.item.findUnique({
+        where:  { id: itemId },
+        select: { id: true, code: true, name: true, unit: true },
+      }),
+    ]);
+    if (!supplier) return res.status(404).json({ message: 'المورد مش موجود' });
+    if (!item)     return res.status(404).json({ message: 'الصنف مش موجود' });
 
-    const invoices = await prisma.purchaseInvoice.findMany({
-      where,
-      include: { items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } } },
-      orderBy: [{ date: 'asc' }],
+    const purWhere = { supplierId, status: { not: 'cancelled' }, items: { some: { itemId } } };
+    const retWhere = { supplierId, type: 'supplier_return', status: 'approved', items: { some: { itemId } } };
+    if (seasonId) { purWhere.seasonId = seasonId; retWhere.seasonId = seasonId; }
+
+    const [purchaseInvoices, returnInvoices] = await Promise.all([
+      prisma.purchaseInvoice.findMany({
+        where:   purWhere,
+        select: {
+          id: true, invoiceNumber: true, docNumber: true, date: true,
+          status: true, createdAt: true,
+          items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } },
+        },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      }),
+      prisma.returnInvoice.findMany({
+        where:   retWhere,
+        select: {
+          id: true, invoiceNumber: true, docNumber: true, date: true,
+          status: true, createdAt: true,
+          items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } },
+        },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      }),
+    ]);
+
+    const movements = [
+      ...purchaseInvoices.flatMap(inv =>
+        inv.items.map(it => ({
+          invoiceId:     inv.id,
+          docNumber:     inv.docNumber  || inv.invoiceNumber || '—',
+          invoiceNumber: inv.invoiceNumber,
+          date:          inv.date,
+          createdAt:     inv.createdAt,
+          status:        inv.status,
+          type:          'purchase',
+          quantity:      round2(safeNum(it.quantity)),
+          weight:        round2(safeNum(it.weight)),
+          totalWeight:   round2(safeNum(it.quantity) * safeNum(it.weight)),
+          price:         round2(safeNum(it.price)),
+          total:         round2(safeNum(it.total)),
+        }))
+      ),
+      ...returnInvoices.flatMap(inv =>
+        inv.items.map(it => ({
+          invoiceId:     inv.id,
+          docNumber:     inv.docNumber  || inv.invoiceNumber || '—',
+          invoiceNumber: inv.invoiceNumber,
+          date:          inv.date,
+          createdAt:     inv.createdAt,
+          status:        inv.status,
+          type:          'return',
+          quantity:      round2(safeNum(it.quantity)),
+          weight:        round2(safeNum(it.weight)),
+          totalWeight:   round2(safeNum(it.quantity) * safeNum(it.weight)),
+          price:         round2(safeNum(it.price)),
+          total:         round2(safeNum(it.total)),
+        }))
+      ),
+    ].sort((a, b) => new Date(a.date) - new Date(b.date) || a.invoiceId.localeCompare(b.invoiceId));
+
+    const sales   = movements.filter(m => m.type === 'purchase');
+    const returns = movements.filter(m => m.type === 'return');
+
+    const totalQty    = round2(sales.reduce((s, m) => s + m.quantity, 0));
+    const totalWeight = round2(sales.reduce((s, m) => s + m.totalWeight, 0));
+    const totalAmount = round2(sales.reduce((s, m) => s + m.total, 0));
+    const returnQty   = round2(returns.reduce((s, m) => s + m.quantity, 0));
+    const returnWeight= round2(returns.reduce((s, m) => s + m.totalWeight, 0));
+    const lastPrice   = sales.length ? sales[sales.length - 1].price : 0;
+
+    res.json({
+      supplier: n(supplier),
+      item,
+      movements,
+      totalQty, totalWeight, totalAmount,
+      returnQty, returnWeight, lastPrice,
     });
-
-    const rows = invoices.flatMap(inv =>
-      inv.items.map(item => ({
-        _id:       inv.id,
-        date:      inv.date,
-        docNumber: inv.docNumber,
-        invoiceNumber: inv.invoiceNumber,
-        quantity:  round2(safeNum(item.quantity)),
-        weight:    round2(safeNum(item.weight)),
-        price:     round2(safeNum(item.price)),
-        total:     round2(safeNum(item.total)),
-      }))
-    );
-
-    res.json({ rows });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 

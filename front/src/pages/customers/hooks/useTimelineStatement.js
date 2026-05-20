@@ -5,14 +5,18 @@
 // • الـ totals (إجمالي مبيعات/مرتجعات/مدفوعات) محسوبة مرة واحدة من الباك
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useCallback, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import api from '../../../services/api';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 100;
 
 export function useTimelineStatement() {
+  const { selectedSeasonId, activeSeason } = useSelector((s) => s.season);
+  const defaultSeasonId = selectedSeasonId || activeSeason?._id || '';
+
   const [customer,   setCustomer]   = useState(null);
-  const [seasonId,   setSeasonId]   = useState('');
+  const [seasonId,   setSeasonId]   = useState(defaultSeasonId);
   const [seasons,    setSeasons]    = useState([]);
   const [totals,     setTotals]     = useState(null);
   const [counts,     setCounts]     = useState(null);

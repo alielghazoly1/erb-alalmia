@@ -225,13 +225,19 @@ export default function PurchaseInvoicePage() {
     setNotes(data.notes || ''); setEditNotes('');
     const sup = data.supplier || { _id: data.supplierId, code: data.supplierCode, name: data.supplierName };
     setSupplier(sup); setSupplierError(false);
-    const loaded = data.items.map(item => ({
-      id: Date.now() + Math.random(),
-      item: item.item?._id || item.item,
-      itemCode: item.itemCode, itemName: item.itemName, unit: item.unit || '',
-      quantity: String(item.quantity), weight: String(item.weight), price: String(item.price),
-      saved: true, editing: false,
-    }));
+    const loaded = data.items.map(item => {
+      const storedTW = item.totalWeight != null
+        ? parseFloat(item.totalWeight)
+        : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
+      return {
+        id: Date.now() + Math.random(),
+        item: item.item?._id || item.item,
+        itemCode: item.itemCode, itemName: item.itemName, unit: item.unit || '',
+        quantity: String(item.quantity), weight: String(item.weight), price: String(item.price),
+        _totalWeight: storedTW,
+        saved: true, editing: false,
+      };
+    });
     setRows([...loaded, newRow()]);
     toast.success(`تم تحميل ${data.invoiceNumber} للتعديل`);
   };
@@ -463,7 +469,7 @@ export default function PurchaseInvoicePage() {
                     <td className="px-3 py-2.5 font-medium text-gray-800">{row.itemName}</td>
                     <td className="px-3 py-2.5 text-center">{row.quantity}</td>
                     <td className="px-3 py-2.5 text-center text-gray-400 text-xs">{parseFloat(row.weight).toFixed(3)}</td>
-                    <td className="px-3 py-2.5 text-center font-medium">{((parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0)).toFixed(3)} ك</td>
+                    <td className="px-3 py-2.5 text-center font-medium">{(row._totalWeight != null ? row._totalWeight : (parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0)).toFixed(3)} ك</td>
                     <td className="px-3 py-2.5 text-center">{parseFloat(row.price).toFixed(2)}</td>
                     <td className="px-3 py-2.5 text-center font-semibold">{calcTotal(row.quantity,row.weight,row.price,row._totalWeight).toFixed(2)}</td>
                     <td className="px-3 py-2.5">

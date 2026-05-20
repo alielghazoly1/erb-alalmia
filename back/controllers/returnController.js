@@ -118,23 +118,24 @@ const createReturn = async (req, res) => {
         invoiceNumber, docNumber,
         date:             date ? new Date(date) : new Date(),
         type, warehouse,
-        customerId:       customerId  || null,
+        customerId:       (typeof customerId === 'object' ? customerId?._id || customerId?.id : customerId) || null,
         customerCode:     customerCode || null,
         customerName:     customerName || null,
-        supplierId:       supplierId  || null,
+        supplierId:       (typeof supplierId === 'object' ? supplierId?._id || supplierId?.id : supplierId) || null,
         supplierCode:     supplierCode || null,
         supplierName:     supplierName || null,
         totalAmount, totalWeight,
         status:           'pending',
         notes, originalInvoiceRef: originalInvoiceRef || null,
-        refundMethod,
+        refundMethod:     refundMethod || 'none',
         refundCashAmount: Number(refundCashAmount) || 0,
         refundBankAmount: Number(refundBankAmount) || 0,
         seasonId:         activeSeason?.id ?? null,
         createdById:      req.user.id,
         items: {
           create: recalcItems.map(i => ({
-            itemId:   i.item, itemCode: i.itemCode, itemName: i.itemName,
+            itemId:   typeof i.item === 'object' ? (i.item?._id || i.item?.id) : i.item,
+            itemCode: i.itemCode, itemName: i.itemName,
             quantity: safeNum(i.quantity), weight: safeNum(i.weight),
             price:    safeNum(i.price),    total:  i.total,
           })),
@@ -202,18 +203,19 @@ const updateReturn = async (req, res) => {
         customerName:       customerName       ?? returnInv.customerName,
         supplierCode:       supplierCode       ?? returnInv.supplierCode,
         supplierName:       supplierName       ?? returnInv.supplierName,
-        customerId:         customerId         ?? returnInv.customerId,
-        supplierId:         supplierId         ?? returnInv.supplierId,
+        customerId:         (typeof customerId === 'object' ? customerId?._id || customerId?.id : customerId) ?? returnInv.customerId,
+        supplierId:         (typeof supplierId === 'object' ? supplierId?._id || supplierId?.id : supplierId) ?? returnInv.supplierId,
         warehouse:          newWarehouse,
         totalAmount, totalWeight,
         notes:              notes              ?? returnInv.notes,
         originalInvoiceRef: originalInvoiceRef ?? returnInv.originalInvoiceRef,
-        refundMethod,
+        refundMethod:     refundMethod || 'none',
         refundCashAmount:   Number(refundCashAmount) || 0,
         refundBankAmount:   Number(refundBankAmount) || 0,
         items: {
           create: recalcItems.map(i => ({
-            itemId:   i.item, itemCode: i.itemCode, itemName: i.itemName,
+            itemId:   typeof i.item === 'object' ? (i.item?._id || i.item?.id) : i.item,
+            itemCode: i.itemCode, itemName: i.itemName,
             quantity: safeNum(i.quantity), weight: safeNum(i.weight),
             price:    safeNum(i.price),    total:  i.total,
           })),
@@ -258,7 +260,11 @@ const approveReturn = async (req, res) => {
     if (returnInv.status === 'approved') return res.status(400).json({ message: 'المرتجع اتوافق عليه قبل كده' });
 
     for (const retItem of returnInv.items) {
-      const tw     = safeNum(retItem.quantity) * safeNum(retItem.weight);
+      // نستخدم total ÷ price لاستخلاص الوزن الكلي الدقيق
+      const retPr = safeNum(retItem.price);
+      const tw    = retPr > 0
+        ? round3(safeNum(retItem.total) / retPr)
+        : round3(safeNum(retItem.quantity) * safeNum(retItem.weight));
       const mvType = returnInv.type === 'customer_return' ? 'return_in' : 'return_out';
       const delta  = returnInv.type === 'customer_return'
         ? { quantity:  retItem.quantity, weight:  tw }

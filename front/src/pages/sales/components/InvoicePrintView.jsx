@@ -16,12 +16,17 @@ export default function InvoicePrintView({ invoice, onBack, backLabel = 'رجو�
     else navigate('/sales/new');
   };
 
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const r3 = (v) => Math.round(v * 1000) / 1000;
   const totalAmount  = toNum(invoice.totalAmount);
   const paidAmount   = toNum(invoice.paidAmount);
-  const remaining    = round2(totalAmount - paidAmount);
-  const totalWeight  = (invoice.items ?? []).reduce(
-    (s, i) => s + toNum(i.quantity) * toNum(i.weight), 0
-  );
+  const remaining    = r2(totalAmount - paidAmount);
+  // نستخدم totalWeight المخزّن إن وُجد، وإلا نحسبه من qty × wt كـ fallback
+  const totalWeight  = toNum(invoice.totalWeight) > 0
+    ? toNum(invoice.totalWeight)
+    : r3((invoice.items ?? []).reduce(
+        (s, i) => s + (toNum(i.totalWeight) > 0 ? toNum(i.totalWeight) : toNum(i.quantity) * toNum(i.weight)), 0
+      ));
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -90,6 +95,13 @@ export default function InvoicePrintView({ invoice, onBack, backLabel = 'رجو�
               const qty = toNum(item.quantity);
               const wt  = toNum(item.weight);
               const pr  = toNum(item.price);
+              // استخدم totalWeight المخزّن مباشرة — يتجنب أخطاء الفاصلة العائمة
+              const tw  = toNum(item.totalWeight) > 0
+                ? toNum(item.totalWeight)
+                : r3(qty * wt);
+              const rowTotal = toNum(item.total) > 0
+                ? toNum(item.total)
+                : r2(tw * pr);
               return (
                 <tr key={idx} style={{ background: idx % 2 === 0 ? '#f8fafc' : 'white', borderBottom: '1px solid #e2e8f0' }}>
                   <td className="px-3 py-1 text-gray-400 text-center text-xs">{idx + 1}</td>
@@ -97,9 +109,9 @@ export default function InvoicePrintView({ invoice, onBack, backLabel = 'رجو�
                   <td className="px-4 py-1 font-medium text-gray-800">{item.itemName}</td>
                   <td className="px-4 py-1 text-center font-bold">{fmtFixed(qty, 4)}</td>
                   <td className="px-4 py-1 text-center text-xs">{fmtFixed(wt, 3)}</td>
-                  <td className="px-4 py-1 text-center font-medium">{fmtFixed(qty * wt, 3)}</td>
+                  <td className="px-4 py-1 text-center font-medium">{fmtFixed(tw, 3)}</td>
                   <td className="px-4 py-1 text-center">{fmtFixed(pr, 2)}</td>
-                  <td className="px-4 py-1 text-center font-semibold">{fmtFixed(qty * wt * pr, 2)}</td>
+                  <td className="px-4 py-1 text-center font-semibold">{fmtFixed(rowTotal, 2)}</td>
                 </tr>
               );
             })}

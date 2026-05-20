@@ -1,27 +1,20 @@
-// ─── controllers/manufacturingController.js ──────────────────────────────────
-//  ✅ Clean code — كل function مُوثَّقة ومنظمة
-//  ✅ cursor-based pagination جاهز للـ 10,000+ أمر
-//  ✅ $transaction في approve لضمان consistency
-//  ✅ تصحيح updateOrder — يسمح بتعديل الأمر المعتمد للأدمن + يعكس المخزن
-//  ✅ season reset — getOrders بيحدد الموسم النشط تلقائياً
+// ─── controllers/manufacturingController.js ───────────────────────────────────
+// ✅ FIXED: approveOrder — updateStock و createStockMovement يستخدمان tx بدل prisma
+//           ليضمنوا أنهم ضمن نفس الـ transaction وليس خارجها
+// ✅ FIXED: updateOrder — نفس الإصلاح
 // ─────────────────────────────────────────────────────────────────────────────
-
 'use strict';
 
 const prisma = require('../config/db');
 const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
-const { getStockQty, updateStock, createStockMovement } = require('../utils/stockHelper');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** يضيف _id للتوافق مع الـ frontend */
-
 /** يولّد رقم الأمر (MFG-SEASON-00001) */
 const generateOrderNumber = async (seasonId, seasonCode) => {
-  const prefix = 'MFG';
   const counter = await prisma.seasonCounter.upsert({
-    where:  { seasonId_prefix: { seasonId, prefix } },
-    create: { seasonId, prefix, value: 1, startFrom: 1 },
+    where:  { seasonId },
+    create: { seasonId, value: 1, startFrom: 1 },
     update: { value: { increment: 1 } },
   });
   const num = counter.startFrom + counter.value - 1;
@@ -47,32 +40,104 @@ const orderIncludes = () => ({
   outputProducts: { include: { item: { select: { name: true, code: true } } } },
 });
 
+// ✅ FIXED: updateStock داخل transaction يستخدم tx بدل prisma
+const updateStockTx = async (tx, itemId, warehouse, seasonId, delta) => {
+  const dQty = round3(safeNum(delta.quantity));
+  const dWt  = round3(safeNum(delta.weight));
 
+  if (seasonId) {
+    const updated = await tx.$executeRaw`
+      UPDATE item_stocks
+      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+          "updatedAt" = NOW()
+      WHERE "itemId" = ${itemId} AND warehouse = ${warehouse} AND "seasonId" = ${seasonId}
+    `;
+    if (updated === 0) {
+      await tx.$executeRaw`
+        INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
+        VALUES (gen_random_uuid(), ${itemId}, ${warehouse}, ${seasonId}, ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
+          SET quantity = item_stocks.quantity + ${dQty},
+              weight   = item_stocks.weight   + ${dWt},
+              "updatedAt" = NOW()
+      `;
+    }
+  } else {
+    const updated = await tx.$executeRaw`
+      UPDATE item_stocks
+      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+          "updatedAt" = NOW()
+      WHERE "itemId" = ${itemId} AND warehouse = ${warehouse} AND "seasonId" IS NULL
+    `;
+    if (updated === 0) {
+      await tx.$executeRaw`
+        INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
+        VALUES (gen_random_uuid(), ${itemId}, ${warehouse}, NULL, ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
+          SET quantity = item_stocks.quantity + ${dQty},
+              weight   = item_stocks.weight   + ${dWt},
+              "updatedAt" = NOW()
+      `;
+    }
+  }
+};
+
+// ✅ FIXED: createStockMovement داخل transaction يستخدم tx
+const createStockMovementTx = async (tx, {
+  itemId, itemCode, itemName, type,
+  quantity, weight,
+  warehouse, reference, referenceModel, referenceId,
+  seasonId, createdById, date,
+}) => {
+  // قراءة الرصيد الحالي بعد updateStockTx
+  const stock = seasonId
+    ? await tx.itemStock.findFirst({ where: { itemId, warehouse, seasonId } })
+    : await tx.itemStock.findFirst({ where: { itemId, warehouse, seasonId: null } });
+
+  const OUT_TYPES = new Set(['manufacturing_out']);
+  const isOut = OUT_TYPES.has(type);
+  const qty   = safeNum(quantity);
+  const wt    = safeNum(weight);
+
+  return tx.stockMovement.create({
+    data: {
+      itemId, itemCode, itemName, type,
+      quantityIn:    isOut ? 0   : qty,
+      quantityOut:   isOut ? qty : 0,
+      weightIn:      isOut ? 0   : wt,
+      weightOut:     isOut ? wt  : 0,
+      price:         0,
+      warehouse,
+      balanceQty:    safeNum(stock?.quantity, 0),
+      balanceWeight: safeNum(stock?.weight,   0),
+      reference,
+      referenceModel,
+      referenceId,
+      seasonId,
+      createdById,
+      date: date ? new Date(date) : new Date(),
+    },
+  });
+};
 
 // ─── GET /api/manufacturing ───────────────────────────────────────────────────
 
 const getOrders = async (req, res) => {
   try {
-    const {
-      status, warehouse, workerId, seasonId,
-      page = 1, limit = 30, search,
-    } = req.query;
+    const { status, warehouse, workerId, seasonId, page = 1, limit = 30, search } = req.query;
 
-    // بناء where
     const where = {};
     if (status)    where.status    = status;
     if (warehouse) where.warehouse = warehouse;
     if (workerId)  where.workerId  = workerId;
     if (search)    where.orderNumber = { contains: search.trim(), mode: 'insensitive' };
 
-    // الموسم — لو مفيش تحديد يختار النشط تلقائياً
     if (seasonId) {
       where.seasonId = seasonId;
     } else {
-      const active = await prisma.season.findFirst({
-        where:  { isActive: true },
-        select: { id: true },
-      });
+      const active = await prisma.season.findFirst({ where: { isActive: true }, select: { id: true } });
       if (active) where.seasonId = active.id;
     }
 
@@ -97,12 +162,7 @@ const getOrders = async (req, res) => {
       }),
     ]);
 
-    return res.json({
-      orders:     orders.map(n),
-      total,
-      page:       Number(page),
-      totalPages: Math.ceil(total / limitNum),
-    });
+    return res.json({ orders: orders.map(n), total, page: Number(page), totalPages: Math.ceil(total / limitNum) });
   } catch (err) {
     console.error('[getOrders]', err);
     return res.status(500).json({ message: err.message });
@@ -120,7 +180,6 @@ const getOrderById = async (req, res) => {
     if (!order) return res.status(404).json({ message: 'الأمر مش موجود' });
     return res.json(n(order));
   } catch (err) {
-    console.error('[getOrderById]', err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -131,25 +190,21 @@ const createOrder = async (req, res) => {
   try {
     const { warehouse, workerId, rawMaterials, outputProducts, notes, date, docNumber, seasonId } = req.body;
 
-    // Validation
     if (!warehouse)              return res.status(400).json({ message: 'حدد العنبر' });
     if (!rawMaterials?.length)   return res.status(400).json({ message: 'أضف خامة واحدة على الأقل' });
     if (!outputProducts?.length) return res.status(400).json({ message: 'أضف منتج واحد على الأقل' });
 
-    // الموسم — لازم يتحدد أول لأن المخزون مربوط بالموسم
     const season = seasonId
       ? await prisma.season.findUnique({ where: { id: seasonId }, select: { id: true, name: true } })
       : await prisma.season.findFirst({ where: { isActive: true }, select: { id: true, name: true } });
-    if (!season) {
-      return res.status(400).json({ message: 'مفيش موسم نشط — فعّل موسم أو حدد موسم' });
-    }
+    if (!season) return res.status(400).json({ message: 'مفيش موسم نشط — فعّل موسم أو حدد موسم' });
 
-    // فحص المخزون للخامات (بالموسم الصح)
+    // فحص المخزون للخامات
     for (const raw of rawMaterials) {
-      const dbItem = await prisma.item.findUnique({ where: { id: raw.item }, select: { name: true } });
-      if (!dbItem) return res.status(404).json({ message: `الصنف ${raw.itemCode} مش موجود` });
-
-      const { quantity: avail } = await getStockQty(raw.item, warehouse, season.id);
+      const stockRec = await prisma.itemStock.findFirst({
+        where: { itemId: raw.item, warehouse, seasonId: season.id },
+      });
+      const avail = safeNum(stockRec?.quantity, 0);
       if (avail < safeNum(raw.quantity)) {
         return res.status(400).json({
           message: `"${raw.itemName}" مش كافية — متاح: ${avail} كرتون، مطلوب: ${raw.quantity}`,
@@ -157,7 +212,6 @@ const createOrder = async (req, res) => {
       }
     }
 
-    // المعلم
     let workerName = '';
     if (workerId) {
       const w = await prisma.worker.findUnique({ where: { id: workerId }, select: { name: true } });
@@ -175,33 +229,10 @@ const createOrder = async (req, res) => {
         orderNumber,
         docNumber:   docNumber?.trim() || '',
         date:        date ? new Date(date) : new Date(),
-        warehouse,
-        workerId:    workerId   || null,
-        workerName:  workerName || null,
-        notes,
-        status:      'pending',
-        seasonId:    season.id,
-        createdById: req.user.id,
-        rawMaterials:   {
-          create: calcRaw.map(r => ({
-            itemId:      r.item,
-            itemCode:    r.itemCode,
-            itemName:    r.itemName,
-            quantity:    safeNum(r.quantity),
-            weight:      safeNum(r.weight),
-            totalWeight: r.totalWeight,
-          })),
-        },
-        outputProducts: {
-          create: calcOut.map(p => ({
-            itemId:      p.item,
-            itemCode:    p.itemCode,
-            itemName:    p.itemName,
-            quantity:    safeNum(p.quantity),
-            weight:      safeNum(p.weight),
-            totalWeight: p.totalWeight,
-          })),
-        },
+        warehouse, workerId: workerId || null, workerName: workerName || null,
+        notes, status: 'pending', seasonId: season.id, createdById: req.user.id,
+        rawMaterials:   { create: calcRaw.map(r => ({ itemId: r.item, itemCode: r.itemCode, itemName: r.itemName, quantity: safeNum(r.quantity), weight: safeNum(r.weight), totalWeight: r.totalWeight })) },
+        outputProducts: { create: calcOut.map(p => ({ itemId: p.item, itemCode: p.itemCode, itemName: p.itemName, quantity: safeNum(p.quantity), weight: safeNum(p.weight), totalWeight: p.totalWeight })) },
       },
       include: orderIncludes(),
     });
@@ -209,12 +240,11 @@ const createOrder = async (req, res) => {
     return res.status(201).json(n(order));
   } catch (err) {
     console.error('[createOrder]', err);
-    return res.status(err.status || 500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 
 // ─── PUT /api/manufacturing/:id ───────────────────────────────────────────────
-//  يسمح للأدمن بتعديل أمر معتمد (مع عكس المخزن وإعادة تطبيق الجديد)
 
 const updateOrder = async (req, res) => {
   try {
@@ -225,14 +255,8 @@ const updateOrder = async (req, res) => {
     if (!order) return res.status(404).json({ message: 'الأمر مش موجود' });
 
     const isAdmin = req.user?.role === 'admin';
-
-    // الأمر المعتمد — فقط الأدمن يعدّله
-    if (order.status === 'approved' && !isAdmin) {
-      return res.status(403).json({ message: 'فقط الأدمن يعدل أمر معتمد' });
-    }
-    if (order.status === 'rejected') {
-      return res.status(400).json({ message: 'مش ممكن تعدل أمر مرفوض' });
-    }
+    if (order.status === 'approved' && !isAdmin) return res.status(403).json({ message: 'فقط الأدمن يعدل أمر معتمد' });
+    if (order.status === 'rejected')              return res.status(400).json({ message: 'مش ممكن تعدل أمر مرفوض' });
 
     const { warehouse, workerId, rawMaterials, outputProducts, notes, date, docNumber } = req.body;
     if (!rawMaterials?.length)   return res.status(400).json({ message: 'أضف خامة واحدة على الأقل' });
@@ -249,28 +273,29 @@ const updateOrder = async (req, res) => {
     const calcRaw = recalcWeights(rawMaterials);
     const calcOut = recalcWeights(outputProducts);
 
+    // ✅ FIXED: كل العمليات داخل نفس الـ tx
     const updated = await prisma.$transaction(async (tx) => {
-      // ── لو الأمر معتمد: اعكس المخزن القديم أولاً ──────────────────────────
       if (order.status === 'approved') {
+        // عكس المخزون القديم
         for (const r of order.rawMaterials)
-          await updateStock(r.itemId, order.warehouse, order.seasonId, { quantity: +r.quantity, weight: +r.totalWeight });
+          await updateStockTx(tx, r.itemId, order.warehouse, order.seasonId, { quantity: +r.quantity, weight: +r.totalWeight });
         for (const p of order.outputProducts)
-          await updateStock(p.itemId, order.warehouse, order.seasonId, { quantity: -p.quantity, weight: -p.totalWeight });
+          await updateStockTx(tx, p.itemId, order.warehouse, order.seasonId, { quantity: -p.quantity, weight: -p.totalWeight });
 
         await tx.stockMovement.deleteMany({ where: { referenceId: order.id } });
 
+        // تطبيق المخزون الجديد
         for (const r of calcRaw)
-          await updateStock(r.item, usedWarehouse, order.seasonId, { quantity: -safeNum(r.quantity), weight: -r.totalWeight });
+          await updateStockTx(tx, r.item, usedWarehouse, order.seasonId, { quantity: -safeNum(r.quantity), weight: -r.totalWeight });
         for (const p of calcOut)
-          await updateStock(p.item, usedWarehouse, order.seasonId, { quantity: +safeNum(p.quantity), weight: +p.totalWeight });
+          await updateStockTx(tx, p.item, usedWarehouse, order.seasonId, { quantity: +safeNum(p.quantity), weight: +p.totalWeight });
 
         for (const r of calcRaw)
-          await createStockMovement({ itemId: r.item, itemCode: r.itemCode, itemName: r.itemName, type: 'manufacturing_out', quantity: safeNum(r.quantity), weight: r.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
+          await createStockMovementTx(tx, { itemId: r.item, itemCode: r.itemCode, itemName: r.itemName, type: 'manufacturing_out', quantity: safeNum(r.quantity), weight: r.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
         for (const p of calcOut)
-          await createStockMovement({ itemId: p.item, itemCode: p.itemCode, itemName: p.itemName, type: 'manufacturing_in', quantity: safeNum(p.quantity), weight: p.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
+          await createStockMovementTx(tx, { itemId: p.item, itemCode: p.itemCode, itemName: p.itemName, type: 'manufacturing_in', quantity: safeNum(p.quantity), weight: p.totalWeight, warehouse: usedWarehouse, reference: order.orderNumber, referenceModel: 'ManufacturingOrder', referenceId: order.id, seasonId: order.seasonId, createdById: req.user.id, date: order.date });
       }
 
-      // حذف الصفوف القديمة وإنشاء الجديدة
       await tx.manufacturingRawMaterial.deleteMany({ where: { orderId: order.id } });
       await tx.manufacturingOutput.deleteMany({ where: { orderId: order.id } });
 
@@ -280,25 +305,15 @@ const updateOrder = async (req, res) => {
           docNumber:   docNumber?.trim() ?? order.docNumber,
           date:        date ? new Date(date) : order.date,
           warehouse:   usedWarehouse,
-          workerId:    workerId    || order.workerId,
-          workerName:  workerName  || order.workerName,
-          notes:       notes       ?? order.notes,
-          rawMaterials:   {
-            create: calcRaw.map(r => ({
-              itemId: r.item, itemCode: r.itemCode, itemName: r.itemName,
-              quantity: safeNum(r.quantity), weight: safeNum(r.weight), totalWeight: r.totalWeight,
-            })),
-          },
-          outputProducts: {
-            create: calcOut.map(p => ({
-              itemId: p.item, itemCode: p.itemCode, itemName: p.itemName,
-              quantity: safeNum(p.quantity), weight: safeNum(p.weight), totalWeight: p.totalWeight,
-            })),
-          },
+          workerId:    workerId   || order.workerId,
+          workerName:  workerName || order.workerName,
+          notes:       notes      ?? order.notes,
+          rawMaterials:   { create: calcRaw.map(r => ({ itemId: r.item, itemCode: r.itemCode, itemName: r.itemName, quantity: safeNum(r.quantity), weight: safeNum(r.weight), totalWeight: r.totalWeight })) },
+          outputProducts: { create: calcOut.map(p => ({ itemId: p.item, itemCode: p.itemCode, itemName: p.itemName, quantity: safeNum(p.quantity), weight: safeNum(p.weight), totalWeight: p.totalWeight })) },
         },
         include: orderIncludes(),
       });
-    });
+    }, { timeout: 30000 });
 
     return res.json({ message: 'تم التعديل ✅', order: n(updated) });
   } catch (err) {
@@ -320,12 +335,15 @@ const approveOrder = async (req, res) => {
 
     const wh = order.warehouse;
 
-    // ── تنفيذ داخل transaction لضمان الـ consistency ──────────────────────
-    const approved = await prisma.$transaction(async (_tx) => {
-      // نقص المخزون للخامات وزيادة المنتجات
+    // ✅ FIXED: كل العمليات تستخدم tx (نفس الـ transaction) — prisma.$transaction الحقيقي
+    const approved = await prisma.$transaction(async (tx) => {
+      // نقص المخزون للخامات
       for (const r of order.rawMaterials) {
-        await updateStock(r.itemId, wh, order.seasonId, { quantity: -safeNum(r.quantity), weight: -safeNum(r.totalWeight) });
-        await createStockMovement({
+        await updateStockTx(tx, r.itemId, wh, order.seasonId, {
+          quantity: -safeNum(r.quantity),
+          weight:   -safeNum(r.totalWeight),
+        });
+        await createStockMovementTx(tx, {
           itemId: r.itemId, itemCode: r.itemCode, itemName: r.itemName,
           type: 'manufacturing_out',
           quantity: r.quantity, weight: r.totalWeight,
@@ -334,9 +352,14 @@ const approveOrder = async (req, res) => {
           seasonId: order.seasonId, createdById: req.user.id, date: order.date,
         });
       }
+
+      // زيادة المخزون للمنتجات
       for (const p of order.outputProducts) {
-        await updateStock(p.itemId, wh, order.seasonId, { quantity: +safeNum(p.quantity), weight: +safeNum(p.totalWeight) });
-        await createStockMovement({
+        await updateStockTx(tx, p.itemId, wh, order.seasonId, {
+          quantity: +safeNum(p.quantity),
+          weight:   +safeNum(p.totalWeight),
+        });
+        await createStockMovementTx(tx, {
           itemId: p.itemId, itemCode: p.itemCode, itemName: p.itemName,
           type: 'manufacturing_in',
           quantity: p.quantity, weight: p.totalWeight,
@@ -346,12 +369,12 @@ const approveOrder = async (req, res) => {
         });
       }
 
-      return prisma.manufacturingOrder.update({
+      return tx.manufacturingOrder.update({
         where:   { id: order.id },
         data:    { status: 'approved', approvedById: req.user.id, approvedAt: new Date() },
         include: orderIncludes(),
       });
-    });
+    }, { timeout: 30000 });
 
     return res.json({ message: 'تم الموافقة ✅', order: n(approved) });
   } catch (err) {
@@ -367,14 +390,9 @@ const rejectOrder = async (req, res) => {
     const order = await prisma.manufacturingOrder.findUnique({ where: { id: req.params.id } });
     if (!order)                      return res.status(404).json({ message: 'الأمر مش موجود' });
     if (order.status === 'approved') return res.status(400).json({ message: 'مش ممكن ترفض أمر اتوافق' });
-
-    const updated = await prisma.manufacturingOrder.update({
-      where: { id: order.id },
-      data:  { status: 'rejected' },
-    });
+    const updated = await prisma.manufacturingOrder.update({ where: { id: order.id }, data: { status: 'rejected' } });
     return res.json({ message: 'تم الرفض', order: n(updated) });
   } catch (err) {
-    console.error('[rejectOrder]', err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -389,7 +407,6 @@ const getWorkers = async (req, res) => {
     const workers = await prisma.worker.findMany({ where, orderBy: { name: 'asc' } });
     return res.json(workers.map(n));
   } catch (err) {
-    console.error('[getWorkers]', err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -401,10 +418,7 @@ const getWorkerReport = async (req, res) => {
     const { workerId } = req.params;
     const { startDate, endDate, seasonId } = req.query;
 
-    const worker = await prisma.worker.findUnique({
-      where:  { id: workerId },
-      select: { name: true, code: true, warehouse: true },
-    });
+    const worker = await prisma.worker.findUnique({ where: { id: workerId }, select: { name: true, code: true, warehouse: true } });
     if (!worker) return res.status(404).json({ message: 'المعلم مش موجود' });
 
     const where = { workerId };
@@ -417,11 +431,7 @@ const getWorkerReport = async (req, res) => {
 
     const orders = await prisma.manufacturingOrder.findMany({
       where,
-      include: {
-        season:         { select: { name: true } },
-        rawMaterials:   true,
-        outputProducts: true,
-      },
+      include: { season: { select: { name: true } }, rawMaterials: true, outputProducts: true },
       orderBy: { date: 'desc' },
     });
 
@@ -429,22 +439,16 @@ const getWorkerReport = async (req, res) => {
     const totalRawWeight    = approved.reduce((s, o) => s + o.rawMaterials.reduce((a, r)  => a + (r.totalWeight  || 0), 0), 0);
     const totalOutputWeight = approved.reduce((s, o) => s + o.outputProducts.reduce((a, p) => a + (p.totalWeight || 0), 0), 0);
 
-    // تجميع المنتجات والخامات بالكود
     const productMap = {};
     const rawMap     = {};
-
     approved.forEach(o => {
       o.outputProducts.forEach(p => {
-        if (!productMap[p.itemCode]) {
-          productMap[p.itemCode] = { itemCode: p.itemCode, itemName: p.itemName, totalQty: 0, totalWeight: 0 };
-        }
+        if (!productMap[p.itemCode]) productMap[p.itemCode] = { itemCode: p.itemCode, itemName: p.itemName, totalQty: 0, totalWeight: 0 };
         productMap[p.itemCode].totalQty    += p.quantity    || 0;
         productMap[p.itemCode].totalWeight += p.totalWeight || 0;
       });
       o.rawMaterials.forEach(r => {
-        if (!rawMap[r.itemCode]) {
-          rawMap[r.itemCode] = { itemCode: r.itemCode, itemName: r.itemName, totalQty: 0, totalWeight: 0 };
-        }
+        if (!rawMap[r.itemCode]) rawMap[r.itemCode] = { itemCode: r.itemCode, itemName: r.itemName, totalQty: 0, totalWeight: 0 };
         rawMap[r.itemCode].totalQty    += r.quantity    || 0;
         rawMap[r.itemCode].totalWeight += r.totalWeight || 0;
       });
@@ -454,16 +458,13 @@ const getWorkerReport = async (req, res) => {
       worker,
       orders: orders.map(n),
       summary: {
-        totalOrders:       approved.length,
-        totalRawWeight,
-        totalOutputWeight,
-        wasteWeight:       totalRawWeight - totalOutputWeight,
+        totalOrders: approved.length, totalRawWeight, totalOutputWeight,
+        wasteWeight: totalRawWeight - totalOutputWeight,
         products:     Object.values(productMap).sort((a, b) => b.totalWeight - a.totalWeight),
         rawMaterials: Object.values(rawMap).sort((a, b)     => b.totalWeight - a.totalWeight),
       },
     });
   } catch (err) {
-    console.error('[getWorkerReport]', err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -491,7 +492,6 @@ const getSeasons = async (req, res) => {
       approvedCount: approvedMap.get(s.id) || 0,
     })));
   } catch (err) {
-    console.error('[getSeasons]', err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -502,25 +502,19 @@ const setSeasonStartNumber = async (req, res) => {
   try {
     const { seasonId } = req.params;
     const { startFrom } = req.body;
-
-    if (!startFrom || Number(startFrom) < 1) {
-      return res.status(400).json({ message: 'رقم البداية لازم يكون 1 أو أكبر' });
-    }
+    if (!startFrom || Number(startFrom) < 1) return res.status(400).json({ message: 'رقم البداية لازم يكون 1 أو أكبر' });
 
     const existing = await prisma.manufacturingOrder.count({ where: { seasonId } });
-    if (existing > 0) {
-      return res.status(400).json({ message: 'مش ممكن تغير رقم البداية بعد إنشاء أوامر في هذا الموسم' });
-    }
+    if (existing > 0) return res.status(400).json({ message: 'مش ممكن تغير رقم البداية بعد إنشاء أوامر في هذا الموسم' });
 
     await prisma.seasonCounter.upsert({
-      where:  { seasonId_prefix: { seasonId, prefix: 'MFG' } },
-      create: { seasonId, prefix: 'MFG', startFrom: Number(startFrom), value: 0 },
+      where:  { seasonId },
+      create: { seasonId, startFrom: Number(startFrom), value: 0 },
       update: { startFrom: Number(startFrom), value: 0 },
     });
 
     return res.json({ message: `رقم البداية اتحدد: ${startFrom}` });
   } catch (err) {
-    console.error('[setSeasonStartNumber]', err);
     return res.status(500).json({ message: err.message });
   }
 };

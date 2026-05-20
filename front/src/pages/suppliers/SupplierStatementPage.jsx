@@ -200,7 +200,7 @@ export default function SupplierStatementPage() {
       {stmt.supplier && (
         <div ref={printRef}>
 
-          <SupplierPrintHeader supplier={stmt.supplier} seasonName={seasonName} />
+          <SupplierPrintHeader supplier={stmt.supplier} seasonName={seasonName} totals={stmt.totals} />
 
           {/* معلومات المورد + الرصيد — مخفية في الطباعة */}
           {stmt.totals && (
@@ -254,20 +254,40 @@ export default function SupplierStatementPage() {
             onEditPayment={isAdmin ? openEdit : null}
           />
 
-          {/* تذييل الطباعة */}
-          <div className="hidden print:block mt-10 pt-4" style={{ borderTop: '2px solid #1e3a5f' }}>
-            <div className="grid grid-cols-3 gap-4 text-center" style={{ fontSize: '10px', color: '#6b7280' }}>
-              <div><div style={{ borderTop: '1px solid #9ca3af', paddingTop: '10px', marginTop: '32px' }}>توقيع المورد</div></div>
+          {/* تذييل الطباعة الاحترافي */}
+          <div className="hidden print:block print-footer-block" style={{ marginTop: '16px', borderTop: '2px solid #1e293b', paddingTop: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center', fontSize: '10px', color: '#6b7280' }}>
               <div>
-                <p className="font-semibold" style={{ color: '#1e3a5f', fontSize: '11px' }}>{COMPANY_NAME}</p>
-                <p className="mt-1">تاريخ الإصدار: {new Date().toLocaleDateString('ar-EG')}</p>
-                <p style={{ fontSize: '9px', color: '#9ca3af', marginTop: '2px' }}>
-                  {stmt.supplier?.name} | {seasonName || 'الموسم النشط'}
-                </p>
+                <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '28px', fontSize: '10px' }}>
+                  توقيع المورد
+                </div>
+                <div style={{ fontSize: '9px', color: '#9ca3af', marginTop: '4px' }}>{stmt.supplier?.name}</div>
               </div>
-              <div><div style={{ borderTop: '1px solid #9ca3af', paddingTop: '10px', marginTop: '32px' }}>توقيع المحاسب</div></div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>{COMPANY_NAME}</div>
+                <div style={{ fontSize: '9px', marginBottom: '2px' }}>تاريخ الإصدار: {new Date().toLocaleDateString('ar-EG')}</div>
+                <div style={{ fontSize: '9px', color: '#9ca3af' }}>
+                  {seasonName || 'الموسم النشط'} — {stmt.counts?.total ?? 0} حركة
+                </div>
+                <div style={{
+                  marginTop: '6px', fontSize: '9px', fontWeight: 700,
+                  color: (stmt.totals?.balance ?? 0) > 0 ? '#dc2626' : '#15803d',
+                  background: (stmt.totals?.balance ?? 0) > 0 ? '#fef2f2' : '#f0fdf4',
+                  border: `1px solid ${(stmt.totals?.balance ?? 0) > 0 ? '#fca5a5' : '#86efac'}`,
+                  borderRadius: '4px', padding: '2px 6px',
+                }}>
+                  الرصيد: {Math.abs(stmt.totals?.balance ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
+                  {(stmt.totals?.balance ?? 0) > 0 ? ' (مستحق للمورد)' : ' (دائن)'}
+                </div>
+              </div>
+              <div>
+                <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '28px', fontSize: '10px' }}>
+                  توقيع المحاسب
+                </div>
+                <div style={{ fontSize: '9px', color: '#9ca3af', marginTop: '4px' }}>المسؤول</div>
+              </div>
             </div>
-            <div style={{ height: '3px', background: 'linear-gradient(90deg,#1e3a5f 0%,#3b82f6 50%,#93c5fd 100%)', borderRadius: '2px', marginTop: '12px' }} />
+            <div style={{ height: '3px', background: 'linear-gradient(90deg,#1e293b 0%,#3b82f6 50%,#93c5fd 100%)', borderRadius: '2px', marginTop: '10px' }} />
           </div>
 
         </div>

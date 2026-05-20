@@ -11,6 +11,7 @@ import { useReactToPrint }        from 'react-to-print';
 import toast                      from 'react-hot-toast';
 
 import { useTimelineStatement }  from './hooks/useTimelineStatement';
+import { COMPANY_NAME }           from '../../components/constants/printStyles';
 import CustomerSearch            from '../../components/common/CustomerSearch';
 import PaymentModal              from '../../components/common/PaymentModal';
 import StatementHeader           from './components/StatementHeader';
@@ -184,7 +185,7 @@ export default function CustomerStatementPage() {
 
           <div ref={printRef}>
             {/* رأس الطباعة */}
-            <PrintHeader customer={stmt.customer} seasonName={selectedSeasonName} />
+            <PrintHeader customer={stmt.customer} seasonName={selectedSeasonName} totals={stmt.totals} />
 
             {/* الكروت — مخفية في الطباعة */}
             {stmt.totals && (
@@ -211,8 +212,40 @@ export default function CustomerStatementPage() {
               onEditPayment={isAdmin ? openEditPayment : null}
             />
 
-            <div className="hidden print:block mt-6 pt-4 border-t text-center text-xs text-gray-400">
-              تم الطباعة بتاريخ {new Date().toLocaleDateString('ar-EG')}
+            {/* تذييل الطباعة الاحترافي */}
+            <div className="hidden print:block" style={{ marginTop: '16px', borderTop: '2px solid #1e293b', paddingTop: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center', fontSize: '10px', color: '#6b7280' }}>
+                <div>
+                  <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '28px', fontSize: '10px' }}>
+                    توقيع العميل
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#9ca3af', marginTop: '4px' }}>{stmt.customer?.name}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>{COMPANY_NAME}</div>
+                  <div style={{ fontSize: '9px', marginBottom: '2px' }}>تاريخ الإصدار: {new Date().toLocaleDateString('ar-EG')}</div>
+                  <div style={{ fontSize: '9px', color: '#9ca3af' }}>
+                    {selectedSeasonName || 'الموسم النشط'} — {stmt.counts?.total ?? 0} حركة
+                  </div>
+                  <div style={{
+                    marginTop: '6px', fontSize: '9px', fontWeight: 700,
+                    color: (stmt.totals?.balance ?? 0) > 0 ? '#dc2626' : '#15803d',
+                    background: (stmt.totals?.balance ?? 0) > 0 ? '#fef2f2' : '#f0fdf4',
+                    border: `1px solid ${(stmt.totals?.balance ?? 0) > 0 ? '#fca5a5' : '#86efac'}`,
+                    borderRadius: '4px', padding: '2px 6px',
+                  }}>
+                    الرصيد: {Math.abs(stmt.totals?.balance ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} ج.م
+                    {(stmt.totals?.balance ?? 0) > 0 ? ' (مستحق على العميل)' : ' (دائن)'}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '28px', fontSize: '10px' }}>
+                    توقيع المحاسب
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#9ca3af', marginTop: '4px' }}>المسؤول</div>
+                </div>
+              </div>
+              <div style={{ height: '3px', background: 'linear-gradient(90deg,#1e293b 0%,#3b82f6 50%,#93c5fd 100%)', borderRadius: '2px', marginTop: '10px' }} />
             </div>
           </div>
         </>

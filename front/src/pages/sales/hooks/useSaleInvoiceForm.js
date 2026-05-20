@@ -247,14 +247,22 @@ export function useSaleInvoiceForm() {
     };
     setCustomer(c);
     setCustomerError(false);
-    const loaded = data.items.map(item => ({
-      id: Date.now() + Math.random(),
-      item: item.item?._id || item.item,
-      itemCode: item.itemCode, itemName: item.itemName,
-      unit: item.unit || '', unitWeight: item.weight,
-      quantity: String(item.quantity), weight: String(item.weight),
-      price: String(item.price), saved: true, editing: false,
-    }));
+    const loaded = data.items.map(item => {
+      // نحسب totalWeight من الـ DB أو من qty × wt كـ fallback
+      const storedTW = item.totalWeight != null
+        ? parseFloat(item.totalWeight)
+        : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
+      return {
+        id: Date.now() + Math.random(),
+        item: item.item?._id || item.item,
+        itemCode: item.itemCode, itemName: item.itemName,
+        unit: item.unit || '', unitWeight: parseFloat(item.weight),
+        quantity: String(item.quantity), weight: String(item.weight),
+        price: String(item.price),
+        _totalWeight: storedTW,   // ← نحفظه عشان الحسابات تكون صح عند التعديل
+        saved: true, editing: false,
+      };
+    });
     setRows([...loaded, newRow()]);
     setTotalWeightInput({});
     customerKey.current += 1;
@@ -380,10 +388,12 @@ export function useSaleInvoiceForm() {
       const qty = parseFloat(r.quantity) || 0;
       const uw  = parseFloat(r.weight)   || 0;
       const pr  = parseFloat(r.price)    || 0;
-      const tw  = r._totalWeight != null ? parseFloat(r._totalWeight) : r3(qty * uw);
+      // الوزن الكلي: نستخدم ما أدخله المستخدم مباشرة إن وُجد، وإلا qty × unitWeight
+      const tw  = r._totalWeight != null ? r3(parseFloat(r._totalWeight)) : r3(qty * uw);
       return {
         item: r.item, itemCode: r.itemCode, itemName: r.itemName,
         quantity: qty, weight: uw, price: pr,
+        totalWeight: tw,          // ← مهم: الـ backend يستخدمه بدل qty × wt
         total: r2(tw * pr),
       };
     });

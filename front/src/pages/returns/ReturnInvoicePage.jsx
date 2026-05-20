@@ -86,7 +86,12 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
         );
         setWarehouse(data.warehouse || 'ramses');
         setNotes(data.notes || '');
-        setRefundMethod(data.refundMethod || 'none');
+        // لو refundMethod = 'cash' لكن في refundBankAmount → كان 'mixed' أصلاً
+        const storedMethod = data.refundMethod || 'none';
+        const detectedMethod = (storedMethod === 'cash' && Number(data.refundBankAmount) > 0)
+          ? 'mixed'
+          : storedMethod;
+        setRefundMethod(detectedMethod);
         setRefundCashAmount(
           data.refundCashAmount ? String(data.refundCashAmount) : '',
         );
@@ -108,19 +113,25 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
           });
         }
 
-        const loaded = data.items.map((item) => ({
-          id: Date.now() + Math.random(),
-          item: item.item?._id || item.item,
-          itemCode: item.itemCode,
-          itemName: item.itemName,
-          unit: item.unit || '',
-          unitWeight: item.weight,
-          quantity: String(item.quantity),
-          weight: String(item.weight),
-          price: String(item.price),
-          saved: true,
-          editing: false,
-        }));
+        const loaded = data.items.map((item) => {
+          const storedTW = item.totalWeight != null
+            ? parseFloat(item.totalWeight)
+            : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
+          return {
+            id: Date.now() + Math.random(),
+            item: item.item?._id || item.item,
+            itemCode: item.itemCode,
+            itemName: item.itemName,
+            unit: item.unit || '',
+            unitWeight: parseFloat(item.weight),
+            quantity: String(item.quantity),
+            weight: String(item.weight),
+            price: String(item.price),
+            _totalWeight: storedTW,
+            saved: true,
+            editing: false,
+          };
+        });
         setRows([...loaded, newRow()]);
         setLoadingEdit(false);
       })
@@ -160,15 +171,17 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
 
   const handleTotalWeightChange = (rowId, totalWt) => {
     setTotalWeightInput((prev) => ({ ...prev, [rowId]: totalWt }));
+    const tw = parseFloat(totalWt) || 0;
     setRows((prev) =>
       prev.map((r) => {
         if (r.id !== rowId) return r;
-        const uw = parseFloat(r.weight) || r.unitWeight;
+        const uw = parseFloat(r.weight) || r.unitWeight || 0;
         if (!uw) return r;
-        const qty = (parseFloat(totalWt) || 0) / uw;
+        const qty = tw / uw;
         return {
           ...r,
-          quantity: qty > 0 ? String(parseFloat(qty.toFixed(4))) : '',
+          quantity:      qty > 0 ? String(Math.round(qty * 10000) / 10000) : '',
+          _totalWeight:  tw,   // ← نحفظ الوزن الكلي الأصلي للحسابات الدقيقة
         };
       }),
     );
@@ -209,7 +222,12 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
 
   const savedRows    = rows.filter((r) => r.saved);
   const totalAmount  = savedRows.reduce((s, r) => s + calcTotal(r.quantity, r.weight, r.price), 0);
-  const totalWeightAll = savedRows.reduce((s, r) => s + calcTotalWeight(r.quantity, r.weight), 0);
+  const totalWeightAll = savedRows.reduce((s, r) => {
+    const tw = r._totalWeight != null
+      ? parseFloat(r._totalWeight)
+      : calcTotalWeight(r.quantity, r.weight);
+    return s + (tw || 0);
+  }, 0);
 
   const handleSubmit = async () => {
     if (!party) {
@@ -229,15 +247,24 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
     }
 
     setSaving(true);
-    const itemsPayload = savedRows.map((r) => ({
-      item:     r.item,
-      itemCode: r.itemCode,
-      itemName: r.itemName,
-      quantity: Number(r.quantity),
-      weight:   Number(r.weight),
-      price:    Number(r.price),
-      total:    calcTotal(r.quantity, r.weight, r.price),
-    }));
+    const itemsPayload = savedRows.map((r) => {
+      const qty = Number(r.quantity) || 0;
+      const wt  = Number(r.weight)   || 0;
+      const pr  = Number(r.price)    || 0;
+      const tw  = r._totalWeight != null
+        ? Math.round(parseFloat(r._totalWeight) * 1000) / 1000
+        : Math.round(qty * wt * 1000) / 1000;
+      return {
+        item:        r.item,
+        itemCode:    r.itemCode,
+        itemName:    r.itemName,
+        quantity:    qty,
+        weight:      wt,
+        price:       pr,
+        totalWeight: tw,   // ← الوزن الكلي الدقيق
+        total:       Math.round(tw * pr * 100) / 100,
+      };
+    });
     const partyFields = isCustomer
       ? { customerId: party._id, customerCode: party.code, customerName: party.name }
       : { supplierId: party._id, supplierCode: party.code, supplierName: party.name };
