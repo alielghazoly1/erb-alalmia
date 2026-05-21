@@ -1,3 +1,8 @@
+// ─── TransferPage.jsx ──────────────────────────────────────────────────────────
+// إذن تحويل — فورم مطابق لفاتورة المبيعات بالضبط
+// ✅ عرض المخزون المتاح عند اختيار الصنف (من الموسم النشط)
+// ✅ تغيير المخزن يحدّث الكميات المتاحة لكل الأصناف
+// ✅ الحفظ + تعديل
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,6 +15,7 @@ const newRow = () => ({
   id: Date.now() + Math.random(),
   item: null, itemCode: '', itemName: '', unit: '',
   quantity: '', weight: '',
+  availableQty: undefined,
   saved: false, editing: false,
 });
 
@@ -23,6 +29,7 @@ export default function TransferPage() {
 
   const { user }    = useSelector(s => s.auth);
   const { current } = useSelector(s => s.transfers);
+  const { activeSeason } = useSelector(s => s.season);
   const isAdmin = user?.role === 'admin';
 
   const defaultFrom = user?.warehouse === 'october' ? 'october' : 'ramses';
@@ -35,17 +42,16 @@ export default function TransferPage() {
   const [loading,     setLoading]     = useState(isEdit);
   const [existingStatus, setExistingStatus] = useState('pending');
 
-  // رقم المستند
   const [docNumber,   setDocNumber]   = useState('');
   const [docError,    setDocError]    = useState('');
   const [docChecking, setDocChecking] = useState(false);
   const docTimer = useRef(null);
 
-  const qtyRefs = useRef({});
-  const wtRefs  = useRef({});
+  const qtyRefs  = useRef({});
+  const wtRefs   = useRef({});
+  const itemRefs = useRef({});
 
-  // تحميل بيانات التحويل للتعديل
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // ── تحميل بيانات التحويل للتعديل ───────────────────────────────────────
   useEffect(() => {
     if (!isEdit) return;
     dispatch(fetchTransferById(id)).then(res => {
@@ -69,16 +75,35 @@ export default function TransferPage() {
         unit:     item.unit || '',
         quantity: String(item.quantity),
         weight:   String(item.weight),
-        saved:    true, editing: false,
+        availableQty: undefined,
+        saved: true, editing: false,
       }));
       setRows([...loaded, newRow()]);
       setLoading(false);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEdit]);
 
-  // التحقق من رقم المستند في real-time
-  const { activeSeason } = useSelector(s => s.season);
+  // ── تحديث stock المتاح لما المخزن يتغير ────────────────────────────────
+  const refreshStockForWarehouse = useCallback(async (warehouse) => {
+    const savedItemIds = rows.filter(r => r.saved && r.item).map(r => r.item);
+    if (!savedItemIds.length) return;
+    try {
+      const seasonId = activeSeason?._id;
+      const results = await Promise.all(
+        savedItemIds.map(id => api.get(`/items/${id}/stock`, { params: seasonId ? { seasonId } : {} }))
+      );
+      const stockByItem = {};
+      results.forEach(({ data }, i) => { stockByItem[savedItemIds[i]] = data.stock; });
+      setRows(prev => prev.map(r => {
+        if (!r.saved || !r.item || !stockByItem[r.item]) return r;
+        return { ...r, availableQty: stockByItem[r.item]?.[warehouse]?.quantity ?? 0 };
+      }));
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, activeSeason]);
 
+  // ── التحقق من رقم المستند ───────────────────────────────────────────────
   const checkDocNumber = useCallback(async (val) => {
     if (!val?.trim() || !fromWarehouse) { setDocError(''); return; }
     const direction = fromWarehouse === 'ramses' ? 'R2O' : 'O2R';
@@ -89,7 +114,7 @@ export default function TransferPage() {
       if (isEdit && id) params.excludeId = id;
       const { data } = await api.get('/transfers/check-doc', { params });
       setDocError(data.exists
-        ? `⚠️ رقم المستند "${val}" موجود بالفعل في هذا الاتجاه (${data.transferNumber})`
+        ? `⚠️ رقم المستند "${val}" موجود بالفعل (${data.transferNumber})`
         : '');
     } catch { setDocError(''); }
     finally { setDocChecking(false); }
@@ -102,12 +127,24 @@ export default function TransferPage() {
     docTimer.current = setTimeout(() => checkDocNumber(val), 500);
   };
 
-  const handleItemSelect = (rowId, item) => {
+  // ── اختيار صنف ──────────────────────────────────────────────────────────
+  const handleItemSelect = async (rowId, item) => {
     if (!item) return;
+    // جيب المخزون المتاح من الموسم النشط
+    let availableQty = undefined;
+    try {
+      const seasonId = activeSeason?._id;
+      const { data } = await api.get(`/items/${item._id}/stock`, {
+        params: seasonId ? { seasonId } : {},
+      });
+      availableQty = data.stock?.[fromWarehouse]?.quantity ?? 0;
+    } catch {}
+
     setRows(prev => prev.map(r =>
       r.id === rowId ? {
         ...r, item: item._id, itemCode: item.code, itemName: item.name, unit: item.unit || '',
         weight: item.defaultWeight ? String(item.defaultWeight) : r.weight,
+        availableQty,
       } : r
     ));
     setTimeout(() => qtyRefs.current[rowId]?.focus(), 50);
@@ -125,8 +162,8 @@ export default function TransferPage() {
 
   const handleSaveRow = (rowId) => {
     const row = rows.find(r => r.id === rowId);
-    if (!row?.item)                    { toast.error('اختار الصنف أولاً'); return; }
-    if (!row.quantity || !row.weight)  { toast.error('اكمل بيانات الصنف'); return; }
+    if (!row?.item)                   { toast.error('اختار الصنف أولاً'); return; }
+    if (!row.quantity || !row.weight) { toast.error('اكمل بيانات الصنف'); return; }
     setRows(prev => {
       const upd = prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r);
       return [...upd, newRow()];
@@ -136,15 +173,15 @@ export default function TransferPage() {
   const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true } : r));
   const handleDeleteRow = (rowId) => setRows(prev => { const f = prev.filter(r => r.id !== rowId); return f.length ? f : [newRow()]; });
 
-  const handleFromChange = (val) => {
+  const handleFromChange = async (val) => {
     setFromWarehouse(val);
     setToWarehouse(val === 'ramses' ? 'october' : 'ramses');
+    await refreshStockForWarehouse(val);
   };
 
   const savedRows     = rows.filter(r => r.saved);
   const totalWeight   = savedRows.reduce((s, r) => s + calcTW(r.quantity, r.weight), 0);
   const totalQuantity = savedRows.reduce((s, r) => s + (parseFloat(r.quantity) || 0), 0);
-
   const isApprovedEdit = isEdit && existingStatus === 'approved';
 
   const handleSubmit = async () => {
@@ -176,7 +213,7 @@ export default function TransferPage() {
       } else {
         const res = await dispatch(createTransfer(payload));
         if (!res.error) {
-          toast.success(`تم حفظ الإذن ${res.payload.transferNumber} — رقم المستند: ${res.payload.docNumber} ⏳`);
+          toast.success(`تم حفظ الإذن ${res.payload.transferNumber} ⏳`);
           setRows([newRow()]); setNotes(''); setDocNumber(''); setDocError('');
           setDate(new Date().toISOString().split('T')[0]);
         } else toast.error(res.payload || 'خطأ في الحفظ');
@@ -187,9 +224,12 @@ export default function TransferPage() {
 
   if (loading) return <div className="text-center py-24 text-gray-400">جاري تحميل الإذن...</div>;
 
+  const warehouseLabel = (w) => w === 'ramses' ? '🔵 رمسيس' : '🟣 أكتوبر';
+
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
-      {/* هيدر */}
+    <div className="max-w-5xl mx-auto space-y-4 pb-8">
+
+      {/* ── هيدر ── */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -206,9 +246,7 @@ export default function TransferPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          {isEdit && (
-            <button className="btn-secondary" onClick={() => navigate(-1)}>← رجوع</button>
-          )}
+          {isEdit && <button className="btn-secondary" onClick={() => navigate(-1)}>← رجوع</button>}
           <button
             className={isApprovedEdit ? 'btn-danger' : 'btn-primary'}
             onClick={handleSubmit}
@@ -221,7 +259,7 @@ export default function TransferPage() {
         </div>
       </div>
 
-      {/* تحذير للمعتمد */}
+      {/* تحذير معتمد */}
       {isApprovedEdit && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex gap-3">
           <span className="text-xl">⚠️</span>
@@ -232,11 +270,10 @@ export default function TransferPage() {
         </div>
       )}
 
-      {/* بيانات التحويل */}
+      {/* ── بيانات الإذن ── */}
       <div className="card">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">بيانات الإذن</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
-          {/* من مخزن */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">من مخزن</label>
             <select className="input-field" value={fromWarehouse} onChange={e => handleFromChange(e.target.value)}>
@@ -244,15 +281,13 @@ export default function TransferPage() {
               <option value="october">🟣 أكتوبر</option>
             </select>
           </div>
-          {/* سهم */}
           <div className="flex justify-center items-end pb-2">
-            <div className="flex items-center gap-2 text-blue-500 font-bold text-lg">
-              <span className="text-sm text-gray-600">{fromWarehouse === 'ramses' ? 'رمسيس' : 'أكتوبر'}</span>
-              <span>←</span>
-              <span className="text-sm text-gray-600">{toWarehouse === 'ramses' ? 'رمسيس' : 'أكتوبر'}</span>
+            <div className="flex items-center gap-2 text-blue-500 font-bold text-base">
+              <span className="text-xs text-gray-600">{warehouseLabel(fromWarehouse)}</span>
+              <span className="text-lg">←</span>
+              <span className="text-xs text-gray-600">{warehouseLabel(toWarehouse)}</span>
             </div>
           </div>
-          {/* إلى مخزن */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">إلى مخزن</label>
             <select className="input-field" value={toWarehouse} onChange={e => setToWarehouse(e.target.value)}>
@@ -260,7 +295,6 @@ export default function TransferPage() {
               <option value="october">🟣 أكتوبر</option>
             </select>
           </div>
-          {/* التاريخ */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">التاريخ</label>
             <input type="date" className="input-field" value={date} onChange={e => setDate(e.target.value)} />
@@ -268,9 +302,7 @@ export default function TransferPage() {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">
-              رقم المستند *
-            </label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">رقم المستند *</label>
             <input
               className={`input-field ${docError ? 'border-red-500 ring-2 ring-red-100' : ''}`}
               placeholder="أدخل رقم المستند..."
@@ -290,7 +322,7 @@ export default function TransferPage() {
         </div>
       </div>
 
-      {/* جدول الأصناف المحفوظة */}
+      {/* ── جدول الأصناف المحفوظة ── */}
       {savedRows.length > 0 && (
         <div className="card">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">
@@ -303,6 +335,7 @@ export default function TransferPage() {
                   <th className="text-right px-3 py-2">#</th>
                   <th className="text-right px-3 py-2">الكود</th>
                   <th className="text-right px-3 py-2">الصنف</th>
+                  <th className="text-center px-3 py-2">متاح</th>
                   <th className="text-center px-3 py-2">العدد</th>
                   <th className="text-center px-3 py-2">وزن/وحدة</th>
                   <th className="text-center px-3 py-2">وزن كلي</th>
@@ -315,7 +348,18 @@ export default function TransferPage() {
                     <td className="px-3 py-2.5 text-gray-400 text-center text-xs">{idx + 1}</td>
                     <td className="px-3 py-2.5 font-mono text-blue-600 text-xs">{row.itemCode}</td>
                     <td className="px-3 py-2.5 font-medium text-gray-800">{row.itemName}</td>
-                    <td className="px-3 py-2.5 text-center">{row.quantity}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      {row.availableQty !== undefined ? (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          row.availableQty <= 0 ? 'bg-red-100 text-red-600' :
+                          row.availableQty < 5  ? 'bg-amber-100 text-amber-700' :
+                                                   'bg-green-100 text-green-700'
+                        }`}>
+                          {row.availableQty} ك
+                        </span>
+                      ) : <span className="text-gray-300 text-xs">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-center font-bold">{row.quantity}</td>
                     <td className="px-3 py-2.5 text-center text-gray-400 text-xs">
                       {parseFloat(row.weight).toFixed(3)} ك
                     </td>
@@ -331,7 +375,7 @@ export default function TransferPage() {
               </tbody>
               <tfoot>
                 <tr className="bg-blue-50 font-semibold text-xs">
-                  <td colSpan={3} className="px-3 py-2 text-right text-gray-600">الإجمالي</td>
+                  <td colSpan={4} className="px-3 py-2 text-right text-gray-600">الإجمالي</td>
                   <td className="px-3 py-2 text-center text-blue-700">{totalQuantity} كرتونة</td>
                   <td></td>
                   <td className="px-3 py-2 text-center text-blue-700">{totalWeight.toFixed(3)} ك</td>
@@ -343,30 +387,50 @@ export default function TransferPage() {
         </div>
       )}
 
-      {/* صفوف الإدخال */}
+      {/* ── صف إدخال الصنف (sticky مثل فاتورة المبيعات) ── */}
       {rows.filter(r => !r.saved).map(row => (
         <div
           key={row.id}
-          className={`card border-2 ${row.editing ? 'border-amber-400 bg-amber-50/20' : 'border-blue-200'}`}
+          className={`rounded-xl border-2 p-3 sticky bottom-0 z-10 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] ${
+            row.editing ? 'border-amber-400 bg-amber-50/95' : 'border-blue-200 bg-blue-50/95'
+          }`}
         >
-          <p className="text-sm font-medium text-gray-600 mb-3">
-            {row.editing ? '✏️ تعديل صنف' : '➕ إضافة صنف'}
+          {/* info header */}
+          {row.itemName && (
+            <p className="text-xs text-green-600 mt-0.5 mb-1 font-medium truncate">✓ {row.itemName}</p>
+          )}
+          {row.availableQty !== undefined && (
+            <p className={`text-xs mb-1 ${
+              row.availableQty <= 0 ? 'text-red-500' : row.availableQty < 5 ? 'text-amber-600' : 'text-green-600'
+            }`}>
+              {row.availableQty <= 0 ? '⚠️ لا يوجد رصيد كافٍ' : `🟢 متاح في ${warehouseLabel(fromWarehouse)}: ${row.availableQty} كرتون`}
+            </p>
+          )}
+          <p className="text-xs font-semibold text-gray-500 mb-2">
+            {row.editing ? '✏️ تعديل صنف' : '➕ أضف صنف'}
           </p>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <div>
+
+          <div className="grid grid-cols-12 gap-2 items-end">
+            {/* الصنف */}
+            <div className="col-span-5">
               <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
               <ItemSearch
                 onSelect={item => handleItemSelect(row.id, item)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); qtyRefs.current[row.id]?.focus(); } }}
                 placeholder="ابحث بالكود أو الاسم..."
-                defaultValue={row.itemName ? `${row.itemCode} — ${row.itemName}` : ''}
+                getFocusTrigger={fn => { itemRefs.current[row.id] = fn; }}
+                defaultValue={row.editing ? row.itemName : ''}
               />
-              {row.itemName && <p className="text-xs text-green-600 mt-1 font-medium">✓ {row.itemName}</p>}
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">العدد (كراتين)</label>
+
+            {/* العدد */}
+            <div className="col-span-3">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                العدد (كراتين)
+                {row.weight && <span className="text-blue-400 mr-1 text-xs">×{row.weight}ك</span>}
+              </label>
               <input
-                ref={el => qtyRefs.current[row.id] = el}
+                ref={el => (qtyRefs.current[row.id] = el)}
                 type="number" min="0" step="1"
                 className="input-field text-center font-bold text-lg"
                 placeholder="0"
@@ -380,10 +444,12 @@ export default function TransferPage() {
                 </p>
               )}
             </div>
-            <div>
+
+            {/* الوزن */}
+            <div className="col-span-3">
               <label className="block text-xs font-medium text-gray-500 mb-1">وزن الكرتونة (كيلو)</label>
               <input
-                ref={el => wtRefs.current[row.id] = el}
+                ref={el => (wtRefs.current[row.id] = el)}
                 type="number" min="0" step="0.001"
                 className="input-field text-center"
                 placeholder="0.000"
@@ -392,31 +458,33 @@ export default function TransferPage() {
                 onKeyDown={e => handleKeyDown(e, row.id, 'weight')}
               />
             </div>
+
+            {/* الوزن الكلي */}
+            <div className="col-span-1 flex flex-col items-center gap-1">
+              <p className="text-xs text-gray-400">الكلي</p>
+              <p className="text-sm font-bold text-blue-700 leading-tight">
+                {calcTW(row.quantity, row.weight).toFixed(2)}
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2 items-center">
-            {row.quantity && row.weight && (
-              <div className="flex-1 bg-blue-50 rounded-lg px-4 py-2 border border-blue-100">
-                <p className="text-xs text-blue-500">الوزن الكلي</p>
-                <p className="text-lg font-bold text-blue-700">
-                  {calcTW(row.quantity, row.weight).toFixed(3)} كيلو
-                </p>
-              </div>
-            )}
+
+          {/* زر الإضافة */}
+          <div className="flex gap-2 items-center mt-2">
             <button
               onClick={() => handleSaveRow(row.id)}
-              className="btn-primary px-6 py-2.5"
+              className="btn-primary px-6 py-2"
               disabled={!row.item || !row.quantity || !row.weight}
             >
-              {row.editing ? 'تحديث' : '✓ إضافة'}
+              {row.editing ? '✓ تحديث' : '✓ إضافة'}
             </button>
             {row.editing && (
-              <button onClick={() => handleDeleteRow(row.id)} className="btn-secondary px-4 py-2.5">إلغاء</button>
+              <button onClick={() => handleDeleteRow(row.id)} className="btn-secondary px-4 py-2">إلغاء</button>
             )}
           </div>
         </div>
       ))}
 
-      {/* بطاقة الإجمالي */}
+      {/* ── بطاقة الإجمالي ── */}
       {savedRows.length > 0 && (
         <div className="card bg-blue-50 border border-blue-200">
           <div className="flex justify-between items-center">
@@ -424,8 +492,11 @@ export default function TransferPage() {
               <p>عدد الأصناف: <span className="font-bold text-gray-800">{savedRows.length}</span></p>
               <p>إجمالي الكراتين: <span className="font-bold text-gray-800">{totalQuantity}</span></p>
               <p className="text-xs text-gray-500">
-                {fromWarehouse === 'ramses' ? '🔵 رمسيس' : '🟣 أكتوبر'} ← {toWarehouse === 'ramses' ? '🔵 رمسيس' : '🟣 أكتوبر'}
+                {warehouseLabel(fromWarehouse)} ← {warehouseLabel(toWarehouse)}
               </p>
+              {activeSeason && (
+                <p className="text-xs text-blue-600">🌿 الموسم: {activeSeason.name}</p>
+              )}
             </div>
             <div className="text-left">
               <p className="text-sm text-gray-500 mb-1">إجمالي الوزن المحوّل</p>

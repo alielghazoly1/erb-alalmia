@@ -1,6 +1,6 @@
 // ─── components/ItemMovementsTable.jsx ──────────────────────────────────────
 // جدول حركات الصنف عند العميل (مبيعات + مرتجعات مدمجة)
-// المرتجع يظهر بلون مختلف وبـ prefix "-"
+// ✅ إضافة عمود الموسم
 // ────────────────────────────────────────────────────────────────────────────
 import { Link } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
@@ -9,16 +9,15 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
   if (!movements?.length)
     return <p className="text-center text-gray-400 py-8">لا يوجد حركات لهذا الصنف</p>;
 
-  // ── إجماليات الجدول ───────────────────────────────────────────────────────
   const sales   = movements.filter((m) => m.type === 'sale');
   const returns = movements.filter((m) => m.type === 'return');
 
   const totals = {
     qty:    sales.reduce((s, m) => s + (m.quantity || 0), 0),
     wt:     sales.reduce((s, m) => s + calcTotalWeight(m), 0),
-    amount: sales.reduce((s, m) => s + calcTotal(m),       0),
+    amount: sales.reduce((s, m) => s + calcTotal(m), 0),
     retQty: returns.reduce((s, m) => s + (m.quantity || 0), 0),
-    retWt:  returns.reduce((s, m) => s + calcTotalWeight(m),  0),
+    retWt:  returns.reduce((s, m) => s + calcTotalWeight(m), 0),
   };
 
   return (
@@ -27,15 +26,15 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
         <thead>
           <tr style={{ borderBottom: '2px solid #000', borderTop: '2px solid #000', background: '#f1f5f9' }}>
             {[
-              '#', 'النوع', 'رقم الفاتورة', 'التاريخ',
+              '#', 'النوع', 'رقم الفاتورة', 'التاريخ', 'الموسم',
               'الكميه', 'الوزن (كجم)', 'الإجمالي (كجم)', 'السعر', 'الإجمالي',
               'الحالة', '',
             ].map((h, i) => (
               <th
                 key={i}
                 className={`px-3 py-2 font-bold text-black text-xs whitespace-nowrap
-                  ${i >= 4 ? 'text-center' : 'text-right'}
-                  ${i === 10 ? 'print:hidden' : ''}`}
+                  ${i >= 5 ? 'text-center' : 'text-right'}
+                  ${i === 11 ? 'print:hidden' : ''}`}
               >
                 {h}
               </th>
@@ -45,12 +44,12 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
 
         <tbody>
           {movements.map((m, idx) => {
-            const isSale   = m.type === 'sale';
-            const tw       = calcTotalWeight(m);
-            const total    = calcTotal(m);
-            const rowBg    = isSale
+            const isSale = m.type === 'sale';
+            const tw     = calcTotalWeight(m);
+            const total  = calcTotal(m);
+            const rowBg  = isSale
               ? (idx % 2 === 0 ? '#f8fafc' : 'white')
-              : '#fff7ed'; // برتقالي فاتح للمرتجع
+              : '#fff7ed';
 
             return (
               <tr key={`${m.type}-${m.invoiceId}`} style={{ background: rowBg, borderBottom: '1px solid #e2e8f0' }}>
@@ -75,9 +74,20 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
                   {new Date(m.date).toLocaleDateString('ar-EG')}
                 </td>
 
+                {/* ✅ الموسم */}
+                <td className="px-3 py-2">
+                  {m.seasonName ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
+                      🌿 {m.seasonName}
+                    </span>
+                  ) : (
+                    <span className="text-gray-300 text-xs">—</span>
+                  )}
+                </td>
+
                 {/* الكمية */}
                 <td className="px-3 py-2 text-center font-medium">
-                  {isSale ? '' : <span className="text-orange-500">-</span>}
+                  {!isSale && <span className="text-orange-500">-</span>}
                   {m.quantity}
                 </td>
 
@@ -92,7 +102,7 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
 
                 {/* الإجمالي */}
                 <td className={`px-3 py-2 text-center font-bold ${isSale ? 'text-blue-700' : 'text-orange-600'}`}>
-                  {isSale ? '' : '-'}{total.toFixed(2)}
+                  {!isSale && '-'}{total.toFixed(2)}
                 </td>
 
                 {/* الحالة */}
@@ -100,7 +110,7 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
                   <StatusBadge status={m.status} />
                 </td>
 
-                {/* رابط الفاتورة */}
+                {/* رابط */}
                 <td className="px-3 py-2 text-center print:hidden">
                   <Link
                     to={isSale ? `/sales/${m.invoiceId}` : `/returns/${m.invoiceId}`}
@@ -114,12 +124,9 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
           })}
         </tbody>
 
-        {/* ── Footer الإجماليات ── */}
         <tfoot>
           <tr style={{ borderTop: '2px solid #000', background: '#e2e8f0', fontWeight: 'bold' }}>
-            <td colSpan={4} className="px-3 py-2 text-right text-black font-bold">
-              إجمالي المبيعات
-            </td>
+            <td colSpan={5} className="px-3 py-2 text-right text-black font-bold">إجمالي المبيعات</td>
             <td className="px-3 py-2 text-center">{totals.qty}</td>
             <td className="px-3 py-2 text-center">—</td>
             <td className="px-3 py-2 text-center">{totals.wt.toFixed(2)}</td>
@@ -129,9 +136,7 @@ export default function ItemMovementsTable({ movements, calcTotalWeight, calcTot
           </tr>
           {returns.length > 0 && (
             <tr style={{ background: '#fff7ed', fontWeight: 'bold' }}>
-              <td colSpan={4} className="px-3 py-2 text-right text-orange-700 font-bold">
-                إجمالي المرتجعات
-              </td>
+              <td colSpan={5} className="px-3 py-2 text-right text-orange-700 font-bold">إجمالي المرتجعات</td>
               <td className="px-3 py-2 text-center text-orange-600">- {totals.retQty}</td>
               <td className="px-3 py-2 text-center">—</td>
               <td className="px-3 py-2 text-center text-orange-600">- {totals.retWt.toFixed(2)}</td>

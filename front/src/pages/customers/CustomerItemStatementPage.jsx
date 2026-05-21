@@ -2,7 +2,8 @@
 // صفحة كشف صنف معين عند عميل — مع طباعة
 // Orchestrator فقط — كل المنطق في الـ hook والمكوّنات
 // ────────────────────────────────────────────────────────────────────────────
-import { useRef }            from 'react';
+import { useRef, useState }  from 'react';
+import { useSelector }        from 'react-redux';
 import { Link }              from 'react-router-dom';
 import { useReactToPrint }   from 'react-to-print';
 
@@ -68,6 +69,24 @@ export default function CustomerItemStatementPage() {
             />
           </div>
         </div>
+        {/* ✅ فلتر الموسم */}
+        {stmt.data?.seasons?.length > 0 && (
+          <div className="mt-3 flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-600 whitespace-nowrap">🌿 الموسم:</label>
+            <select
+              className="input-field max-w-xs"
+              value={stmt.seasonId || ''}
+              onChange={e => stmt.changeSeason(e.target.value || null)}
+            >
+              <option value="">كل المواسم</option>
+              {stmt.data.seasons.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name}{s.isActive ? ' ✓ (النشط)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* ── زر الطباعة — يظهر بعد اختيار العميل والصنف ── */}

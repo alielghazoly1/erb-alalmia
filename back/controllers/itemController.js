@@ -9,12 +9,16 @@ const { safeNum, round2, round3, n } = require('../utils/decimalHelper');
 const PAGE_SIZE = 100;
 
 // ── enrichWithStock — يضيف stock map لكل صنف ─────────────────────────────────
-const enrichWithStock = async (items) => {
+const enrichWithStock = async (items, seasonId = null) => {
   if (!items.length) return items;
   const ids = items.map(i => i.id);
+  // ✅ FIX: فلتر بالموسم النشط عشان نجيب رصيد الموسم الصح
+  const stockWhere = { itemId: { in: ids } };
+  if (seasonId) stockWhere.seasonId = seasonId;
+  else stockWhere.seasonId = null; // بدون موسم افتراضياً
   const stocks = await prisma.itemStock.findMany({
-    where: { itemId: { in: ids } },
-    select: { itemId: true, warehouse: true, quantity: true, weight: true },
+    where: stockWhere,
+    select: { itemId: true, warehouse: true, quantity: true, weight: true, seasonId: true },
   });
   const stockMap = {};
   for (const s of stocks) {
@@ -74,7 +78,9 @@ const getItems = async (req, res) => {
       ),
     ]);
 
-    const items = await enrichWithStock(rawItems);
+    // ✅ نجيب الموسم النشط لفلترة المخزون
+    const activeSeason = await prisma.season.findFirst({ where: { isActive: true }, select: { id: true } });
+    const items = await enrichWithStock(rawItems, activeSeason?.id ?? null);
     const total = parseInt(countResult[0].count, 10);
     res.json({ items, total, page: pageNum, pageSize: PAGE_SIZE, hasMore: skip + items.length < total });
   } catch (err) {
@@ -88,7 +94,8 @@ const getItemById = async (req, res) => {
   try {
     const item = await prisma.item.findUnique({ where: { id: req.params.id } });
     if (!item || !item.isActive) return res.status(404).json({ message: 'الصنف مش موجود' });
-    const [enriched] = await enrichWithStock([item]);
+    const activeSeason = await prisma.season.findFirst({ where: { isActive: true }, select: { id: true } });
+    const [enriched] = await enrichWithStock([item], activeSeason?.id ?? null);
     res.json(enriched);
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
@@ -98,7 +105,8 @@ const getItemByCode = async (req, res) => {
   try {
     const item = await prisma.item.findFirst({ where: { code: req.params.code, isActive: true } });
     if (!item) return res.status(404).json({ message: 'الصنف مش موجود' });
-    const [enriched] = await enrichWithStock([item]);
+    const activeSeason = await prisma.season.findFirst({ where: { isActive: true }, select: { id: true } });
+    const [enriched] = await enrichWithStock([item], activeSeason?.id ?? null);
     res.json(enriched);
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
@@ -124,7 +132,8 @@ const createItem = async (req, res) => {
         notes: req.body.notes,
       },
     });
-    const [enriched] = await enrichWithStock([item]);
+    const activeSeason = await prisma.season.findFirst({ where: { isActive: true }, select: { id: true } });
+    const [enriched] = await enrichWithStock([item], activeSeason?.id ?? null);
     res.status(201).json(enriched);
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
@@ -146,7 +155,8 @@ const updateItem = async (req, res) => {
       }
     });
     const item = await prisma.item.update({ where: { id: req.params.id }, data });
-    const [enriched] = await enrichWithStock([item]);
+    const activeSeason = await prisma.season.findFirst({ where: { isActive: true }, select: { id: true } });
+    const [enriched] = await enrichWithStock([item], activeSeason?.id ?? null);
     res.json(enriched);
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ message: 'الصنف مش موجود' });
@@ -167,12 +177,21 @@ const getItemStock = async (req, res) => {
   try {
     const item = await prisma.item.findUnique({ where: { id: req.params.id } });
     if (!item) return res.status(404).json({ message: 'الصنف مش موجود' });
-    const stocks = await prisma.itemStock.findMany({ where: { itemId: item.id } });
+    // ✅ FIX: دعم seasonId في query param (أو الموسم النشط كـ fallback)
+    let { seasonId } = req.query;
+    if (!seasonId) {
+      const activeSeason = await prisma.season.findFirst({ where: { isActive: true }, select: { id: true } });
+      seasonId = activeSeason?.id ?? null;
+    }
+    const stockWhere = { itemId: item.id };
+    if (seasonId) stockWhere.seasonId = seasonId;
+    else stockWhere.seasonId = null;
+    const stocks = await prisma.itemStock.findMany({ where: stockWhere });
     const stockMap = {};
     for (const s of stocks) stockMap[s.warehouse] = { quantity: s.quantity, weight: s.weight };
     res.json({
       _id: item.id, code: item.code, name: item.name, unit: item.unit,
-      stock: stockMap,
+      stock: stockMap, seasonId,
       defaultWeight: item.defaultWeight,
       lastPurchasePrice: item.lastPurchasePrice,
       lastSalePrice: item.lastSalePrice,

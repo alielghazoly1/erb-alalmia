@@ -57,13 +57,15 @@ const sumRows = (rows) => {
 const getItemMovements = async (req, res) => {
   try {
     const { itemId }  = req.params;
-    const { warehouse, startDate, endDate, page = 1 } = req.query;
+    const { warehouse, startDate, endDate, page = 1, seasonId } = req.query;
     const pageNum = Math.max(1, parseInt(page, 10));
     const skip    = (pageNum - 1) * MOV_PAGE_SIZE;
 
     // ── بناء where object للاستخدام مع Prisma ORM ──────────────────────────
     const baseWhere   = { itemId };
     if (warehouse) baseWhere.warehouse = warehouse;
+    // ✅ FIX: فلتر بالموسم لو اتبعت
+    if (seasonId) baseWhere.seasonId = seasonId;
 
     const periodWhere = { ...baseWhere };
     const dateFilter  = {};

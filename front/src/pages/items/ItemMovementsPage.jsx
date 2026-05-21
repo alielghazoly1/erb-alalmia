@@ -2,6 +2,7 @@
 // حركات الأصناف — رصيد تراكمي صحيح + طباعة في نفس الصفحة (iframe)
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import api from '../../services/api';
 import ItemSearch from '../../components/common/ItemSearch';
 import { useInfiniteScroll } from '../../hook/useInfiniteScroll';
@@ -326,6 +327,7 @@ export default function ItemMovementsPage() {
   const [invoicePath,  setInvoicePath]  = useState(null);
 
   // حقول مهمة يرجعها الـ API للطباعة والإحصائيات
+  const { activeSeason } = useSelector(s => s.season);
   const [openingQty,    setOpeningQty]    = useState(0);
   const [openingWeight, setOpeningWeight] = useState(0);
   const [periodTotals,  setPeriodTotals]  = useState(null);
@@ -365,6 +367,8 @@ export default function ItemMovementsPage() {
       if (wh) params.warehouse = wh;
       if (sd) params.startDate = sd;
       if (ed) params.endDate   = ed;
+      // ✅ فلتر الموسم النشط
+      if (activeSeason?._id) params.seasonId = activeSeason._id;
 
       // المسار الجديد /api/items/:itemId/movements
       const { data } = await api.get(`/items/${itemId}/movements`, { params });
@@ -384,7 +388,8 @@ export default function ItemMovementsPage() {
 
   useEffect(() => {
     if (initItemId) {
-      api.get(`/items/${initItemId}/stock`)
+      const sParam = activeSeason?._id ? `?seasonId=${activeSeason._id}` : '';
+      api.get(`/items/${initItemId}/stock${sParam}`)
         .then(({ data }) => {
           setStockInfo({
             ramses:  data.stock?.ramses  || { quantity: 0, weight: 0 },
@@ -407,6 +412,7 @@ export default function ItemMovementsPage() {
       if (wh) params.warehouse = wh;
       if (sd) params.startDate = sd;
       if (ed) params.endDate   = ed;
+      if (activeSeason?._id) params.seasonId = activeSeason._id;
       const { data } = await api.get(`/items/${item._id}/movements`, { params });
 
       setMovements((prev) => {

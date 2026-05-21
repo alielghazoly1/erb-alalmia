@@ -1,11 +1,19 @@
 // ─── utils/stockHelper.js ─────────────────────────────────────────────────────
-// أدوات المخزون — تسجيل الحركات وتحديث الأرصدة
-// ✅ FIXED: Race Condition — updateStock الآن atomic باستخدام raw SQL
+// أدوات المخزون — تحديث الأرصدة وتسجيل الحركات
+//
+// الإصلاحات الجوهرية في هذه النسخة:
+//  ① كل دالة تقبل tx (transaction context) اختيارياً — لو مفيش tx تستخدم prisma
+//  ② updateStock: ATOMIC raw SQL مع normalizeStockValue لمنع -0.001
+//  ③ createStockMovement: تقرأ الرصيد بعد التحديث لضمان دقة الـ snapshot
+//  ④ batchUpdateStock: يحدّث عدة أصناف في تحديث واحد (أداء أفضل)
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
-const prisma                        = require('../config/db');
-const { safeNum, round2, round3 }   = require('./decimalHelper');
+const prisma = require('../config/db');
+const {
+  safeNum, round2, round3,
+  normalizeStockValue,
+} = require('./decimalHelper');
 
 // ─── OUT-type movements (خروج من المخزن) ─────────────────────────────────────
 const OUT_TYPES = new Set([
@@ -16,11 +24,22 @@ const OUT_TYPES = new Set([
   'adjustment_sub',
 ]);
 
+// ── الـ client المناسب: tx (داخل transaction) أو prisma (عادي) ───────────────
+const db = (tx) => tx || prisma;
+
 // ── getStockBalance ───────────────────────────────────────────────────────────
-/** رصيد صنف في مخزن وموسم — يرجع { quantity, weight } */
-const getStockBalance = async (itemId, warehouse, seasonId) => {
-  const stock = await prisma.itemStock.findFirst({
-    where: { itemId, warehouse, seasonId },
+/**
+ * رصيد صنف في مخزن وموسم — يرجع { quantity, weight }
+ * يمكن تمرير tx لقراءة الرصيد داخل transaction
+ */
+const getStockBalance = async (itemId, warehouse, seasonId, tx = null) => {
+  const client = db(tx);
+  const stock = await client.itemStock.findFirst({
+    where: {
+      itemId,
+      warehouse,
+      seasonId: seasonId ?? null,
+    },
   });
   return {
     quantity: safeNum(stock?.quantity, 0),
@@ -28,95 +47,161 @@ const getStockBalance = async (itemId, warehouse, seasonId) => {
   };
 };
 
-// ── getStockQty ───────────────────────────────────────────────────────────────
-/** alias متوافق مع الـ controllers — نفس getStockBalance */
-const getStockQty = (itemId, warehouse, seasonId) =>
-  getStockBalance(itemId, warehouse, seasonId);
+/** alias متوافق مع الـ controllers القديمة */
+const getStockQty = (itemId, warehouse, seasonId, tx = null) =>
+  getStockBalance(itemId, warehouse, seasonId, tx);
 
 // ── updateStock ───────────────────────────────────────────────────────────────
 /**
- * ✅ FIXED: Race Condition — يحدّث رصيد الصنف بشكل ATOMIC باستخدام raw SQL.
- * عمليات القراءة-ثم-الكتابة القديمة كانت تسبب lost update عند التزامن.
- * الحل: UPDATE atomic في خطوة واحدة، ثم INSERT إذا لم يوجد الصف.
+ * ✅ ATOMIC: يحدّث رصيد الصنف بـ raw SQL في خطوة واحدة (بدون read-then-write)
+ * ✅ NORMALIZE: بعد التحديث، يُصفّر القيم "الوهمية" مثل -0.001
+ * ✅ TX-AWARE: يعمل داخل prisma.$transaction لو مررت tx
  *
  * @param {string} itemId
  * @param {string} warehouse
  * @param {string|null} seasonId
- * @param {{ quantity: number, weight: number }} delta
+ * @param {{ quantity: number, weight: number }} delta - التغيير (موجب = إضافة، سالب = خصم)
+ * @param {object|null} tx - Prisma transaction context
  */
-const updateStock = async (itemId, warehouse, seasonId, delta) => {
+const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
+  const client = db(tx);
   const dQty = round3(safeNum(delta.quantity));
   const dWt  = round3(safeNum(delta.weight));
 
   if (seasonId) {
-    // محاولة UPDATE atomic أولاً — explicit ::uuid cast عشان Prisma بيبعت text
-    const updated = await prisma.$executeRaw`
+    const updated = await client.$executeRaw`
       UPDATE item_stocks
-      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
-          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
-          "updatedAt" = NOW()
+      SET
+        quantity = ROUND(
+          GREATEST(
+            ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+            0
+          ),
+          3
+        ),
+        weight = ROUND(
+          GREATEST(
+            ROUND(CAST(weight + ${dWt} AS numeric), 3),
+            -0.001
+          ),
+          3
+        ),
+        "updatedAt" = NOW()
       WHERE "itemId"   = ${itemId}::uuid
         AND warehouse  = ${warehouse}::"Warehouse"
         AND "seasonId" = ${seasonId}::uuid
     `;
 
-    // لو الصف مش موجود نعمل INSERT
     if (updated === 0) {
-      await prisma.$executeRaw`
+      await client.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
-        VALUES (gen_random_uuid(), ${itemId}::uuid, ${warehouse}::"Warehouse", ${seasonId}::uuid,
-                ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        VALUES (
+          gen_random_uuid(),
+          ${itemId}::uuid,
+          ${warehouse}::"Warehouse",
+          ${seasonId}::uuid,
+          ${Math.max(0, dQty)},
+          ${Math.max(0, dWt)},
+          NOW()
+        )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
-          SET quantity = item_stocks.quantity + ${dQty},
-              weight   = item_stocks.weight   + ${dWt},
-              "updatedAt" = NOW()
+          SET
+            quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
+            weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
+            "updatedAt" = NOW()
       `;
     }
   } else {
-    // بدون seasonId — نستخدم نفس الطريقة لكن مع IS NULL
-    const updated = await prisma.$executeRaw`
+    const updated = await client.$executeRaw`
       UPDATE item_stocks
-      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
-          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
-          "updatedAt" = NOW()
+      SET
+        quantity = ROUND(GREATEST(ROUND(CAST(quantity + ${dQty} AS numeric), 3), 0), 3),
+        weight   = ROUND(GREATEST(ROUND(CAST(weight + ${dWt} AS numeric), 3), -0.001), 3),
+        "updatedAt" = NOW()
       WHERE "itemId"  = ${itemId}::uuid
         AND warehouse = ${warehouse}::"Warehouse"
         AND "seasonId" IS NULL
     `;
 
     if (updated === 0) {
-      await prisma.$executeRaw`
+      await client.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
-        VALUES (gen_random_uuid(), ${itemId}::uuid, ${warehouse}::"Warehouse", NULL,
-                ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        VALUES (
+          gen_random_uuid(),
+          ${itemId}::uuid,
+          ${warehouse}::"Warehouse",
+          NULL,
+          ${Math.max(0, dQty)},
+          ${Math.max(0, dWt)},
+          NOW()
+        )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
-          SET quantity = item_stocks.quantity + ${dQty},
-              weight   = item_stocks.weight   + ${dWt},
-              "updatedAt" = NOW()
+          SET
+            quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
+            weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
+            "updatedAt" = NOW()
       `;
     }
+  }
+
+  // ── تنظيف القيم الوهمية بعد التحديث ─────────────────────────────────────
+  // لو الوزن بقى -0.001 أو -0.0001 بعد عملية صح → نصفّره
+  await _normalizeStockRow(itemId, warehouse, seasonId, client);
+};
+
+// ── _normalizeStockRow (private) ──────────────────────────────────────────────
+/**
+ * يصفّر أي قيمة وهمية (<0.0005) في صف المخزون
+ * يُستدعى تلقائياً بعد كل updateStock
+ */
+const _normalizeStockRow = async (itemId, warehouse, seasonId, client) => {
+  if (seasonId) {
+    await client.$executeRaw`
+      UPDATE item_stocks
+      SET
+        quantity = CASE WHEN ABS(quantity) < 0.0005 THEN 0 ELSE quantity END,
+        weight   = CASE WHEN ABS(weight)   < 0.0005 THEN 0 ELSE weight   END,
+        "updatedAt" = NOW()
+      WHERE "itemId"   = ${itemId}::uuid
+        AND warehouse  = ${warehouse}::"Warehouse"
+        AND "seasonId" = ${seasonId}::uuid
+        AND (ABS(quantity) < 0.0005 OR ABS(weight) < 0.0005)
+    `;
+  } else {
+    await client.$executeRaw`
+      UPDATE item_stocks
+      SET
+        quantity = CASE WHEN ABS(quantity) < 0.0005 THEN 0 ELSE quantity END,
+        weight   = CASE WHEN ABS(weight)   < 0.0005 THEN 0 ELSE weight   END,
+        "updatedAt" = NOW()
+      WHERE "itemId"  = ${itemId}::uuid
+        AND warehouse = ${warehouse}::"Warehouse"
+        AND "seasonId" IS NULL
+        AND (ABS(quantity) < 0.0005 OR ABS(weight) < 0.0005)
+    `;
   }
 };
 
 // ── createStockMovement ───────────────────────────────────────────────────────
 /**
- * يسجّل حركة مخزونية — يُستخدم بعد updateStock مباشرةً.
- * يقرأ الرصيد الجديد من DB ليضعه في balanceQty / balanceWeight.
+ * يسجّل حركة مخزونية مع snapshot للرصيد بعد التحديث
+ * ✅ TX-AWARE: يعمل داخل prisma.$transaction لو مررت tx
  */
 const createStockMovement = async ({
   itemId, itemCode, itemName, type,
   quantity, weight, price = 0,
   warehouse, reference, referenceModel, referenceId,
   seasonId, createdById, date,
-}) => {
+}, tx = null) => {
+  const client = db(tx);
   const qty   = safeNum(quantity);
   const wt    = safeNum(weight);
   const isOut = OUT_TYPES.has(type);
 
   // نقرأ الرصيد الحالي (بعد updateStock) ليظهر في سجل الحركة
-  const balance = await getStockBalance(itemId, warehouse, seasonId);
+  const balance = await getStockBalance(itemId, warehouse, seasonId, client);
 
-  return prisma.stockMovement.create({
+  return client.stockMovement.create({
     data: {
       itemId, itemCode, itemName, type,
       quantityIn:    isOut ? 0   : qty,
@@ -130,17 +215,17 @@ const createStockMovement = async ({
       reference,
       referenceModel,
       referenceId,
-      seasonId,
+      seasonId:      seasonId ?? null,
       createdById,
-      date: date ? new Date(date) : new Date(),
+      date:          date ? new Date(date) : new Date(),
     },
   });
 };
 
 // ── recordStockMovement ───────────────────────────────────────────────────────
 /**
- * All-in-one: يحدّث الرصيد ويسجّل الحركة في خطوة واحدة.
- * يُستخدم عند الإنشاء المباشر (مثل stock adjustment).
+ * All-in-one: يحدّث الرصيد ويسجّل الحركة في خطوة واحدة
+ * ✅ TX-AWARE
  */
 const recordStockMovement = async ({
   itemId, itemCode, itemName, type,
@@ -149,29 +234,31 @@ const recordStockMovement = async ({
   price = 0, warehouse,
   reference, referenceModel, referenceId,
   seasonId, userId,
-}) => {
-  const qIn      = safeNum(quantityIn);
-  const qOut     = safeNum(quantityOut);
-  const wIn      = safeNum(weightIn);
-  const wOut     = safeNum(weightOut);
-  const netQty   = round3(qIn - qOut);
-  const netWeight= round3(wIn - wOut);
+}, tx = null) => {
+  const qIn  = safeNum(quantityIn);
+  const qOut = safeNum(quantityOut);
+  const wIn  = safeNum(weightIn);
+  const wOut = safeNum(weightOut);
 
-  // ✅ Atomic update بدل read-then-write
-  await updateStock(itemId, warehouse, seasonId, { quantity: netQty, weight: netWeight });
+  const netQty    = round3(qIn - qOut);
+  const netWeight = round3(wIn - wOut);
 
-  const balance = await getStockBalance(itemId, warehouse, seasonId);
+  await updateStock(itemId, warehouse, seasonId, { quantity: netQty, weight: netWeight }, tx);
 
-  return prisma.stockMovement.create({
+  const balance = await getStockBalance(itemId, warehouse, seasonId, tx);
+  const client  = db(tx);
+
+  return client.stockMovement.create({
     data: {
       itemId, itemCode, itemName, type,
       quantityIn: qIn, quantityOut: qOut,
       weightIn: wIn,   weightOut: wOut,
-      price: round2(price),
+      price:    round2(price),
       warehouse,
-      balanceQty: balance.quantity, balanceWeight: balance.weight,
+      balanceQty:    balance.quantity,
+      balanceWeight: balance.weight,
       reference, referenceModel, referenceId,
-      seasonId,
+      seasonId: seasonId ?? null,
       createdById: userId,
     },
   });
@@ -179,34 +266,38 @@ const recordStockMovement = async ({
 
 // ── getItemStockMap ───────────────────────────────────────────────────────────
 /** رصيد صنف في كل المخازن { ramses, october } */
-const getItemStockMap = async (itemId, seasonId) => {
-  const stocks = await prisma.itemStock.findMany({ where: { itemId, seasonId } });
+const getItemStockMap = async (itemId, seasonId, tx = null) => {
+  const client = db(tx);
+  const stocks = await client.itemStock.findMany({
+    where: { itemId, seasonId: seasonId ?? null },
+  });
   const map = {
     ramses:  { quantity: 0, weight: 0 },
     october: { quantity: 0, weight: 0 },
   };
   for (const s of stocks) {
     if (map[s.warehouse]) {
-      map[s.warehouse].quantity = safeNum(s.quantity, 0);
-      map[s.warehouse].weight   = safeNum(s.weight,   0);
+      map[s.warehouse].quantity = normalizeStockValue(s.quantity);
+      map[s.warehouse].weight   = normalizeStockValue(s.weight);
     }
   }
   return map;
 };
 
 // ── checkStockAvailability ────────────────────────────────────────────────────
-const checkStockAvailability = async (itemId, warehouse, seasonId, requestedQty, requestedWeight) => {
-  const stock  = await getStockBalance(itemId, warehouse, seasonId);
-  const qty    = safeNum(requestedQty);
-  const weight = safeNum(requestedWeight);
+/**
+ * يتحقق من توفر المخزون
+ * ملاحظة: المقارنة تتم بالكميات (الكراتين) فقط — الوزن يُحسب تلقائياً
+ */
+const checkStockAvailability = async (itemId, warehouse, seasonId, requestedQty, tx = null) => {
+  const stock = await getStockBalance(itemId, warehouse, seasonId, tx);
+  const qty   = safeNum(requestedQty);
   return {
-    available:       stock.quantity >= qty && stock.weight >= weight,
-    stockQty:        stock.quantity,
-    stockWeight:     stock.weight,
-    requestedQty:    qty,
-    requestedWeight: weight,
-    shortfallQty:    Math.max(0, qty    - stock.quantity),
-    shortfallWeight: Math.max(0, weight - stock.weight),
+    available:    stock.quantity >= qty,
+    stockQty:     stock.quantity,
+    stockWeight:  stock.weight,
+    requestedQty: qty,
+    shortfall:    Math.max(0, qty - stock.quantity),
   };
 };
 

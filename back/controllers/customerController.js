@@ -404,6 +404,7 @@ const getCustomerItemStatement = async (req, res) => {
         where: saleWhere,
         select: {
           id: true, invoiceNumber: true, docNumber: true, date: true, status: true,
+          season: { select: { id: true, name: true } },
           items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } },
         },
         orderBy: [{ date: 'asc' }, { id: 'asc' }],
@@ -412,6 +413,7 @@ const getCustomerItemStatement = async (req, res) => {
         where: returnWhere,
         select: {
           id: true, invoiceNumber: true, docNumber: true, date: true, status: true,
+          season: { select: { id: true, name: true } },
           items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } },
         },
         orderBy: [{ date: 'asc' }, { id: 'asc' }],
@@ -426,6 +428,7 @@ const getCustomerItemStatement = async (req, res) => {
           invoiceNumber: inv.invoiceNumber,
           date:          inv.date,
           status:        inv.status,
+          seasonName:    inv.season?.name ?? null,
           type:          'sale',
           quantity:      round2(safeNum(it.quantity)),
           weight:        round2(safeNum(it.weight)),
@@ -440,6 +443,7 @@ const getCustomerItemStatement = async (req, res) => {
           invoiceNumber: inv.invoiceNumber,
           date:          inv.date,
           status:        inv.status,
+          seasonName:    inv.season?.name ?? null,
           type:          'return',
           quantity:      round2(safeNum(it.quantity)),
           weight:        round2(safeNum(it.weight)),
@@ -460,11 +464,15 @@ const getCustomerItemStatement = async (req, res) => {
     const returnWeight= round2(returns.reduce((s, m) => s + m.quantity * m.weight, 0));
     const lastPrice   = sales.length ? sales[sales.length - 1].price : 0;
 
+    // جلب المواسم للـ dropdown
+    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' }, select: { id: true, name: true, isActive: true } });
+    const item = await prisma.item.findUnique({ where: { id: itemId }, select: { id: true, code: true, name: true, unit: true } });
     res.json({
-      customer,
+      customer, item,
       movements,
       totalQty, totalWeight, totalAmount,
       returnQty, returnWeight, lastPrice,
+      seasons,
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

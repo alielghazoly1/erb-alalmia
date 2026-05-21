@@ -402,6 +402,7 @@ const getSupplierItemStatement = async (req, res) => {
         select: {
           id: true, invoiceNumber: true, docNumber: true, date: true,
           status: true, createdAt: true,
+          season: { select: { id: true, name: true } },
           items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } },
         },
         orderBy: [{ date: 'asc' }, { id: 'asc' }],
@@ -411,6 +412,7 @@ const getSupplierItemStatement = async (req, res) => {
         select: {
           id: true, invoiceNumber: true, docNumber: true, date: true,
           status: true, createdAt: true,
+          season: { select: { id: true, name: true } },
           items: { where: { itemId }, select: { quantity: true, weight: true, price: true, total: true } },
         },
         orderBy: [{ date: 'asc' }, { id: 'asc' }],
@@ -427,6 +429,7 @@ const getSupplierItemStatement = async (req, res) => {
           createdAt:     inv.createdAt,
           status:        inv.status,
           type:          'purchase',
+          seasonName:    inv.season?.name ?? null,
           quantity:      round2(safeNum(it.quantity)),
           weight:        round2(safeNum(it.weight)),
           totalWeight:   round2(safeNum(it.quantity) * safeNum(it.weight)),
@@ -443,6 +446,7 @@ const getSupplierItemStatement = async (req, res) => {
           createdAt:     inv.createdAt,
           status:        inv.status,
           type:          'return',
+          seasonName:    inv.season?.name ?? null,
           quantity:      round2(safeNum(it.quantity)),
           weight:        round2(safeNum(it.weight)),
           totalWeight:   round2(safeNum(it.quantity) * safeNum(it.weight)),
@@ -462,12 +466,14 @@ const getSupplierItemStatement = async (req, res) => {
     const returnWeight= round2(returns.reduce((s, m) => s + m.totalWeight, 0));
     const lastPrice   = sales.length ? sales[sales.length - 1].price : 0;
 
+    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' }, select: { id: true, name: true, isActive: true } });
     res.json({
       supplier: n(supplier),
       item,
       movements,
       totalQty, totalWeight, totalAmount,
       returnQty, returnWeight, lastPrice,
+      seasons,
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

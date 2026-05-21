@@ -51,10 +51,8 @@ export default function SupplierItemStatementPage() {
       );
       setData(res);
       // جيب المواسم مرة واحدة
-      if (!seasons.length) {
-        const { data: ss } = await api.get('/seasons');
-        setSeasons(ss || []);
-      }
+      // ✅ المواسم تيجي من الـ response مباشرة
+      if (res.seasons?.length) setSeasons(res.seasons);
     } catch {
       toast.error('خطأ في تحميل البيانات');
     } finally {
@@ -90,7 +88,7 @@ export default function SupplierItemStatementPage() {
               <span className="font-medium">{data.item?.name}</span>
               {seasonFilter && seasons.length && (
                 <span className="mr-2 text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full">
-                  {seasons.find(s => s._id === seasonFilter)?.name || ''}
+                  {seasons.find(s => (s.id || s._id) === seasonFilter)?.name || ''}
                 </span>
               )}
             </p>
@@ -122,7 +120,7 @@ export default function SupplierItemStatementPage() {
             >
               <option value="">كل المواسم</option>
               {seasons.map(s => (
-                <option key={s._id} value={s._id}>
+                <option key={s.id || s._id} value={s.id || s._id}>
                   {s.name}{s.isActive ? ' ✦' : ''}
                 </option>
               ))}
@@ -295,8 +293,8 @@ export default function SupplierItemStatementPage() {
 
                           {/* الموسم */}
                           <td className="px-3 py-2.5 text-xs">
-                            {m.season?.name
-                              ? <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">{m.season.name}</span>
+                            {m.seasonName
+                              ? <span className="px-1.5 py-0.5 bg-green-50 text-green-700 rounded text-xs">🌿 {m.seasonName}</span>
                               : <span className="text-gray-300">—</span>}
                           </td>
 
