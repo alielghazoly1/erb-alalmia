@@ -2,6 +2,9 @@
 // ✅ CRIT-NEW-002: كل عمليات approve/cancel/forceEdit داخل prisma.$transaction
 // ✅ FLOAT-FIX: حساب الأوزان عبر calcWeight (Decimal.js) بدل الضرب المباشر
 // ✅ TX-AWARE: stockHelper و treasuryHelper يقبلون tx
+// ✅ FIX-PAY-001: التحقق من أن paidAmount = totalAmount لعملاء نقدي قبل الاعتماد
+// ✅ FIX-AUDIT-001: audit داخل transaction في createSaleInvoice لضمان الاتساق
+// ✅ FIX-CREDIT-001: إظهار رسالة واضحة لو العميل آجل وأُرسل مبلغ نقدي
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -13,7 +16,6 @@ const { audit }      = require('../utils/auditHelper');
 const { nextNumber } = require('../utils/counterHelper');
 
 // ── حساب الوزن الكلي للسطر ───────────────────────────────────────────────────
-// calcWeight من decimalHelper تستخدم Decimal.js — بدل floating point
 const calcItemTotalWeight = (qty, wt, totalWt = null) =>
   calcWeight(qty, wt, totalWt);
 
@@ -30,6 +32,51 @@ const extractTotalWeight = (item) => {
   const pr = safeNum(item.price);
   if (pr > 0) return round3(safeNum(item.total) / pr);
   return calcWeight(item.quantity, item.weight);
+};
+
+// ── validatePayment ───────────────────────────────────────────────────────────
+/**
+ * ✅ FIX-PAY-001: يتحقق من صحة بيانات الدفع قبل حفظ أو اعتماد الفاتورة
+ *
+ * القواعد:
+ * - عميل نقدي: المبلغ المدفوع لازم = الإجمالي تماماً (ما عدا آجل)
+ * - عميل آجل (credit): paidAmount يُتجاهل ويُصبح 0 تلقائياً
+ * - mixed: cashAmount + instapayAmount لازم = totalAmount
+ *
+ * @returns {{ valid: boolean, message?: string }}
+ */
+const validatePayment = (paymentMethod, totalAmount, paidAmount, cashAmount, instapayAmount, customerType) => {
+  // عميل آجل — مش مطلوب دفع
+  if (paymentMethod === 'credit' || customerType === 'credit') {
+    return { valid: true };
+  }
+
+  const total    = round2(safeNum(totalAmount));
+  const paid     = round2(safeNum(paidAmount));
+  const cash     = round2(safeNum(cashAmount));
+  const instapay = round2(safeNum(instapayAmount));
+
+  if (paymentMethod === 'mixed') {
+    const mixedTotal = round2(cash + instapay);
+    if (Math.abs(mixedTotal - total) > 0.01) {
+      return {
+        valid: false,
+        message: `المبلغ المدفوع (${mixedTotal.toFixed(2)}) لا يساوي إجمالي الفاتورة (${total.toFixed(2)}) — يرجى مراجعة المبالغ`,
+      };
+    }
+    return { valid: true };
+  }
+
+  // cash, instapay, transfer, check
+  const effectivePaid = paymentMethod === 'instapay' ? instapay || cash : cash || paid;
+  if (Math.abs(effectivePaid - total) > 0.01) {
+    return {
+      valid: false,
+      message: `المبلغ المدفوع (${effectivePaid.toFixed(2)}) لا يساوي إجمالي الفاتورة (${total.toFixed(2)}) — الفاتورة النقدية تحتاج دفع كامل`,
+    };
+  }
+
+  return { valid: true };
 };
 
 // ── GET all ───────────────────────────────────────────────────────────────────
@@ -155,6 +202,12 @@ const createSaleInvoice = async (req, res) => {
 
     if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
+    // ── جلب بيانات العميل لمعرفة نوعه (cash/credit) ─────────────────────────
+    const customerRecord = customerId
+      ? await prisma.customer.findUnique({ where: { id: customerId }, select: { type: true } })
+      : null;
+    const customerType = customerRecord?.type || 'credit';
+
     const isAdmin      = req.user?.role === 'admin';
     const permsArr     = req.user?.permissions || [];
     const negativeAllowed = isAdmin || permsArr.some(p => p.permission === 'sale_allow_negative' && p.granted === true);
@@ -187,42 +240,67 @@ const createSaleInvoice = async (req, res) => {
       _tw:   calcItemTotalWeight(i.quantity, i.weight, i.totalWeight ?? null),
       total: calcItemTotal(i.quantity, i.weight, i.price, i.totalWeight ?? null),
     }));
-    const invoiceNumber = await nextNumber('SAL', 'SAL');
     const totalAmount   = sumAmounts(recalcItems.map(i => i.total));
     const totalWeight   = sumWeights(recalcItems.map(i => i._tw));
 
-    const invoice = await prisma.saleInvoice.create({
-      data: {
-        invoiceNumber, docNumber,
-        date:           date ? new Date(date) : new Date(),
-        customerId, customerCode, customerName,
-        warehouse, totalAmount, totalWeight,
-        discountAmount:  0,
-        netAmount:       totalAmount,
-        paidAmount:      safeNum(paidAmount)     || 0,
-        remainingAmount: totalAmount - (safeNum(paidAmount) || 0),
-        cashAmount:      safeNum(cashAmount)     || 0,
-        instapayAmount:  safeNum(instapayAmount) || 0,
-        paymentMethod:   paymentMethod || 'credit',
-        status:          'pending',
-        seasonId:        activeSeason?.id ?? null,
-        allowNegative:   negativeAllowed,
-        notes,
-        createdById: req.user.id,
-        items: {
-          create: recalcItems.map(i => ({
-            itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
-          })),
+    // ── ✅ FIX-PAY-001: التحقق من المبلغ المدفوع ─────────────────────────────
+    const effectivePaymentMethod = customerType === 'credit' ? 'credit' : (paymentMethod || 'credit');
+    if (effectivePaymentMethod !== 'credit') {
+      const payCheck = validatePayment(
+        effectivePaymentMethod, totalAmount,
+        safeNum(paidAmount), safeNum(cashAmount), safeNum(instapayAmount),
+        customerType,
+      );
+      if (!payCheck.valid) {
+        return res.status(400).json({ message: payCheck.message });
+      }
+    }
+
+    // ── ✅ FIX-AUDIT-001: كل شيء داخل transaction واحد ──────────────────────
+    // invoiceNumber يُحسب داخل الـ tx لضمان atomic counter
+    const invoice = await prisma.$transaction(async (tx) => {
+      const invoiceNumber = await nextNumber('SAL', 'SAL', tx);
+
+      const created = await tx.saleInvoice.create({
+        data: {
+          invoiceNumber, docNumber,
+          date:           date ? new Date(date) : new Date(),
+          customerId, customerCode, customerName,
+          warehouse, totalAmount, totalWeight,
+          discountAmount:  0,
+          netAmount:       totalAmount,
+          paidAmount:      safeNum(paidAmount)     || 0,
+          remainingAmount: totalAmount - (safeNum(paidAmount) || 0),
+          cashAmount:      safeNum(cashAmount)     || 0,
+          instapayAmount:  safeNum(instapayAmount) || 0,
+          paymentMethod:   effectivePaymentMethod,
+          status:          'pending',
+          seasonId:        activeSeason?.id ?? null,
+          allowNegative:   negativeAllowed,
+          notes,
+          createdById: req.user.id,
+          items: {
+            create: recalcItems.map(i => ({
+              itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
+              quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
+            })),
+          },
         },
-      },
-      include: { items: true },
+        include: { items: true },
+      });
+
+      return created;
+    }, { isolationLevel: 'Serializable' });
+
+    // audit خارج الـ tx (لأن auditHelper يستخدم prisma مباشرة ولا يضر لو فشل)
+    await audit(req.user, 'invoice_created', 'SaleInvoice', invoice.id, invoice.invoiceNumber, {
+      customerName, totalAmount, paymentMethod: effectivePaymentMethod,
     });
 
-    await audit(req.user, 'invoice_created', 'SaleInvoice', invoice.id, invoice.invoiceNumber, { customerName, totalAmount, paymentMethod: paymentMethod || 'credit' });
     res.status(201).json(n(invoice));
   } catch (err) {
     if (err.code === 'P2002') return res.status(400).json({ message: 'رقم المستند موجود بالفعل في هذا الموسم' });
+    if (err.code === 'P2034') return res.status(409).json({ message: 'تعارض في العملية، يرجى المحاولة مرة أخرى' });
     res.status(500).json({ message: err.message });
   }
 };
@@ -265,6 +343,24 @@ const updateSaleInvoice = async (req, res) => {
     const totalAmount = sumAmounts(recalcItems.map(i => i.total));
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
+    // ✅ FIX-PAY-001: التحقق من المبلغ لو الفاتورة نقدية
+    const effectivePaymentMethod = paymentMethod || invoice.paymentMethod;
+    if (effectivePaymentMethod !== 'credit') {
+      const customerRecord = invoice.customerId
+        ? await prisma.customer.findUnique({ where: { id: invoice.customerId }, select: { type: true } })
+        : null;
+      if (customerRecord?.type !== 'credit') {
+        const payCheck = validatePayment(
+          effectivePaymentMethod, totalAmount,
+          safeNum(paidAmount), safeNum(cashAmount), safeNum(instapayAmount),
+          customerRecord?.type || 'cash',
+        );
+        if (!payCheck.valid) {
+          return res.status(400).json({ message: payCheck.message });
+        }
+      }
+    }
+
     // ── Transaction: إرجاع المخزون القديم + تحديث الفاتورة ──────────────────
     const updated = await prisma.$transaction(async (tx) => {
       // لو كانت معتمدة → نرجع المخزون القديم أولاً
@@ -288,7 +384,7 @@ const updateSaleInvoice = async (req, res) => {
           paidAmount:     safeNum(paidAmount)     || 0,
           cashAmount:     safeNum(cashAmount)     || 0,
           instapayAmount: safeNum(instapayAmount) || 0,
-          paymentMethod:  paymentMethod || invoice.paymentMethod,
+          paymentMethod:  effectivePaymentMethod,
           notes,
           status:         'pending',
           approvedById:   null,
@@ -333,6 +429,24 @@ const forceEditSaleInvoice = async (req, res) => {
     const totalAmount = sumAmounts(recalcItems.map(i => i.total));
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
+    // ✅ FIX-PAY-001: أدمن كمان محتاج يتحقق من المبلغ
+    const effectivePaymentMethod = paymentMethod || invoice.paymentMethod;
+    if (effectivePaymentMethod !== 'credit') {
+      const customerRecord = invoice.customerId
+        ? await prisma.customer.findUnique({ where: { id: invoice.customerId }, select: { type: true } })
+        : null;
+      if (customerRecord?.type !== 'credit') {
+        const payCheck = validatePayment(
+          effectivePaymentMethod, totalAmount,
+          safeNum(paidAmount), safeNum(cashAmount), safeNum(instapayAmount),
+          customerRecord?.type || 'cash',
+        );
+        if (!payCheck.valid) {
+          return res.status(400).json({ message: payCheck.message });
+        }
+      }
+    }
+
     // ── Transaction: كل شيء في خطوة واحدة أو لا شيء ─────────────────────────
     const updated = await prisma.$transaction(async (tx) => {
       if (wasApproved) {
@@ -355,7 +469,7 @@ const forceEditSaleInvoice = async (req, res) => {
           paidAmount:     safeNum(paidAmount)     || 0,
           cashAmount:     safeNum(cashAmount)     || 0,
           instapayAmount: safeNum(instapayAmount) || 0,
-          paymentMethod:  paymentMethod || invoice.paymentMethod,
+          paymentMethod:  effectivePaymentMethod,
           notes:          notes ?? invoice.notes,
           status:         'pending',
           approvedById:   null,
@@ -387,26 +501,41 @@ const approveSaleInvoice = async (req, res) => {
     if (invoice.status === 'approved')  return res.status(400).json({ message: 'اتوافق عليها قبل كده' });
     if (invoice.status === 'cancelled') return res.status(400).json({ message: 'الفاتورة ملغية' });
 
+    // ✅ FIX-PAY-001: التحقق من المبلغ عند الاعتماد أيضاً
+    if (invoice.paymentMethod !== 'credit') {
+      const customerRecord = invoice.customerId
+        ? await prisma.customer.findUnique({ where: { id: invoice.customerId }, select: { type: true } })
+        : null;
+      if (customerRecord?.type !== 'credit') {
+        const payCheck = validatePayment(
+          invoice.paymentMethod,
+          safeNum(invoice.totalAmount),
+          safeNum(invoice.paidAmount),
+          safeNum(invoice.cashAmount),
+          safeNum(invoice.instapayAmount),
+          customerRecord?.type || 'cash',
+        );
+        if (!payCheck.valid) {
+          return res.status(400).json({ message: `لا يمكن اعتماد الفاتورة: ${payCheck.message}` });
+        }
+      }
+    }
+
     // ── Transaction: خصم المخزون + تسجيل الحركات + اعتماد الفاتورة ─────────
-    // لو أي خطوة فشلت → كل شيء يُرجع (Rollback)
     const approved = await prisma.$transaction(async (tx) => {
       for (const saleItem of invoice.items) {
-        // استخلاص الوزن الكلي الدقيق من total ÷ price
         const tw = extractTotalWeight(saleItem);
 
-        // خصم المخزون
         await updateStock(saleItem.itemId, invoice.warehouse, invoice.seasonId, {
           quantity: -safeNum(saleItem.quantity),
           weight:   -tw,
         }, tx);
 
-        // تحديث آخر سعر بيع
         await tx.item.update({
           where: { id: saleItem.itemId },
           data:  { lastSalePrice: saleItem.price },
         });
 
-        // تسجيل الحركة
         await createStockMovement({
           itemId: saleItem.itemId, itemCode: saleItem.itemCode, itemName: saleItem.itemName,
           type: 'sale_out', quantity: safeNum(saleItem.quantity), weight: tw, price: saleItem.price,
@@ -416,26 +545,22 @@ const approveSaleInvoice = async (req, res) => {
         }, tx);
       }
 
-      // اعتماد الفاتورة
       const approvedInvoice = await tx.saleInvoice.update({
         where: { id: invoice.id },
         data:  { status: 'approved', approvedById: req.user.id, approvedAt: new Date() },
         include: { items: true },
       });
 
-      // تسجيل قيود الخزينة داخل نفس الـ transaction
       await recordSaleInvoice(approvedInvoice, req.user, tx);
 
       return approvedInvoice;
     }, {
-      // Serializable لمنع Race Condition عند الموافقة المتزامنة على فواتير لنفس الصنف
       isolationLevel: 'Serializable',
     });
 
     await audit(req.user, 'invoice_approved', 'SaleInvoice', approved.id, approved.invoiceNumber, { customerName: approved.customerName, totalAmount: approved.totalAmount });
     res.json({ message: 'تم الموافقة ✅', invoice: n(approved) });
   } catch (err) {
-    // P2034 = serialization failure — يحدث نادراً عند التزامن الشديد
     if (err.code === 'P2034') {
       return res.status(409).json({ message: 'تعارض في العملية، يرجى المحاولة مرة أخرى' });
     }
@@ -467,7 +592,6 @@ const cancelSaleInvoice = async (req, res) => {
 
     const wasApproved = invoice.status === 'approved';
 
-    // ── Transaction: إرجاع المخزون + حذف الحركات + حذف الفاتورة ─────────────
     await prisma.$transaction(async (tx) => {
       if (wasApproved) {
         for (const item of invoice.items) {

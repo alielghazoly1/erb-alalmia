@@ -1,6 +1,7 @@
 // ─── utils/treasuryHelper.js ──────────────────────────────────────────────────
 // أدوات الخزينة — تسجيل وحذف القيود المحاسبية
 // ✅ TX-AWARE: كل دالة تقبل tx (transaction context) اختيارياً
+// ✅ FIX: recordReturn يدعم الآن طرق الاسترداد: transfer, check (لم تكن مدعومة)
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -71,6 +72,8 @@ const recordPayment = async (payment, user, tx = null) => {
 };
 
 // ── recordReturn ──────────────────────────────────────────────────────────────
+// ✅ FIX: أضفنا دعم لـ 'transfer' و 'check' كطرق استرداد
+//         وأضفنا دعم لـ 'mixed' بالتحقق من كلا المبلغين
 const recordReturn = async (returnInv, user, tx = null) => {
   if (returnInv.type !== 'customer_return') return;
   const client = db(tx);
@@ -86,16 +89,26 @@ const recordReturn = async (returnInv, user, tx = null) => {
   };
 
   const entries = [];
-  const m = returnInv.refundMethod;
+  const m             = returnInv.refundMethod;
+  const cashAmt       = returnInv.refundCashAmount  || 0;
+  const bankAmt       = returnInv.refundBankAmount  || 0;
+  // paidAmount هو مجموع ما يُرد للعميل (cash أو bank منفردين)
+  const refundTotal   = returnInv.paidAmount || returnInv.totalAmount || 0;
 
-  if (m === 'cash'     && returnInv.refundCashAmount > 0)
-    entries.push({ ...base, treasury: 'cash', type: 'return_out_cash', amount: returnInv.refundCashAmount, direction: -1, paymentMethod: 'cash' });
-  if (m === 'instapay' && returnInv.refundBankAmount > 0)
-    entries.push({ ...base, treasury: 'bank', type: 'return_out_bank', amount: returnInv.refundBankAmount, direction: -1, paymentMethod: 'instapay' });
-  if (m === 'mixed') {
-    if (returnInv.refundCashAmount > 0) entries.push({ ...base, treasury: 'cash', type: 'return_out_cash', amount: returnInv.refundCashAmount, direction: -1, paymentMethod: 'cash' });
-    if (returnInv.refundBankAmount > 0) entries.push({ ...base, treasury: 'bank', type: 'return_out_bank', amount: returnInv.refundBankAmount, direction: -1, paymentMethod: 'instapay' });
+  if (m === 'cash' && cashAmt > 0)
+    entries.push({ ...base, treasury: 'cash', type: 'return_out_cash', amount: cashAmt,     direction: -1, paymentMethod: 'cash' });
+  else if (m === 'instapay' && bankAmt > 0)
+    entries.push({ ...base, treasury: 'bank', type: 'return_out_bank', amount: bankAmt,     direction: -1, paymentMethod: 'instapay' });
+  // ✅ FIX: دعم transfer وcheck كطرق استرداد
+  else if (m === 'transfer' && (bankAmt > 0 || refundTotal > 0))
+    entries.push({ ...base, treasury: 'bank', type: 'return_out_bank', amount: bankAmt || refundTotal, direction: -1, paymentMethod: 'transfer' });
+  else if (m === 'check' && (bankAmt > 0 || refundTotal > 0))
+    entries.push({ ...base, treasury: 'bank', type: 'return_out_bank', amount: bankAmt || refundTotal, direction: -1, paymentMethod: 'check' });
+  else if (m === 'mixed') {
+    if (cashAmt > 0) entries.push({ ...base, treasury: 'cash', type: 'return_out_cash', amount: cashAmt, direction: -1, paymentMethod: 'cash' });
+    if (bankAmt > 0) entries.push({ ...base, treasury: 'bank', type: 'return_out_bank', amount: bankAmt, direction: -1, paymentMethod: 'instapay' });
   }
+  // 'none' أو عميل آجل — مفيش خروج من الخزينة
 
   if (entries.length) await client.treasuryEntry.createMany({ data: entries });
 };

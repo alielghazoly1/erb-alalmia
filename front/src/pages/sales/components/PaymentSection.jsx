@@ -1,4 +1,10 @@
+// ─── PaymentSection.jsx ───────────────────────────────────────────────────────
+// ✅ FIX-PAY-001: تحذير مرئي لما المبلغ المدفوع لا يساوي الإجمالي
+// ✅ FIX-CREDIT-001: عرض شارة "آجل" واضحة للعميل الآجل
+// ─────────────────────────────────────────────────────────────────────────────
 import { PAYMENT_METHODS } from '../hooks/useSaleInvoiceForm';
+
+const r2 = (v) => Math.round((parseFloat(v) || 0) * 100) / 100;
 
 export default function PaymentSection({
   isCash, isMixed, paymentMethod, cashAmount, instapayAmount,
@@ -8,7 +14,7 @@ export default function PaymentSection({
 }) {
   if (!customer) return null;
 
-  // عميل آجل
+  // ── عميل آجل ─────────────────────────────────────────────────────────────
   if (!isCash) {
     return (
       <div className="mb-4 pb-4 border-b border-gray-100">
@@ -17,6 +23,20 @@ export default function PaymentSection({
         </div>
       </div>
     );
+  }
+
+  // ✅ حساب الفرق لإظهار تحذير لو المبلغ مختلف
+  const eps = 0.01;
+  let effectivePaid = 0;
+  let paymentMismatch = false;
+
+  if (totalAmount > 0) {
+    if (isMixed) {
+      effectivePaid = r2((parseFloat(cashAmount) || 0) + (parseFloat(instapayAmount) || 0));
+    } else if (paymentMethod !== 'credit') {
+      effectivePaid = r2(parseFloat(cashAmount) || parseFloat(instapayAmount) || 0);
+    }
+    paymentMismatch = Math.abs(effectivePaid - totalAmount) > eps;
   }
 
   return (
@@ -55,12 +75,33 @@ export default function PaymentSection({
                : paymentMethod === 'check'    ? 'المبلغ (شيك)'
                : 'المبلغ المدفوع'}
             </label>
-            <input type="number" min="0" step="0.01" className="input-field"
+            <input
+              type="number" min="0" step="0.01"
+              className={`input-field ${paymentMismatch ? 'border-red-400 ring-2 ring-red-100 bg-red-50' : ''}`}
               placeholder={totalAmount.toFixed(2)}
-              value={cashAmount} onChange={e => onCashChange(e.target.value)} />
+              value={cashAmount} onChange={e => onCashChange(e.target.value)}
+            />
           </div>
         )}
       </div>
+
+      {/* ✅ تحذير مرئي لما المبلغ مختلف عن الإجمالي */}
+      {paymentMismatch && totalAmount > 0 && (
+        <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+          <span className="text-red-500 text-base">⚠️</span>
+          <p className="text-xs text-red-600 font-medium">
+            المبلغ المدفوع ({effectivePaid.toFixed(2)}) لا يساوي إجمالي الفاتورة ({r2(totalAmount).toFixed(2)}) — يجب أن يكون مساوياً تماماً للمبيعات النقدية
+          </p>
+        </div>
+      )}
+
+      {/* ✅ تأكيد أخضر لما المبلغ مضبوط */}
+      {!paymentMismatch && effectivePaid > 0 && totalAmount > 0 && (
+        <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-green-100 border border-green-200 rounded-lg">
+          <span className="text-green-600 text-base">✅</span>
+          <p className="text-xs text-green-700 font-medium">المبلغ المدفوع مطابق للإجمالي</p>
+        </div>
+      )}
     </div>
   );
 }

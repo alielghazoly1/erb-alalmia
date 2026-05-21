@@ -1,6 +1,7 @@
 // ─── controllers/purchaseController.js ───────────────────────────────────────
 // ✅ CRIT-NEW-002: approvePurchaseInvoice داخل prisma.$transaction(Serializable)
 // ✅ FLOAT-FIX: calcWeight + sumWeights من Decimal.js
+// ✅ FIX-PURCHASE-001: forceEditPurchaseInvoice يعكس المخزون بـ calcWeight بدل qty×weight الـ float
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -172,11 +173,16 @@ const forceEditPurchaseInvoice = async (req, res) => {
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
     const updated = await prisma.$transaction(async (tx) => {
-      // إرجاع المخزون القديم لو كانت معتمدة
+      // ✅ FIX-PURCHASE-001: عكس المخزون باستخدام calcWeight بدل qty × weight (float)
+      // الكود القديم: const tw = safeNum(item.quantity) * safeNum(item.weight) — خطأ
+      // الكود الجديد: calcWeight(item.quantity, item.weight) — استخدام Decimal.js
       if (wasApproved) {
         for (const item of invoice.items) {
-          const tw = safeNum(item.quantity) * safeNum(item.weight); // وزن شراء = qty × unitWeight
-          await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, { quantity: -safeNum(item.quantity), weight: -round3(tw) }, tx);
+          const tw = calcWeight(safeNum(item.quantity), safeNum(item.weight));
+          await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, {
+            quantity: -safeNum(item.quantity),
+            weight:   -tw,
+          }, tx);
         }
         await tx.stockMovement.deleteMany({ where: { referenceId: invoice.id } });
       }

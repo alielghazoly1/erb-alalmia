@@ -41,6 +41,9 @@ const orderIncludes = () => ({
 });
 
 // ✅ FIXED: updateStock داخل transaction يستخدم tx بدل prisma
+// ✅ FIX-MFG-001: updateStockTx الآن يستخدم GREATEST لمنع القيم السالبة
+//               ويضيف خطوة NORMALIZE لتصفير القيم الوهمية (مثل -0.001)
+//               متوافق مع stockHelper.updateStock
 const updateStockTx = async (tx, itemId, warehouse, seasonId, delta) => {
   const dQty = round3(safeNum(delta.quantity));
   const dWt  = round3(safeNum(delta.weight));
@@ -48,39 +51,88 @@ const updateStockTx = async (tx, itemId, warehouse, seasonId, delta) => {
   if (seasonId) {
     const updated = await tx.$executeRaw`
       UPDATE item_stocks
-      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
-          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+      SET quantity = ROUND(
+            GREATEST(ROUND(CAST(quantity + ${dQty} AS numeric), 3), 0),
+            3
+          ),
+          weight   = ROUND(
+            GREATEST(ROUND(CAST(weight + ${dWt} AS numeric), 3), -0.001),
+            3
+          ),
           "updatedAt" = NOW()
-      WHERE "itemId" = ${itemId} AND warehouse = ${warehouse} AND "seasonId" = ${seasonId}
+      WHERE "itemId" = ${itemId}::uuid AND warehouse = ${warehouse}::"Warehouse" AND "seasonId" = ${seasonId}::uuid
     `;
     if (updated === 0) {
       await tx.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
-        VALUES (gen_random_uuid(), ${itemId}, ${warehouse}, ${seasonId}, ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        VALUES (
+          gen_random_uuid(),
+          ${itemId}::uuid,
+          ${warehouse}::"Warehouse",
+          ${seasonId}::uuid,
+          ${Math.max(0, dQty)},
+          ${Math.max(0, dWt)},
+          NOW()
+        )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
-          SET quantity = item_stocks.quantity + ${dQty},
-              weight   = item_stocks.weight   + ${dWt},
+          SET quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
+              weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
               "updatedAt" = NOW()
       `;
     }
   } else {
     const updated = await tx.$executeRaw`
       UPDATE item_stocks
-      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
-          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+      SET quantity = ROUND(GREATEST(ROUND(CAST(quantity + ${dQty} AS numeric), 3), 0), 3),
+          weight   = ROUND(GREATEST(ROUND(CAST(weight + ${dWt} AS numeric), 3), -0.001), 3),
           "updatedAt" = NOW()
-      WHERE "itemId" = ${itemId} AND warehouse = ${warehouse} AND "seasonId" IS NULL
+      WHERE "itemId" = ${itemId}::uuid AND warehouse = ${warehouse}::"Warehouse" AND "seasonId" IS NULL
     `;
     if (updated === 0) {
       await tx.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
-        VALUES (gen_random_uuid(), ${itemId}, ${warehouse}, NULL, ${Math.max(0, dQty)}, ${Math.max(0, dWt)}, NOW())
+        VALUES (
+          gen_random_uuid(),
+          ${itemId}::uuid,
+          ${warehouse}::"Warehouse",
+          NULL,
+          ${Math.max(0, dQty)},
+          ${Math.max(0, dWt)},
+          NOW()
+        )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
-          SET quantity = item_stocks.quantity + ${dQty},
-              weight   = item_stocks.weight   + ${dWt},
+          SET quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
+              weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
               "updatedAt" = NOW()
       `;
     }
+  }
+
+  // ✅ NORMALIZE: تصفير القيم الوهمية بعد التحديث (مثل -0.001 بعد عملية صحيحة)
+  if (seasonId) {
+    await tx.$executeRaw`
+      UPDATE item_stocks
+      SET
+        quantity = CASE WHEN ABS(quantity) < 0.0005 THEN 0 ELSE quantity END,
+        weight   = CASE WHEN ABS(weight)   < 0.0005 THEN 0 ELSE weight   END,
+        "updatedAt" = NOW()
+      WHERE "itemId"   = ${itemId}::uuid
+        AND warehouse  = ${warehouse}::"Warehouse"
+        AND "seasonId" = ${seasonId}::uuid
+        AND (ABS(quantity) < 0.0005 OR ABS(weight) < 0.0005)
+    `;
+  } else {
+    await tx.$executeRaw`
+      UPDATE item_stocks
+      SET
+        quantity = CASE WHEN ABS(quantity) < 0.0005 THEN 0 ELSE quantity END,
+        weight   = CASE WHEN ABS(weight)   < 0.0005 THEN 0 ELSE weight   END,
+        "updatedAt" = NOW()
+      WHERE "itemId"  = ${itemId}::uuid
+        AND warehouse = ${warehouse}::"Warehouse"
+        AND "seasonId" IS NULL
+        AND (ABS(quantity) < 0.0005 OR ABS(weight) < 0.0005)
+    `;
   }
 };
 

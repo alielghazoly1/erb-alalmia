@@ -120,10 +120,12 @@ export function useSaleInvoiceForm() {
 
   useEffect(() => {
     if (!customer || customer.type === 'cash') { setCustomerBalance(null); return; }
-    api.get(`/customers/${customer._id}/statement`)
+    // ✅ FIX-CREDIT-001: نجيب الرصيد مع الموسم الحالي لضمان دقة الرصيد المعروض
+    const params = activeSeason?._id ? { seasonId: activeSeason._id } : {};
+    api.get(`/customers/${customer._id}/statement`, { params })
       .then(({ data }) => setCustomerBalance(data))
-      .catch(() => {});
-  }, [customer]);
+      .catch(() => setCustomerBalance(null));
+  }, [customer, activeSeason]);
 
   useEffect(() => {
     if (!customer) return;
@@ -381,6 +383,32 @@ export function useSaleInvoiceForm() {
     if (!docNumber.trim())  { toast.error('أدخل رقم المستند'); return; }
     if (docError)           { toast.error(docError); return; }
     if (savedRows.length === 0) { toast.error('أضف صنف واحد على الأقل'); return; }
+
+    // ✅ FIX-PAY-001: التحقق من المبلغ المدفوع للعملاء النقديين قبل الإرسال
+    // عميل نقدي: المبلغ المدفوع لازم = الإجمالي بدقة 0.01 جنيه
+    const finalPaymentMethodCheck = customer.type === 'cash' ? paymentMethod : 'credit';
+    if (finalPaymentMethodCheck !== 'credit' && savedRows.length > 0) {
+      const eps = 0.01; // tolerance
+      if (finalPaymentMethodCheck === 'mixed') {
+        const mixedTotal = r2((parseFloat(cashAmount) || 0) + (parseFloat(instapayAmount) || 0));
+        if (Math.abs(mixedTotal - totalAmount) > eps) {
+          toast.error(
+            `المبلغ المدفوع (${mixedTotal.toFixed(2)}) لا يساوي إجمالي الفاتورة (${totalAmount.toFixed(2)}) ج.م\nيرجى مراجعة المبالغ`,
+            { duration: 5000 }
+          );
+          return;
+        }
+      } else {
+        const paid = parseFloat(cashAmount) || parseFloat(instapayAmount) || 0;
+        if (Math.abs(paid - totalAmount) > eps) {
+          toast.error(
+            `المبلغ المدفوع (${paid.toFixed(2)}) لا يساوي إجمالي الفاتورة (${totalAmount.toFixed(2)}) ج.م\nالفاتورة النقدية تحتاج دفع كامل`,
+            { duration: 5000 }
+          );
+          return;
+        }
+      }
+    }
 
     setSaving(true);
 
