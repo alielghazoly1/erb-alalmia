@@ -1,6 +1,6 @@
 // ─── InvoicePrintView.jsx ─────────────────────────────────────────────────────
 import { useNavigate } from 'react-router-dom';
-import { toNum, fmtFixed } from '../../../utils/fmt';
+import { toNum, fmtFixed, smartFmt } from '../../../utils/fmt';
 
 const PAYMENT_LABELS = {
   cash: 'نقدي', instapay: 'انستاباي',
@@ -107,11 +107,11 @@ export default function InvoicePrintView({ invoice, onBack, backLabel = 'رجو�
                   <td className="px-3 py-1 text-gray-400 text-center text-xs">{idx + 1}</td>
                   <td className="px-3 py-1 font-mono text-blue-600 text-xs">{item.itemCode}</td>
                   <td className="px-4 py-1 font-medium text-gray-800">{item.itemName}</td>
-                  <td className="px-4 py-1 text-center font-bold">{fmtFixed(qty, 4)}</td>
-                  <td className="px-4 py-1 text-center text-xs">{fmtFixed(wt, 3)}</td>
-                  <td className="px-4 py-1 text-center font-medium">{fmtFixed(tw, 3)}</td>
-                  <td className="px-4 py-1 text-center">{fmtFixed(pr, 2)}</td>
-                  <td className="px-4 py-1 text-center font-semibold">{fmtFixed(rowTotal, 2)}</td>
+                  <td className="px-4 py-1 text-center font-bold">{smartFmt(qty, 3)}</td>
+                  <td className="px-4 py-1 text-center text-xs">{smartFmt(wt, 3)}</td>
+                  <td className="px-4 py-1 text-center font-medium">{smartFmt(tw, 3)} ك</td>
+                  <td className="px-4 py-1 text-center">{smartFmt(pr, 2)}</td>
+                  <td className="px-4 py-1 text-center font-semibold">{smartFmt(rowTotal, 2)}</td>
                 </tr>
               );
             })}
@@ -119,9 +119,9 @@ export default function InvoicePrintView({ invoice, onBack, backLabel = 'رجو�
           <tfoot>
             <tr style={{ background: '#eee', fontWeight: 'bold', borderTop: '2px solid #333' }}>
               <td colSpan={5} className="px-3 py-2 text-right">الإجمالي</td>
-              <td className="px-3 py-2 text-center">{fmtFixed(totalWeight, 3)} ك</td>
+              <td className="px-3 py-2 text-center">{smartFmt(totalWeight, 3)} ك</td>
               <td />
-              <td className="px-3 py-2 text-center text-lg font-bold">{fmtFixed(totalAmount, 2)} ج.م</td>
+              <td className="px-3 py-2 text-center text-lg font-bold">{smartFmt(totalAmount, 2)} ج.م</td>
             </tr>
           </tfoot>
         </table>
@@ -139,7 +139,7 @@ export default function InvoicePrintView({ invoice, onBack, backLabel = 'رجو�
           <div className="w-64 space-y-2">
             <div className="flex justify-between text-sm py-1 border-b">
               <span className="text-gray-500">إجمالي الفاتورة</span>
-              <span className="font-bold text-gray-800">{fmtFixed(totalAmount, 2)} ج.م</span>
+              <span className="font-bold text-gray-800">{smartFmt(totalAmount, 2)} ج.م</span>
             </div>
 
             {invoice.paymentMethod !== 'credit' && (
@@ -148,22 +148,22 @@ export default function InvoicePrintView({ invoice, onBack, backLabel = 'رجو�
                   <>
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>نقدي</span>
-                      <span>{fmtFixed(invoice.cashAmount, 2)} ج.م</span>
+                      <span>{smartFmt(invoice.cashAmount, 2)} ج.م</span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>انستاباي</span>
-                      <span>{fmtFixed(invoice.instapayAmount, 2)} ج.م</span>
+                      <span>{smartFmt(invoice.instapayAmount, 2)} ج.م</span>
                     </div>
                   </>
                 )}
                 <div className="flex justify-between text-sm text-green-600">
                   <span>المدفوع ({PAYMENT_LABELS[invoice.paymentMethod] || invoice.paymentMethod})</span>
-                  <span className="font-bold">{fmtFixed(paidAmount, 2)} ج.م</span>
+                  <span className="font-bold">{smartFmt(paidAmount, 2)} ج.م</span>
                 </div>
                 {remaining > 0 && (
                   <div className="flex justify-between text-sm text-red-600 font-bold border-t pt-2">
                     <span>المتبقي</span>
-                    <span>{fmtFixed(remaining, 2)} ج.م</span>
+                    <span>{smartFmt(remaining, 2)} ج.م</span>
                   </div>
                 )}
               </>

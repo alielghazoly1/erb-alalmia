@@ -41,9 +41,8 @@ const orderIncludes = () => ({
 });
 
 // ✅ FIXED: updateStock داخل transaction يستخدم tx بدل prisma
-// ✅ FIX-MFG-001: updateStockTx الآن يستخدم GREATEST لمنع القيم السالبة
-//               ويضيف خطوة NORMALIZE لتصفير القيم الوهمية (مثل -0.001)
-//               متوافق مع stockHelper.updateStock
+// ✅ FIX-MFG-001: updateStockTx يسمح بالسالب (لإزالة GREATEST التي كانت تمنعه)
+//               ويضيف خطوة NORMALIZE لتصفير القيم الوهمية الصغيرة جداً فقط
 const updateStockTx = async (tx, itemId, warehouse, seasonId, delta) => {
   const dQty = round3(safeNum(delta.quantity));
   const dWt  = round3(safeNum(delta.weight));
@@ -51,64 +50,43 @@ const updateStockTx = async (tx, itemId, warehouse, seasonId, delta) => {
   if (seasonId) {
     const updated = await tx.$executeRaw`
       UPDATE item_stocks
-      SET quantity = ROUND(
-            GREATEST(ROUND(CAST(quantity + ${dQty} AS numeric), 3), 0),
-            3
-          ),
-          weight   = ROUND(
-            GREATEST(ROUND(CAST(weight + ${dWt} AS numeric), 3), -0.001),
-            3
-          ),
+      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
           "updatedAt" = NOW()
       WHERE "itemId" = ${itemId}::uuid AND warehouse = ${warehouse}::"Warehouse" AND "seasonId" = ${seasonId}::uuid
     `;
     if (updated === 0) {
       await tx.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
-        VALUES (
-          gen_random_uuid(),
-          ${itemId}::uuid,
-          ${warehouse}::"Warehouse",
-          ${seasonId}::uuid,
-          ${Math.max(0, dQty)},
-          ${Math.max(0, dWt)},
-          NOW()
-        )
+        VALUES (gen_random_uuid(), ${itemId}::uuid, ${warehouse}::"Warehouse", ${seasonId}::uuid, ${dQty}, ${dWt}, NOW())
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
-          SET quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
-              weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
+          SET quantity = ROUND(item_stocks.quantity + ${dQty}, 3),
+              weight   = ROUND(item_stocks.weight   + ${dWt},  3),
               "updatedAt" = NOW()
       `;
     }
   } else {
     const updated = await tx.$executeRaw`
       UPDATE item_stocks
-      SET quantity = ROUND(GREATEST(ROUND(CAST(quantity + ${dQty} AS numeric), 3), 0), 3),
-          weight   = ROUND(GREATEST(ROUND(CAST(weight + ${dWt} AS numeric), 3), -0.001), 3),
+      SET quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+          weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
           "updatedAt" = NOW()
       WHERE "itemId" = ${itemId}::uuid AND warehouse = ${warehouse}::"Warehouse" AND "seasonId" IS NULL
     `;
     if (updated === 0) {
       await tx.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
-        VALUES (
-          gen_random_uuid(),
-          ${itemId}::uuid,
-          ${warehouse}::"Warehouse",
-          NULL,
-          ${Math.max(0, dQty)},
-          ${Math.max(0, dWt)},
-          NOW()
-        )
+        VALUES (gen_random_uuid(), ${itemId}::uuid, ${warehouse}::"Warehouse", NULL, ${dQty}, ${dWt}, NOW())
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
-          SET quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
-              weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
+          SET quantity = ROUND(item_stocks.quantity + ${dQty}, 3),
+              weight   = ROUND(item_stocks.weight   + ${dWt},  3),
               "updatedAt" = NOW()
       `;
     }
   }
 
-  // ✅ NORMALIZE: تصفير القيم الوهمية بعد التحديث (مثل -0.001 بعد عملية صحيحة)
+  // NORMALIZE: تصفير القيم الوهمية الصغيرة جداً فقط (أقل من 0.0005)
+  // القيم السالبة الحقيقية (مثل -5) تبقى كما هي
   if (seasonId) {
     await tx.$executeRaw`
       UPDATE item_stocks

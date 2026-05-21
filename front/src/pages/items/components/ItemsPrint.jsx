@@ -2,8 +2,32 @@
 // طباعة كشف الأصناف عبر iframe في نفس الصفحة (بدون window.open)
 // مُحسَّن لـ 100K+ صنف: A4 landscape، خط صغير، compact rows
 
-const fmt    = (n) => (n || 0).toLocaleString('eg-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtQty = (n) => (n || 0).toLocaleString('eg-EG');
+// تحويل أي قيمة (Decimal, string, number, null) لـ JS number آمن
+const toN = (v) => {
+  if (v === null || v === undefined) return 0;
+  if (typeof v === 'object' && typeof v.toNumber === 'function') return v.toNumber();
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+};
+
+// تقريب وشيل أصفار الزيادة  →  "5" مش "5.00"، "22.68" مش "22.680"
+const smart = (v, maxDec = 3) => {
+  const n = toN(v);
+  const rounded = parseFloat(n.toFixed(maxDec));
+  if (rounded === 0) return '0';
+  let s = rounded.toFixed(maxDec);
+  s = s.replace(/\.?0+$/, '');
+  return s;
+};
+
+// للكميات (أعداد صحيحة في الغالب) — لو فيه كسر يظهر بـ 3 خانات max
+const fmtQty = (v) => smart(v, 3);
+
+// للأوزان — دايماً 3 خانات max مع شيل الأصفار
+const fmtWgt = (v) => smart(v, 3);
+
+// للإجماليات الكبيرة — نفس المنطق
+const fmtTot = (v) => smart(v, 3);
 
 const WH_LABEL = { ramses: 'رمسيس', october: 'أكتوبر', all: 'جميع المخازن' };
 
@@ -16,25 +40,31 @@ export function printItems(items, warehouse = 'all') {
   const showOctober = warehouse === 'all' || warehouse === 'october';
   const showTotal   = warehouse === 'all';
 
-  const totalRamQty = items.reduce((s, i) => s + (i.stock?.ramses?.quantity  ?? 0), 0);
-  const totalRamWgt = items.reduce((s, i) => s + (i.stock?.ramses?.weight    ?? 0), 0);
-  const totalOctQty = items.reduce((s, i) => s + (i.stock?.october?.quantity ?? 0), 0);
-  const totalOctWgt = items.reduce((s, i) => s + (i.stock?.october?.weight   ?? 0), 0);
+  // نجمع بـ JS numbers عادية بعد toN — مش Decimal objects
+  let totalRamQty = 0, totalRamWgt = 0, totalOctQty = 0, totalOctWgt = 0;
+  for (const i of items) {
+    totalRamQty += toN(i.stock?.ramses?.quantity);
+    totalRamWgt += toN(i.stock?.ramses?.weight);
+    totalOctQty += toN(i.stock?.october?.quantity);
+    totalOctWgt += toN(i.stock?.october?.weight);
+  }
 
   const rows = items.map((item, idx) => {
-    const ramQty = item.stock?.ramses?.quantity  ?? 0;
-    const ramWgt = item.stock?.ramses?.weight    ?? 0;
-    const octQty = item.stock?.october?.quantity ?? 0;
-    const octWgt = item.stock?.october?.weight   ?? 0;
+    const ramQty = toN(item.stock?.ramses?.quantity);
+    const ramWgt = toN(item.stock?.ramses?.weight);
+    const octQty = toN(item.stock?.october?.quantity);
+    const octWgt = toN(item.stock?.october?.weight);
+    const totQty = ramQty + octQty;
+    const totWgt = ramWgt + octWgt;
     return `<tr class="${idx % 2 === 0 ? 'even' : 'odd'}">
       <td class="cen">${idx + 1}</td>
       <td class="code">${item.code}</td>
       <td>${item.name}</td>
       <td class="cen">${item.category || '—'}</td>
       <td class="cen">${item.unit}</td>
-      ${showRamses  ? `<td class="cen num ${ramQty > 0 ? 'pos' : ''}">${fmtQty(ramQty)}</td><td class="cen num ${ramWgt > 0 ? 'pos' : ''}">${fmt(ramWgt)}</td>` : ''}
-      ${showOctober ? `<td class="cen num ${octQty > 0 ? 'pos' : ''}">${fmtQty(octQty)}</td><td class="cen num ${octWgt > 0 ? 'pos' : ''}">${fmt(octWgt)}</td>` : ''}
-      ${showTotal   ? `<td class="cen num bold">${fmtQty(ramQty + octQty)}</td><td class="cen num bold">${fmt(ramWgt + octWgt)}</td>` : ''}
+      ${showRamses  ? `<td class="cen num ${ramQty > 0 ? 'pos' : ramQty < 0 ? 'neg' : ''}">${fmtQty(ramQty)}</td><td class="cen num ${ramWgt > 0 ? 'pos' : ramWgt < 0 ? 'neg' : ''}">${fmtWgt(ramWgt)}</td>` : ''}
+      ${showOctober ? `<td class="cen num ${octQty > 0 ? 'pos' : octQty < 0 ? 'neg' : ''}">${fmtQty(octQty)}</td><td class="cen num ${octWgt > 0 ? 'pos' : octWgt < 0 ? 'neg' : ''}">${fmtWgt(octWgt)}</td>` : ''}
+      ${showTotal   ? `<td class="cen num bold ${totQty > 0 ? 'pos' : totQty < 0 ? 'neg' : ''}">${fmtTot(totQty)}</td><td class="cen num bold ${totWgt > 0 ? 'pos' : totWgt < 0 ? 'neg' : ''}">${fmtTot(totWgt)}</td>` : ''}
       <td class="cen"><span class="badge ${item.isRawMaterial ? 'raw' : 'prod'}">${item.isRawMaterial ? 'خامة' : 'منتج'}</span></td>
     </tr>`;
   }).join('');
@@ -49,9 +79,9 @@ export function printItems(items, warehouse = 'all') {
 
   const footerCols = `
     <td></td><td></td><td></td><td></td><td></td>
-    ${showRamses  ? `<td class="cen bold">${fmtQty(totalRamQty)}</td><td class="cen bold">${fmt(totalRamWgt)}</td>` : ''}
-    ${showOctober ? `<td class="cen bold">${fmtQty(totalOctQty)}</td><td class="cen bold">${fmt(totalOctWgt)}</td>` : ''}
-    ${showTotal   ? `<td class="cen bold">${fmtQty(totalRamQty + totalOctQty)}</td><td class="cen bold">${fmt(totalRamWgt + totalOctWgt)}</td>` : ''}
+    ${showRamses  ? `<td class="cen bold">${fmtTot(totalRamQty)}</td><td class="cen bold">${fmtTot(totalRamWgt)}</td>` : ''}
+    ${showOctober ? `<td class="cen bold">${fmtTot(totalOctQty)}</td><td class="cen bold">${fmtTot(totalOctWgt)}</td>` : ''}
+    ${showTotal   ? `<td class="cen bold">${fmtTot(totalRamQty + totalOctQty)}</td><td class="cen bold">${fmtTot(totalRamWgt + totalOctWgt)}</td>` : ''}
     <td></td>
   `;
 
@@ -86,7 +116,9 @@ export function printItems(items, warehouse = 'all') {
     td{padding:5px 4px;border:1px solid #e5e7eb;vertical-align:middle}
     .cen{text-align:center}
     .code{font-family:monospace;font-weight:700;color:#1d4ed8;font-size:10.5px}
-    .num{font-variant-numeric:tabular-nums}.pos{color:#1d4ed8;font-weight:700}
+    .num{font-variant-numeric:tabular-nums;font-family:monospace}
+    .pos{color:#1d4ed8;font-weight:700}
+    .neg{color:#dc2626;font-weight:700}
     .bold{font-weight:700}
     .badge{display:inline-block;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700}
     .badge.raw{background:#fed7aa;color:#9a3412}.badge.prod{background:#bfdbfe;color:#1e40af}
@@ -104,7 +136,7 @@ export function printItems(items, warehouse = 'all') {
 <body>
   <div class="hdr">
     <div>
-      <div class="company">🏭 شركة السيد</div>
+      <div class="company">🏭  العالمية</div>
       <div class="sub">كشف الأصناف — ${WH_LABEL[warehouse]}</div>
     </div>
     <div class="meta">
@@ -114,10 +146,10 @@ export function printItems(items, warehouse = 'all') {
   </div>
 
   <div class="stats">
-    <span>إجمالي الأصناف: <b>${fmtQty(items.length)}</b></span>
-    ${showRamses  ? `<span>رمسيس: <b>${fmtQty(totalRamQty)} كرتون / ${fmt(totalRamWgt)} ك</b></span>` : ''}
-    ${showOctober ? `<span>أكتوبر: <b>${fmtQty(totalOctQty)} كرتون / ${fmt(totalOctWgt)} ك</b></span>` : ''}
-    ${showTotal   ? `<span>الكلي: <b>${fmtQty(totalRamQty + totalOctQty)} كرتون / ${fmt(totalRamWgt + totalOctWgt)} ك</b></span>` : ''}
+    <span>إجمالي الأصناف: <b>${items.length}</b></span>
+    ${showRamses  ? `<span>رمسيس: <b>${fmtTot(totalRamQty)} كرتون / ${fmtTot(totalRamWgt)} ك</b></span>` : ''}
+    ${showOctober ? `<span>أكتوبر: <b>${fmtTot(totalOctQty)} كرتون / ${fmtTot(totalOctWgt)} ك</b></span>` : ''}
+    ${showTotal   ? `<span>الكلي: <b>${fmtTot(totalRamQty + totalOctQty)} كرتون / ${fmtTot(totalRamWgt + totalOctWgt)} ك</b></span>` : ''}
   </div>
 
   <table>

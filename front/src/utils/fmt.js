@@ -29,6 +29,38 @@ export const round3 = (v) => Math.round(toNum(v) * 1000) / 1000;
 export const fmtFixed = (v, d = 2) => toNum(v).toFixed(d);
 
 /**
+ * smartFmt — عرض رقم بدون أصفار زيادة في النهاية
+ * بيضبط عدد الخانات تلقائياً:
+ *   - الأعداد الصحيحة: بلا فاصلة           → "5"    مش "5.000"
+ *   - رقم كسري:        بأقل خانات ممكنة    → "22.68" مش "22.680"
+ *   - يحترم maxDecimals كحد أقصى للدقة
+ *
+ * @param {*}      v            — القيمة
+ * @param {number} maxDecimals  — أقصى خانات عشرية (default: 3)
+ * @param {number} minDecimals  — أدنى خانات عشرية (default: 0)
+ * @returns {string}
+ */
+export const smartFmt = (v, maxDecimals = 3, minDecimals = 0) => {
+  const n = toNum(v);
+  // نقرّب للدقة المطلوبة أولاً لتجنب 22.6800000001
+  const rounded = parseFloat(n.toFixed(maxDecimals));
+  // نحوّل لـ string ونشيل الأصفار الزيادة
+  let s = rounded.toFixed(maxDecimals);
+  if (s.includes('.')) {
+    s = s.replace(/\.?0+$/, '');        // شيل أصفار النهاية والنقطة لو اتشالوا كلهم
+  }
+  // لو minDecimals > 0، نضمن إن فيه على الأقل minDecimals خانة
+  if (minDecimals > 0) {
+    const parts = s.split('.');
+    const currentDec = parts[1]?.length ?? 0;
+    if (currentDec < minDecimals) {
+      s = rounded.toFixed(minDecimals);
+    }
+  }
+  return s;
+};
+
+/**
  * fmt — عرض رقم بفواصل ألاف + خانتين عشريتين
  * @returns {string}       — مثال: "1,234.56"
  */

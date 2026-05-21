@@ -8,9 +8,19 @@ import ItemSearch from '../../components/common/ItemSearch';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
-const calcTotal = (q, w, p) =>
-  (parseFloat(q) || 0) * (parseFloat(w) || 0) * (parseFloat(p) || 0);
-const calcTotalWeight = (q, w) => (parseFloat(q) || 0) * (parseFloat(w) || 0);
+const r2 = (v) => Math.round((parseFloat(v) || 0) * 100) / 100;
+const r3 = (v) => Math.round((parseFloat(v) || 0) * 1000) / 1000;
+// calcTotalWeight: لو اتبعت totalWeight صريح نستخدمه — غير كده qty × unitWeight بتقريب آمن
+const calcTotalWeight = (q, w, tw = null) =>
+  tw != null ? r3(parseFloat(tw)) : r3((parseFloat(q) || 0) * (parseFloat(w) || 0));
+// calcTotal: totalWeight × price (مش qty × w × p مباشرة عشان نتجنب floating point تراكمي)
+const calcTotal = (q, w, p, tw = null) =>
+  r2(calcTotalWeight(q, w, tw) * (parseFloat(p) || 0));
+// cleanNum: يعرض صفر بدل -0 أو -0.000 أو أي قيمة وهمية
+const cleanNum = (v, decimals = 3) => {
+  const n = parseFloat(v) || 0;
+  return (Object.is(n, -0) || Math.abs(n) < 0.0005) ? (0).toFixed(decimals) : n.toFixed(decimals);
+};
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
@@ -22,6 +32,8 @@ const newRow = () => ({
   quantity: '',
   weight: '',
   price: '',
+  availableQty: undefined,
+  availableWeight: undefined,
   saved: false,
   editing: false,
 });
@@ -34,6 +46,7 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
   const isCustomer = type === 'customer_return';
 
   const { user } = useSelector((s) => s.auth);
+  const { activeSeason } = useSelector((s) => s.season);
   const isAdmin = user?.role === 'admin';
 
   // state
@@ -146,6 +159,9 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
   const handleItemSelect = (rowId, item) => {
     if (!item) return;
     const unitWeight = item.defaultWeight || 0;
+    // نقرأ الرصيد من item.stock اللي بيييجي مع نتيجة البحث
+    const stockQty = item.stock?.[warehouse]?.quantity ?? 0;
+    const stockWt  = item.stock?.[warehouse]?.weight   ?? 0;
     setRows((prev) =>
       prev.map((r) =>
         r.id === rowId
@@ -157,6 +173,8 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
               unit: item.unit,
               unitWeight,
               weight: unitWeight ? String(unitWeight) : r.weight,
+              availableQty: stockQty,
+              availableWeight: stockWt,
             }
           : r,
       ),
@@ -221,13 +239,13 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
   };
 
   const savedRows    = rows.filter((r) => r.saved);
-  const totalAmount  = savedRows.reduce((s, r) => s + calcTotal(r.quantity, r.weight, r.price), 0);
-  const totalWeightAll = savedRows.reduce((s, r) => {
+  const totalAmount  = r2(savedRows.reduce((s, r) => s + calcTotal(r.quantity, r.weight, r.price, r._totalWeight ?? null), 0));
+  const totalWeightAll = r3(savedRows.reduce((s, r) => {
     const tw = r._totalWeight != null
       ? parseFloat(r._totalWeight)
       : calcTotalWeight(r.quantity, r.weight);
     return s + (tw || 0);
-  }, 0);
+  }, 0));
 
   const handleSubmit = async () => {
     if (!party) {
@@ -529,16 +547,16 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
                     <td className="px-3 py-2.5 font-medium text-gray-800">{row.itemName}</td>
                     <td className="px-3 py-2.5 text-center">{row.quantity}</td>
                     <td className="px-3 py-2.5 text-center text-gray-400 text-xs">
-                      {parseFloat(row.weight).toFixed(3)}
+                      {cleanNum(row.weight, 3)}
                     </td>
                     <td className="px-3 py-2.5 text-center font-medium">
-                      {calcTotalWeight(row.quantity, row.weight).toFixed(3)} ك
+                      {cleanNum(calcTotalWeight(row.quantity, row.weight, row._totalWeight ?? null), 3)} ك
                     </td>
                     <td className="px-3 py-2.5 text-center">
-                      {parseFloat(row.price).toFixed(2)}
+                      {cleanNum(row.price, 2)}
                     </td>
                     <td className="px-3 py-2.5 text-center font-semibold text-orange-600">
-                      {calcTotal(row.quantity, row.weight, row.price).toFixed(2)}
+                      {cleanNum(calcTotal(row.quantity, row.weight, row.price, row._totalWeight ?? null), 2)}
                     </td>
                     <td className="px-3 py-2.5">
                       <button
@@ -557,11 +575,11 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
                 <tr className="bg-orange-50 font-semibold text-xs">
                   <td colSpan={5} className="px-3 py-2 text-right text-gray-600">الإجمالي</td>
                   <td className="px-3 py-2 text-center text-orange-700">
-                    {totalWeightAll.toFixed(3)} ك
+                    {cleanNum(totalWeightAll, 3)} ك
                   </td>
                   <td></td>
                   <td className="px-3 py-2 text-center text-orange-700">
-                    {totalAmount.toFixed(2)} ج.م
+                    {cleanNum(totalAmount, 2)} ج.م
                   </td>
                   <td></td>
                 </tr>
@@ -571,114 +589,142 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
         </div>
       )}
 
-      {/* صفوف الإدخال */}
+      {/* صفوف الإدخال — طبق الأصل من فاتورة المبيعات */}
       {rows
         .filter((r) => !r.saved)
-        .map((row) => (
-          <div
-            key={row.id}
-            className={`card mb-3 border-2 ${row.editing ? 'border-amber-400 bg-amber-50/30' : 'border-orange-200'}`}
-          >
-            <p className="text-sm font-medium text-gray-600 mb-3">
-              {row.editing ? '✏️ تعديل صنف' : '➕ إضافة صنف'}
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-              <div className="md:col-span-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
-                <ItemSearch
-                  onSelect={(item) => handleItemSelect(row.id, item)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); qtyRefs.current[row.id]?.focus(); }
-                  }}
-                  placeholder="ابحث بالكود أو الاسم..."
-                />
-                {row.itemName && (
-                  <p className="text-xs text-green-600 mt-1 font-medium">✓ {row.itemName}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">وزن الكرتونة (كيلو)</label>
-                <input
-                  ref={(el) => (wtRefs.current[row.id] = el)}
-                  type="number" min="0" step="0.001"
-                  className="input-field text-center"
-                  placeholder="22.680"
-                  value={row.weight}
-                  onChange={(e) => updateRow(row.id, 'weight', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, row.id, 'weight')}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">السعر / كيلو</label>
-                <input
-                  ref={(el) => (prRefs.current[row.id] = el)}
-                  type="number" min="0" step="0.01"
-                  className="input-field text-center"
-                  placeholder="0.00"
-                  value={row.price}
-                  onChange={(e) => updateRow(row.id, 'price', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, row.id, 'price')}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  العدد (كراتين)
-                  {row.weight && <span className="text-blue-400 mr-1">× {row.weight} ك</span>}
-                </label>
-                <input
-                  ref={(el) => (qtyRefs.current[row.id] = el)}
-                  type="number" min="0" step="0.001"
-                  className="input-field text-center font-bold text-lg"
-                  placeholder="0"
-                  value={row.quantity}
-                  onChange={(e) => updateRow(row.id, 'quantity', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, row.id, 'quantity')}
-                />
-                {row.quantity && row.weight && (
-                  <p className="text-xs text-blue-500 mt-0.5 text-center">
-                    = {calcTotalWeight(row.quantity, row.weight).toFixed(3)} كيلو
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  أو أدخل الوزن الكلي <span className="text-gray-400">(يحسب العدد)</span>
-                </label>
-                <input
-                  type="number" min="0" step="0.001"
-                  className="input-field text-center bg-blue-50"
-                  placeholder="10.000 كيلو"
-                  value={totalWeightInput[row.id] || ''}
-                  onChange={(e) => handleTotalWeightChange(row.id, e.target.value)}
-                />
-              </div>
-              <div className="flex items-end">
-                <div className="w-full bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200">
-                  <p className="text-xs text-gray-400 mb-0.5">الإجمالي</p>
-                  <p className="text-xl font-bold text-orange-600">
-                    {calcTotal(row.quantity, row.weight, row.price).toFixed(2)} ج.م
+        .map((row) => {
+          const twInputVal = totalWeightInput[row.id] || '';
+          const hasTwInput = parseFloat(twInputVal) > 0;
+          const tw = hasTwInput
+            ? parseFloat(twInputVal)
+            : calcTotalWeight(row.quantity, row.weight);
+          const rowTotal = r2(tw * (parseFloat(row.price) || 0));
+
+          return (
+            <div
+              key={row.id}
+              className={`rounded-xl border-2 p-3 sticky bottom-0 z-10 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] ${
+                row.editing ? 'border-amber-400 bg-amber-50/95' : 'border-orange-200 bg-orange-50/95'
+              }`}
+            >
+              {/* item info header */}
+              {row.itemName && (
+                <p className="text-xs text-green-600 mt-0.5 mb-1 font-medium truncate">✓ {row.itemName}</p>
+              )}
+              {row.availableQty !== undefined && (
+                <p className={`text-xs mb-1 ${
+                  row.availableQty <= 0 ? 'text-orange-500' : row.availableQty <= 5 ? 'text-amber-600' : 'text-green-600'
+                }`}>
+                  {row.availableQty <= 0 ? '⚠️' : row.availableQty <= 5 ? '🟡' : '🟢'}{' '}
+                  {row.availableQty <= 0
+                    ? `الرصيد صفر (${row.availableQty} كرتون في المخزن)`
+                    : `رصيد متاح: ${row.availableQty} كرتون`}
+                </p>
+              )}
+              <p className="text-xs font-semibold text-gray-500 mb-2">
+                {row.editing ? '✏️ تعديل صنف' : '➕ أضف صنف'}
+              </p>
+
+              <div className="grid grid-cols-12 gap-2 items-end">
+                {/* الصنف */}
+                <div className="col-span-5">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
+                  <ItemSearch
+                    onSelect={(item) => handleItemSelect(row.id, item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); qtyRefs.current[row.id]?.focus(); }
+                    }}
+                    placeholder="ابحث بالكود أو الاسم..."
+                    defaultValue={row.editing ? row.itemName : ''}
+                  />
+                </div>
+
+                {/* العدد */}
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    العدد{row.weight && <span className="text-blue-400 mr-1">×{row.weight}ك</span>}
+                    {hasTwInput && <span className="text-xs text-orange-400 mr-1">(محسوب)</span>}
+                  </label>
+                  <input
+                    ref={(el) => (qtyRefs.current[row.id] = el)}
+                    type="number" min="0" step="0.001"
+                    className={`input-field text-center font-bold text-base ${hasTwInput ? 'bg-orange-50/50 text-orange-600' : ''}`}
+                    placeholder="0"
+                    value={row.quantity}
+                    onChange={(e) => updateRow(row.id, 'quantity', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, row.id, 'quantity')}
+                  />
+                </div>
+
+                {/* وزن/وحدة */}
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">وزن/وحدة</label>
+                  <input
+                    ref={(el) => (wtRefs.current[row.id] = el)}
+                    type="number" min="0" step="0.001"
+                    className="input-field text-center"
+                    placeholder="22.680"
+                    value={row.weight}
+                    onChange={(e) => updateRow(row.id, 'weight', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, row.id, 'weight')}
+                  />
+                </div>
+
+                {/* السعر */}
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">السعر/ك</label>
+                  <input
+                    ref={(el) => (prRefs.current[row.id] = el)}
+                    type="number" min="0" step="0.01"
+                    className="input-field text-center"
+                    placeholder="0.00"
+                    value={row.price}
+                    onChange={(e) => updateRow(row.id, 'price', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, row.id, 'price')}
+                  />
+                </div>
+
+                {/* الإجمالي */}
+                <div className="col-span-1 flex flex-col items-center gap-1">
+                  <p className="text-xs text-gray-400">الإجمالي</p>
+                  <p className="text-sm font-bold text-orange-600 leading-tight">
+                    {rowTotal.toFixed(0)}
                   </p>
                 </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleSaveRow(row.id)}
-                className="btn-primary px-6 py-2"
-                disabled={!row.item || !row.quantity || !row.weight || !row.price}
-              >
-                {row.editing ? 'تحديث' : '✓ إضافة'}
-              </button>
-              {row.editing && (
-                <button onClick={() => handleDeleteRow(row.id)} className="btn-secondary px-4 py-2">
-                  إلغاء
+
+              {/* الوزن الكلي + زر الإضافة */}
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex-1">
+                  <input
+                    type="number" min="0" step="0.001"
+                    className={`input-field text-center text-xs py-1.5 ${hasTwInput ? 'bg-blue-100 border-blue-400' : 'bg-blue-50/50'}`}
+                    placeholder="أو أدخل الوزن الكلي (يحسب العدد)"
+                    value={twInputVal}
+                    onChange={(e) => handleTotalWeightChange(row.id, e.target.value)}
+                  />
+                  {hasTwInput && (
+                    <p className="text-xs text-blue-500 mt-0.5 text-center">
+                      وزن كلي: {r3(tw).toFixed(3)} ك → إجمالي: {rowTotal.toFixed(2)} ج.م
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleSaveRow(row.id)}
+                  className="btn-primary px-5 py-2 text-sm"
+                  disabled={!row.item || !row.quantity || !row.weight || !row.price}
+                >
+                  {row.editing ? '✓ تحديث' : '✓ إضافة'}
                 </button>
-              )}
+                {row.editing && (
+                  <button onClick={() => handleDeleteRow(row.id)} className="btn-secondary px-3 py-2 text-sm">
+                    إلغاء
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
       {/* الإجمالي */}
       {savedRows.length > 0 && (
@@ -686,11 +732,11 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
           <div className="flex justify-between items-start">
             <div className="text-sm text-gray-500 space-y-1">
               <p>عدد الأصناف: <span className="font-medium text-gray-700">{savedRows.length}</span></p>
-              <p>إجمالي الوزن: <span className="font-medium text-gray-700">{totalWeightAll.toFixed(3)} كيلو</span></p>
+              <p>إجمالي الوزن: <span className="font-medium text-gray-700">{cleanNum(totalWeightAll, 3)} كيلو</span></p>
             </div>
             <div className="text-left">
               <p className="text-sm text-gray-500 mb-1">الإجمالي الكلي</p>
-              <p className="text-3xl font-bold text-orange-600">{totalAmount.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-orange-600">{cleanNum(totalAmount, 2)}</p>
               <p className="text-sm text-gray-400">جنيه مصري</p>
             </div>
           </div>

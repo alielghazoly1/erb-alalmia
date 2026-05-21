@@ -5,13 +5,16 @@
 //   1. نحسب openingBalance  = مجموع الحركات قبل startDate (لو في فلتر)
 //   2. نجيب حركات الفترة    مرتبة ASC مع pagination
 //   3. لكل صفحة > 1 نحسب   مجموع الصفحات السابقة لتصحيح نقطة البداية
-//   4. نحسب running balance  لكل حركة في الصفحة
+//   4. نحسب running balance  لكل حركة في الصفحة بـ Decimal.js (تجنب 1.11e-16)
 //   5. نرجع إجماليات الفترة الكاملة (مش الصفحة بس)
 //
 // مُحسَّن لـ 100K+ صنف: aggregate SQL بدل findMany للحسابات
 
 const prisma      = require('../config/db');
 const { safeNum } = require('../utils/decimalHelper');
+const { Decimal }  = require('decimal.js');
+
+Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
 const MOV_PAGE_SIZE = 200;
 
@@ -41,16 +44,22 @@ const norm = (x) => ({
   createdAt:   x.createdAt,
 });
 
-// ── حساب مجموع صفوف (من findMany) ────────────────────────────────────────────
+// ── حساب مجموع صفوف (من findMany) بـ Decimal.js لتجنب float drift ──────────
 const sumRows = (rows) => {
-  let qIn = 0, qOut = 0, wIn = 0, wOut = 0;
+  let qIn = new Decimal(0), qOut = new Decimal(0);
+  let wIn = new Decimal(0), wOut = new Decimal(0);
   for (const r of rows) {
-    qIn  += safeNum(r.quantityIn);
-    qOut += safeNum(r.quantityOut);
-    wIn  += safeNum(r.weightIn);
-    wOut += safeNum(r.weightOut);
+    qIn  = qIn.plus(new Decimal(safeNum(r.quantityIn)));
+    qOut = qOut.plus(new Decimal(safeNum(r.quantityOut)));
+    wIn  = wIn.plus(new Decimal(safeNum(r.weightIn)));
+    wOut = wOut.plus(new Decimal(safeNum(r.weightOut)));
   }
-  return { qIn, qOut, wIn, wOut };
+  return {
+    qIn:  parseFloat(qIn.toFixed(6)),
+    qOut: parseFloat(qOut.toFixed(6)),
+    wIn:  parseFloat(wIn.toFixed(6)),
+    wOut: parseFloat(wOut.toFixed(6)),
+  };
 };
 
 // ── GET /api/items/:itemId/movements ─────────────────────────────────────────
@@ -90,8 +99,10 @@ const getItemMovements = async (req, res) => {
         where: preWhere,
         _sum:  { quantityIn: true, quantityOut: true, weightIn: true, weightOut: true },
       });
-      openingQty    = safeNum(agg?._sum?.quantityIn)  - safeNum(agg?._sum?.quantityOut);
-      openingWeight = safeNum(agg?._sum?.weightIn)    - safeNum(agg?._sum?.weightOut);
+      openingQty    = parseFloat(new Decimal(safeNum(agg?._sum?.quantityIn)).minus(new Decimal(safeNum(agg?._sum?.quantityOut))).toFixed(6));
+      openingWeight = parseFloat(new Decimal(safeNum(agg?._sum?.weightIn)).minus(new Decimal(safeNum(agg?._sum?.weightOut))).toFixed(6));
+      if (Math.abs(openingQty)    < 1e-9) openingQty    = 0;
+      if (Math.abs(openingWeight) < 1e-9) openingWeight = 0;
     }
 
     // ── 2. total + صفحة الحركات (ASC) ──────────────────────────────────────
@@ -129,18 +140,27 @@ const getItemMovements = async (req, res) => {
         take:    skip,
       });
       const p = sumRows(prevRows);
-      pageOpeningQty    += p.qIn - p.qOut;
-      pageOpeningWeight += p.wIn - p.wOut;
+      const pOQ = parseFloat(new Decimal(pageOpeningQty).plus(new Decimal(p.qIn)).minus(new Decimal(p.qOut)).toFixed(6));
+      const pOW = parseFloat(new Decimal(pageOpeningWeight).plus(new Decimal(p.wIn)).minus(new Decimal(p.wOut)).toFixed(6));
+      pageOpeningQty    = Math.abs(pOQ) < 1e-9 ? 0 : pOQ;
+      pageOpeningWeight = Math.abs(pOW) < 1e-9 ? 0 : pOW;
     }
 
     // ── 4. running balance لكل حركة في الصفحة ──────────────────────────────
-    let runQty    = pageOpeningQty;
-    let runWeight = pageOpeningWeight;
+    // نستخدم Decimal.js لتجنب تراكم أخطاء floating point (مثل 1.1102e-16 بدل صفر)
+    const toD = (v) => new Decimal(isFinite(safeNum(v)) ? safeNum(v) : 0);
+    const dp  = (d) => {
+      const n = parseFloat(d.toFixed(6));
+      return Math.abs(n) < 1e-9 ? 0 : n;   // تنظيف قيم أصغر من 1 نانو
+    };
+
+    let runQty    = toD(pageOpeningQty);
+    let runWeight = toD(pageOpeningWeight);
 
     const normed = movements.map((m) => {
-      runQty    += safeNum(m.quantityIn)  - safeNum(m.quantityOut);
-      runWeight += safeNum(m.weightIn)    - safeNum(m.weightOut);
-      return { ...norm(m), runningQty: runQty, runningWeight: runWeight };
+      runQty    = runQty.plus(toD(m.quantityIn)).minus(toD(m.quantityOut));
+      runWeight = runWeight.plus(toD(m.weightIn)).minus(toD(m.weightOut));
+      return { ...norm(m), runningQty: dp(runQty), runningWeight: dp(runWeight) };
     });
 
     // ── 5. إجماليات الفترة كاملة (aggregate) ───────────────────────────────

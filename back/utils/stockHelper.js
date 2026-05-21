@@ -72,20 +72,8 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
     const updated = await client.$executeRaw`
       UPDATE item_stocks
       SET
-        quantity = ROUND(
-          GREATEST(
-            ROUND(CAST(quantity + ${dQty} AS numeric), 3),
-            0
-          ),
-          3
-        ),
-        weight = ROUND(
-          GREATEST(
-            ROUND(CAST(weight + ${dWt} AS numeric), 3),
-            -0.001
-          ),
-          3
-        ),
+        quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+        weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
         "updatedAt" = NOW()
       WHERE "itemId"   = ${itemId}::uuid
         AND warehouse  = ${warehouse}::"Warehouse"
@@ -100,14 +88,14 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
           ${itemId}::uuid,
           ${warehouse}::"Warehouse",
           ${seasonId}::uuid,
-          ${Math.max(0, dQty)},
-          ${Math.max(0, dWt)},
+          ${dQty},
+          ${dWt},
           NOW()
         )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
           SET
-            quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
-            weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
+            quantity = ROUND(item_stocks.quantity + ${dQty}, 3),
+            weight   = ROUND(item_stocks.weight   + ${dWt},  3),
             "updatedAt" = NOW()
       `;
     }
@@ -115,8 +103,8 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
     const updated = await client.$executeRaw`
       UPDATE item_stocks
       SET
-        quantity = ROUND(GREATEST(ROUND(CAST(quantity + ${dQty} AS numeric), 3), 0), 3),
-        weight   = ROUND(GREATEST(ROUND(CAST(weight + ${dWt} AS numeric), 3), -0.001), 3),
+        quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
+        weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
         "updatedAt" = NOW()
       WHERE "itemId"  = ${itemId}::uuid
         AND warehouse = ${warehouse}::"Warehouse"
@@ -131,21 +119,21 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
           ${itemId}::uuid,
           ${warehouse}::"Warehouse",
           NULL,
-          ${Math.max(0, dQty)},
-          ${Math.max(0, dWt)},
+          ${dQty},
+          ${dWt},
           NOW()
         )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
           SET
-            quantity = ROUND(GREATEST(item_stocks.quantity + ${dQty}, 0), 3),
-            weight   = ROUND(GREATEST(item_stocks.weight   + ${dWt}, -0.001), 3),
+            quantity = ROUND(item_stocks.quantity + ${dQty}, 3),
+            weight   = ROUND(item_stocks.weight   + ${dWt},  3),
             "updatedAt" = NOW()
       `;
     }
   }
 
-  // ── تنظيف القيم الوهمية بعد التحديث ─────────────────────────────────────
-  // لو الوزن بقى -0.001 أو -0.0001 بعد عملية صح → نصفّره
+  // تنظيف القيم الوهمية الصغيرة جداً (مثل 0.0001 أو -0.0001 ناتجة عن floating point)
+  // لكن نحافظ على القيم السالبة الحقيقية (مثل -5 كراتين عند البيع بالسالب)
   await _normalizeStockRow(itemId, warehouse, seasonId, client);
 };
 

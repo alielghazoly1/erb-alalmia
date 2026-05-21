@@ -100,15 +100,15 @@ export function useSaleInvoiceForm() {
   // ── computed ──────────────────────────────────────────────────────────────
   const savedRows      = rows.filter(r => r.saved);
   const activeRowId    = rows.find(r => !r.saved)?.id;
-  const totalAmount = savedRows.reduce((s, r) => {
+  const totalAmount = r2(savedRows.reduce((s, r) => {
     // لو المستخدم دخل الوزن الكلي يدوياً، نحسب من الوزن الكلي × السعر مباشرة
-    const tw = r._totalWeight ?? (parseFloat(r.quantity) * parseFloat(r.weight));
+    const tw = r._totalWeight ?? r3((parseFloat(r.quantity) || 0) * (parseFloat(r.weight) || 0));
     return s + r2((parseFloat(tw) || 0) * (parseFloat(r.price) || 0));
-  }, 0);
-  const totalWeightAll = savedRows.reduce((s, r) => {
-    const tw = r._totalWeight ?? (parseFloat(r.quantity) * parseFloat(r.weight));
+  }, 0));
+  const totalWeightAll = r3(savedRows.reduce((s, r) => {
+    const tw = r._totalWeight ?? r3((parseFloat(r.quantity) || 0) * (parseFloat(r.weight) || 0));
     return s + r3(parseFloat(tw) || 0);
-  }, 0);
+  }, 0));
   const isCash         = customer?.type === 'cash';
   const isMixed        = paymentMethod === 'mixed';
   const paidAmount     = isMixed
@@ -123,7 +123,11 @@ export function useSaleInvoiceForm() {
     // ✅ FIX-CREDIT-001: نجيب الرصيد مع الموسم الحالي لضمان دقة الرصيد المعروض
     const params = activeSeason?._id ? { seasonId: activeSeason._id } : {};
     api.get(`/customers/${customer._id}/statement`, { params })
-      .then(({ data }) => setCustomerBalance(data))
+      .then(({ data }) => {
+        // الـ API يرجع { customer, totals: { balance, totalSales, ... }, rows, ... }
+        // CustomerBalanceCard تحتاج الـ totals مباشرة
+        setCustomerBalance(data.totals ?? data);
+      })
       .catch(() => setCustomerBalance(null));
   }, [customer, activeSeason]);
 
@@ -250,13 +254,18 @@ export function useSaleInvoiceForm() {
     setCustomer(c);
     setCustomerError(false);
     const loaded = data.items.map(item => {
-      // نحسب totalWeight من الـ DB أو من qty × wt كـ fallback
-      const storedTW = item.totalWeight != null
-        ? parseFloat(item.totalWeight)
+      // itemId: نستخدم itemId مباشرة من السطر (هو الـ UUID الصح)
+      // item.item موجود بس لو الـ include جاب الـ relation — آمن نفال على itemId
+      const resolvedItemId = item.itemId || item.item?._id || item.item?.id || item.item;
+      // totalWeight: نحسبه من total ÷ price لو السعر > 0 (أدق من qty × wt)
+      // لأن total مخزّن في DB بدقة عالية بينما qty × wt ممكن يطلع floating point
+      const pr = parseFloat(item.price) || 0;
+      const storedTW = pr > 0
+        ? Math.round((parseFloat(item.total) / pr) * 1000) / 1000
         : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
       return {
         id: Date.now() + Math.random(),
-        item: item.item?._id || item.item,
+        item: resolvedItemId,
         itemCode: item.itemCode, itemName: item.itemName,
         unit: item.unit || '', unitWeight: parseFloat(item.weight),
         quantity: String(item.quantity), weight: String(item.weight),

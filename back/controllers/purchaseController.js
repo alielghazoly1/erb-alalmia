@@ -1,7 +1,8 @@
 // ─── controllers/purchaseController.js ───────────────────────────────────────
 // ✅ CRIT-NEW-002: approvePurchaseInvoice داخل prisma.$transaction(Serializable)
 // ✅ FLOAT-FIX: calcWeight + sumWeights من Decimal.js
-// ✅ FIX-PURCHASE-001: forceEditPurchaseInvoice يعكس المخزون بـ calcWeight بدل qty×weight الـ float
+// ✅ FIX-PURCHASE-002: forceEditPurchaseInvoice يعكس المخزون بـ extractTotalWeight (total÷price من DB)
+//    أدق من calcWeight(qty,weight) عشان total المخزّن هو المصدر الحقيقي
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -9,6 +10,18 @@ const prisma = require('../config/db');
 const { safeNum, round2, round3, calcWeight, calcTotal, sumWeights, sumAmounts, n } = require('../utils/decimalHelper');
 const { updateStock, createStockMovement } = require('../utils/stockHelper');
 const { nextNumber } = require('../utils/counterHelper');
+
+// ── extractTotalWeight ────────────────────────────────────────────────────────
+/**
+ * يستخلص الوزن الكلي الدقيق من سطر الفاتورة المخزّن في DB:
+ *  - لو السعر > 0 → نحسب total ÷ price (أدق لأن total مخزّن في DB)
+ *  - غير ذلك    → نحسب qty × weight بـ Decimal.js
+ */
+const extractTotalWeight = (item) => {
+  const pr = safeNum(item.price);
+  if (pr > 0) return round3(safeNum(item.total) / pr);
+  return calcWeight(item.quantity, item.weight);
+};
 
 const PAGE_SIZE = 100;
 
@@ -134,6 +147,11 @@ const createPurchaseInvoice = async (req, res) => {
         date:           date ? new Date(date) : new Date(),
         supplierCode, supplierName, supplierId: supplierId || null,
         warehouse, totalAmount, totalWeight,
+        // ✅ FIX-PUR-SCHEMA: حقول مطلوبة في schema غير موجودة كانت سبب 500
+        discountAmount:  0,
+        netAmount:       totalAmount,
+        paidAmount:      0,
+        remainingAmount: totalAmount,
         status:         'pending',
         seasonId:       activeSeason?.id ?? null,
         notes,
@@ -173,12 +191,11 @@ const forceEditPurchaseInvoice = async (req, res) => {
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
     const updated = await prisma.$transaction(async (tx) => {
-      // ✅ FIX-PURCHASE-001: عكس المخزون باستخدام calcWeight بدل qty × weight (float)
-      // الكود القديم: const tw = safeNum(item.quantity) * safeNum(item.weight) — خطأ
-      // الكود الجديد: calcWeight(item.quantity, item.weight) — استخدام Decimal.js
+      // ✅ FIX-PURCHASE-001: عكس المخزون باستخدام extractTotalWeight (total÷price من DB)
+      // أدق من calcWeight(qty, weight) لأن total المخزّن هو المصدر الحقيقي للوزن
       if (wasApproved) {
         for (const item of invoice.items) {
-          const tw = calcWeight(safeNum(item.quantity), safeNum(item.weight));
+          const tw = extractTotalWeight(item);
           await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, {
             quantity: -safeNum(item.quantity),
             weight:   -tw,
@@ -195,6 +212,11 @@ const forceEditPurchaseInvoice = async (req, res) => {
           docNumber:   docNumber || invoice.docNumber,
           date:        date ? new Date(date) : invoice.date,
           totalAmount, totalWeight,
+          // ✅ FIX-PUR-SCHEMA: تحديث الحقول المالية عند التعديل
+          discountAmount:  0,
+          netAmount:       totalAmount,
+          paidAmount:      0,
+          remainingAmount: totalAmount,
           notes,
           status:      'pending',
           approvedById: null, approvedAt: null,
