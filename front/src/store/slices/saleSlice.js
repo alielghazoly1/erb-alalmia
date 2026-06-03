@@ -1,6 +1,6 @@
 // ─── store/slices/saleSlice.js ────────────────────────────────────────────────
-// Lazy Loading: 100 فاتورة كل مرة (offset-based pagination)
-// يحمل التالي عند IntersectionObserver في SaleListPage
+// ✅ PERF-001: cursor-based pagination بدل offset
+//    لا COUNT في كل صفحة — total يُحفظ من أول طلب ويُرجَّح بالعمليات المحلية
 // ─────────────────────────────────────────────────────────────────────────────
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
@@ -13,12 +13,16 @@ export const fetchSaleInvoices = createAsyncThunk(
   async (params = {}, thunkAPI) => {
     try {
       const { data } = await api.get('/sales', {
-        params: { ...params, limit: PAGE_SIZE, page: 1 },
+        params: { ...params, limit: PAGE_SIZE },
+        // بدون cursor → الباك يرسل total
       });
-      // الباك بيرجع { invoices, total, page, limit }
       const invoices = Array.isArray(data) ? data : (data.invoices ?? []);
-      const total    = data.total ?? invoices.length;
-      return { invoices, total, page: 1 };
+      return {
+        invoices,
+        total:      data.total ?? invoices.length,
+        hasMore:    data.hasMore ?? false,
+        nextCursor: data.nextCursor ?? null,
+      };
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data?.message || 'خطأ في جلب الفواتير');
     }
@@ -30,14 +34,18 @@ export const fetchMoreSaleInvoices = createAsyncThunk(
   'sales/fetchMore',
   async (params = {}, thunkAPI) => {
     try {
-      const state    = thunkAPI.getState().sales;
-      const nextPage = state.currentPage + 1;
+      const { nextCursor } = thunkAPI.getState().sales;
+      if (!nextCursor) return thunkAPI.rejectWithValue('لا يوجد cursor');
+
       const { data } = await api.get('/sales', {
-        params: { ...params, limit: PAGE_SIZE, page: nextPage },
+        params: { ...params, limit: PAGE_SIZE, cursor: nextCursor },
       });
       const invoices = Array.isArray(data) ? data : (data.invoices ?? []);
-      const total    = data.total ?? (state.total ?? 0);
-      return { invoices, total, page: nextPage };
+      return {
+        invoices,
+        hasMore:    data.hasMore ?? false,
+        nextCursor: data.nextCursor ?? null,
+      };
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data?.message || 'خطأ في تحميل المزيد');
     }
@@ -94,12 +102,15 @@ export const cancelSaleInvoice = createAsyncThunk(
 );
 
 // ── Helper ────────────────────────────────────────────────────────────────────
+const toId  = (i) => i._id ?? i.id;
+const norm  = (i) => ({ ...i, _id: toId(i) });
+
 const upsertInList = (list, payload) => {
   if (!payload) return list;
-  const idx = list.findIndex(i => i._id === payload._id || i.id === payload.id);
+  const idx = list.findIndex(i => toId(i) === toId(payload));
   if (idx !== -1) {
     const copy = [...list];
-    copy[idx] = { ...payload, _id: payload._id || payload.id };
+    copy[idx] = norm(payload);
     return copy;
   }
   return list;
@@ -110,21 +121,19 @@ const saleSlice = createSlice({
   name: 'sales',
   initialState: {
     list:        [],
-    deletedIds:  [],
     total:       0,
-    currentPage: 1,
     hasMore:     false,
+    nextCursor:  null,
     loading:     false,
     loadingMore: false,
     error:       null,
     lastParams:  null,
   },
   reducers: {
-    clearDeletedIds: (state) => { state.deletedIds = []; },
-    resetSales:      (state) => {
+    resetSales: (state) => {
       state.list = []; state.total = 0;
-      state.currentPage = 1; state.hasMore = false;
-      state.error = null;
+      state.hasMore = false; state.nextCursor = null;
+      state.error = null; state.loading = false; state.loadingMore = false;
     },
   },
   extraReducers: (builder) => {
@@ -134,19 +143,17 @@ const saleSlice = createSlice({
         state.loading    = true;
         state.error      = null;
         state.lastParams = action.meta.arg;
-        state.list       = [];   // reset عند تغيير الفلاتر
+        state.list       = [];
+        state.nextCursor = null;
+        state.hasMore    = false;
       })
       .addCase(fetchSaleInvoices.fulfilled, (state, action) => {
-        state.loading     = false;
-        const { invoices, total, page } = action.payload;
-        // فلتر الفواتير المحذوفة محلياً
-        state.list        = invoices
-          .filter(i => !state.deletedIds.includes(i._id ?? i.id))
-          .map(i => ({ ...i, _id: i._id ?? i.id }));
-        state.total       = total;
-        state.currentPage = page;
-        // ✅ FIX: hasMore يعتمد على total من الباك مش طول القائمة المفلترة
-        state.hasMore     = state.list.length < total && invoices.length === PAGE_SIZE;
+        state.loading    = false;
+        const { invoices, total, hasMore, nextCursor } = action.payload;
+        state.list       = invoices.map(norm);
+        state.total      = total;
+        state.hasMore    = hasMore;
+        state.nextCursor = nextCursor;
       })
       .addCase(fetchSaleInvoices.rejected, (state, action) => {
         state.loading = false;
@@ -159,28 +166,21 @@ const saleSlice = createSlice({
       })
       .addCase(fetchMoreSaleInvoices.fulfilled, (state, action) => {
         state.loadingMore = false;
-        const { invoices, total, page } = action.payload;
-        // deduplicate + فلتر المحذوفات
-        const existingIds = new Set(state.list.map(i => i._id));
-        const newItems = invoices
-          .filter(i => !state.deletedIds.includes(i._id ?? i.id))
-          .filter(i => !existingIds.has(i._id ?? i.id))
-          .map(i => ({ ...i, _id: i._id ?? i.id }));
-
+        const { invoices, hasMore, nextCursor } = action.payload;
+        const existingIds = new Set(state.list.map(toId));
+        const newItems    = invoices.map(norm).filter(i => !existingIds.has(toId(i)));
         state.list        = [...state.list, ...newItems];
-        state.total       = total;
-        state.currentPage = page;
-        state.hasMore     = state.list.length < total && invoices.length === PAGE_SIZE;
+        state.hasMore     = hasMore;
+        state.nextCursor  = nextCursor;
       })
       .addCase(fetchMoreSaleInvoices.rejected, (state, action) => {
         state.loadingMore = false;
-        state.error       = action.payload || 'حدث خطأ في تحميل المزيد';
+        state.error       = action.payload || 'خطأ في تحميل المزيد';
       })
 
       // ── create ────────────────────────────────────────────────────────────
       .addCase(createSaleInvoice.fulfilled, (state, action) => {
-        const inv = { ...action.payload, _id: action.payload._id ?? action.payload.id };
-        state.list.unshift(inv);
+        state.list.unshift(norm(action.payload));
         state.total += 1;
       })
 
@@ -196,14 +196,12 @@ const saleSlice = createSlice({
 
       // ── cancel ────────────────────────────────────────────────────────────
       .addCase(cancelSaleInvoice.fulfilled, (state, action) => {
-        const id = action.payload;
-        state.list       = state.list.filter(i => i._id !== id && i.id !== id);
-        state.deletedIds = [...state.deletedIds, id];
-        state.total      = Math.max(0, state.total - 1);
-        state.hasMore    = state.list.length < state.total;
+        const id    = action.payload;
+        state.list  = state.list.filter(i => toId(i) !== id);
+        state.total = Math.max(0, state.total - 1);
       });
   },
 });
 
-export const { clearDeletedIds, resetSales } = saleSlice.actions;
+export const { resetSales } = saleSlice.actions;
 export default saleSlice.reducer;

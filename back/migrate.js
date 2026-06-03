@@ -1,14 +1,45 @@
-// ─── migrate-db1.js ───────────────────────────────────────────────────────────
-// يحوّل بيانات MongoDB القديمة (db1/) إلى PostgreSQL عبر Prisma
-// ✅ idempotent — آمن للتشغيل أكثر من مرة
-// تشغيل: node migrate-db1.js
-// ─────────────────────────────────────────────────────────────────────────────
+//  ══════════════════════════════════════════════════════════════════════════════
+//  migrate.js  —  ترحيل كامل من MongoDB → PostgreSQL (Prisma)
+//
+//  الملفات المدعومة:
+//    ceo.seasons.json        → seasons
+//    ceo.users.json          → users
+//    ceo.customers.json      → customers + customer_season_balances
+//    ceo.suppliers.json      → suppliers
+//    ceo.items.json          → items + item_stocks
+//    ceo.pricelists.json     → price_lists + price_list_item_links
+//    ceo.saleinvoices.json   → sale_invoices + sale_invoice_items
+//    ceo.purchaseinvoices.json → purchase_invoices + purchase_invoice_items
+//    ceo.counters.json       → global_counters
+//
+//  تشغيل:
+//    node migrate.js              ← ترحيل كامل
+//    DRY_RUN=1 node migrate.js    ← قراءة بس بدون كتابة
+//    STOP_ON_ERROR=1 node migrate.js
+// ══════════════════════════════════════════════════════════════════════════════
 'use strict';
 
+require('dotenv').config();
 const path = require('path');
 const fs   = require('fs');
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient({ log: [] });
+
+const prisma  = new PrismaClient({ log: [] });
+const STOP    = process.env.STOP_ON_ERROR === '1';
+const DRY_RUN = process.env.DRY_RUN === '1';
+const DB1     = path.join(__dirname, 'db1');
+
+// ── الألوان ────────────────────────────────────────────────────────────────────
+const C = {
+  reset: '\x1b[0m', red: '\x1b[31m', green: '\x1b[32m',
+  yellow: '\x1b[33m', blue: '\x1b[34m', cyan: '\x1b[36m',
+  bold: '\x1b[1m', dim: '\x1b[2m',
+};
+const ok   = (m) => console.log(`${C.green}  ✓${C.reset} ${m}`);
+const warn = (m) => console.log(`${C.yellow}  ⚠${C.reset}  ${m}`);
+const fail = (m) => console.log(`${C.red}  ✗${C.reset} ${m}`);
+const head = (m) => console.log(`\n${C.bold}${C.blue}── ${m}${C.reset}`);
+const line = ()  => console.log(`${C.dim}${'─'.repeat(60)}${C.reset}`);
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const oid = (v) => (v && typeof v === 'object' && v.$oid) ? v.$oid : (v || null);
@@ -17,440 +48,704 @@ const dt  = (v) => {
   if (v && typeof v === 'object' && v.$date) return new Date(v.$date);
   return new Date(v);
 };
-const num = (v, def = 0) => { const n = parseFloat(v); return isNaN(n) ? def : n; };
-const readDb1 = (filename) => {
-  const p = path.join(__dirname, 'db1', filename);
-  if (!fs.existsSync(p)) { console.warn(`  ⚠️  ملف غير موجود: ${filename}`); return []; }
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
-};
-const log = (msg) => console.log(`  ${msg}`);
+const num = (v, d = 0) => { const n = parseFloat(v); return isNaN(n) ? d : n; };
 
-// ── خريطة OID → Prisma UUID ───────────────────────────────────────────────────
-const ID = {
-  season:     new Map(),
-  user:       new Map(),
-  customer:   new Map(),
-  supplier:   new Map(),
-  item:       new Map(),
-  itemByCode: new Map(),
+const readJson = (fname) => {
+  const p = path.join(DB1, fname);
+  if (!fs.existsSync(p)) { console.error(`  ❌ مش موجود: db1/${fname}`); process.exit(1); }
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
+  catch (e) { console.error(`  ❌ خطأ في ${fname}: ${e.message}`); process.exit(1); }
 };
 
-// ── 1. SEASONS ────────────────────────────────────────────────────────────────
+// ── خرائط للـ IDs ──────────────────────────────────────────────────────────────
+const MAP = {
+  users:     new Map(), // mongoOid → prismaUUID
+  customers: new Map(),
+  suppliers: new Map(),
+  items:     new Map(),
+  itemByCode:new Map(),
+  seasons:   new Map(),
+};
+
+// ── stats ─────────────────────────────────────────────────────────────────────
+const S = {};
+const stat = (key) => { if (!S[key]) S[key] = { ok: 0, skip: 0, fail: 0 }; return S[key]; };
+const inc  = (key, field) => { stat(key)[field] = (stat(key)[field] || 0) + 1; };
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 0 — المواسم
+// ══════════════════════════════════════════════════════════════════════════════
 async function migrateSeasons() {
-  const data = readDb1('ceo.seasons.json');
-  log(`Seasons: ${data.length} records`);
+  head('STEP 0 — المواسم');
+  const data = readJson('ceo.seasons.json');
+  console.log(`  ${data.length} موسم في الملف`);
 
   for (const s of data) {
     const mongoId = oid(s._id);
-    const code    = s.name.replace(/\s+/g, '_').slice(0, 20);
+    const name    = s.name?.trim();
+    const code    = (s.code || name.replace(/\s+/g, '_').replace(/[^\w_]/g, '').substring(0, 20) || 'SEASON1').trim();
 
-    // upsert بـ code (unique)
-    const created = await prisma.season.upsert({
-      where:  { code },
-      update: {},
-      create: {
-        name: s.name, code,
-        startDate:       dt(s.startDate),
-        endDate:         dt(s.endDate),
-        isActive:        s.isActive        ?? false,
-        isClosed:        s.isClosed        ?? false,
-        isManufacturing: s.isManufacturing ?? false,
-        notes:           s.notes           || null,
-        createdAt:       dt(s.createdAt),
-      },
-    });
-    ID.season.set(mongoId, created.id);
-    log(`  ✅ موسم: ${created.name} → ${created.id}`);
+    try {
+      let rec;
+      if (!DRY_RUN) {
+        rec = await prisma.season.upsert({
+          where:  { code },
+          update: { name, isActive: s.isActive ?? false, isManufacturing: s.isManufacturing ?? false,
+                    startDate: dt(s.startDate), endDate: dt(s.endDate) },
+          create: { name, code, isActive: s.isActive ?? false, isManufacturing: s.isManufacturing ?? false,
+                    isClosed: s.isClosed ?? false, startDate: dt(s.startDate), endDate: dt(s.endDate),
+                    notes: s.notes || null, createdAt: dt(s.createdAt) },
+        });
+      } else {
+        rec = { id: `dry_season_${mongoId}` };
+      }
+      if (mongoId) MAP.seasons.set(mongoId, rec.id);
+      ok(`${name}  (${code})`);
+      inc('seasons', 'ok');
+    } catch (e) {
+      fail(`موسم [${name}]: ${e.message}`);
+      inc('seasons', 'fail');
+      if (STOP) throw e;
+    }
   }
 }
 
-// ── 2. USERS ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 1 — المستخدمون
+// ══════════════════════════════════════════════════════════════════════════════
 async function migrateUsers() {
-  const data = readDb1('ceo.users.json');
-  log(`Users: ${data.length} records`);
+  head('STEP 1 — المستخدمون');
+  const data = readJson('ceo.users.json');
+  console.log(`  ${data.length} مستخدم في الملف`);
+
+  // role map: mongo → prisma
+  const roleMap = { super_admin: 'super_admin', admin: 'admin', supervisor: 'supervisor', user: 'user', viewer: 'viewer' };
+  // scope/warehouse map
   const scopeMap = { ramses: 'ramses', october: 'october', both: 'both' };
 
   for (const u of data) {
-    const created = await prisma.user.upsert({
-      where:  { username: u.username },
-      update: {},
-      create: {
-        name: u.name, username: u.username, password: u.password,
-        role:  u.role === 'admin' ? 'admin' : 'user',
-        scope: scopeMap[u.warehouse] || 'both',
-        isActive: u.isActive ?? true,
-        createdAt: dt(u.createdAt),
-      },
-    });
-    ID.user.set(oid(u._id), created.id);
-
-    if (u.permissions?.allowNegativeSale) {
-      await prisma.userPermission.upsert({
-        where:  { userId_permission: { userId: created.id, permission: 'sale_allow_negative' } },
-        update: { granted: true },
-        create: { userId: created.id, permission: 'sale_allow_negative', granted: true },
-      });
-    }
-    log(`  ✅ مستخدم: ${created.username}`);
-  }
-}
-
-// ── 3. CUSTOMERS ──────────────────────────────────────────────────────────────
-async function migrateCustomers() {
-  const data = readDb1('ceo.customers.json');
-  log(`Customers: ${data.length} records`);
-
-  const BATCH = 100;
-  for (let i = 0; i < data.length; i += BATCH) {
-    for (const c of data.slice(i, i + BATCH)) {
-      const created = await prisma.customer.upsert({
-        where:  { code: String(c.code) },
-        update: {},
-        create: {
-          code: String(c.code), name: c.name,
-          phone: c.phone || null, address: c.address || null,
-          type: c.type === 'cash' ? 'cash' : 'credit',
-          isActive: c.isActive ?? true, notes: c.notes || null,
-          openingBalance: 0, createdAt: dt(c.createdAt),
-        },
-      });
-      ID.customer.set(oid(c._id), created.id);
-    }
-    log(`  ✅ ${Math.min(i + BATCH, data.length)}/${data.length} عميل`);
-  }
-}
-
-// ── 4. SUPPLIERS ──────────────────────────────────────────────────────────────
-async function migrateSuppliers() {
-  const data = readDb1('ceo.suppliers.json');
-  log(`Suppliers: ${data.length} records`);
-
-  const BATCH = 100;
-  for (let i = 0; i < data.length; i += BATCH) {
-    for (const s of data.slice(i, i + BATCH)) {
-      const created = await prisma.supplier.upsert({
-        where:  { code: String(s.code) },
-        update: {},
-        create: {
-          code: String(s.code), name: s.name,
-          phone: s.phone || null, address: s.address || null,
-          notes: s.notes || null, isActive: s.isActive ?? true,
-          openingBalance: 0, createdAt: dt(s.createdAt),
-        },
-      });
-      ID.supplier.set(oid(s._id), created.id);
-    }
-    log(`  ✅ ${Math.min(i + BATCH, data.length)}/${data.length} مورد`);
-  }
-}
-
-// ── 5. ITEMS + ITEMSTOCKS ─────────────────────────────────────────────────────
-// @@unique([itemId, warehouse, seasonId]) — لازم seasonId في الـ where
-async function migrateItems() {
-  const data = readDb1('ceo.items.json');
-  log(`Items: ${data.length} records`);
-
-  const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
-  const seasonId     = activeSeason?.id || null;
-
-  for (const it of data) {
-    const created = await prisma.item.upsert({
-      where:  { code: String(it.code) },
-      update: {},
-      create: {
-        code: String(it.code), name: it.name,
-        category: it.category || null, unit: it.unit || 'كرتون',
-        defaultWeight:     num(it.defaultWeight),
-        lastPurchasePrice: num(it.lastPurchasePrice),
-        lastSalePrice:     num(it.lastSalePrice),
-        isRawMaterial: it.isRawMaterial ?? false,
-        isActive:      it.isActive      ?? true,
-        notes:         it.notes         || null,
-        createdAt:     dt(it.createdAt),
-      },
-    });
-    ID.item.set(oid(it._id), created.id);
-    ID.itemByCode.set(String(it.code), created.id);
-
-    // ItemStock — @@unique([itemId, warehouse, seasonId])
-    const stock = it.stock || {};
-    for (const wh of ['ramses', 'october']) {
-      const s = stock[wh] || { quantity: 0, weight: 0 };
-
-      const existing = await prisma.itemStock.findFirst({
-        where: { itemId: created.id, warehouse: wh, seasonId },
-      });
-
-      if (existing) {
-        await prisma.itemStock.update({
-          where: { id: existing.id },
-          data:  { quantity: num(s.quantity), weight: num(s.weight) },
+    const mongoId  = oid(u._id);
+    const username = u.username?.toLowerCase().trim();
+    try {
+      let rec;
+      if (!DRY_RUN) {
+        rec = await prisma.user.upsert({
+          where:  { username },
+          update: { name: u.name, role: roleMap[u.role] || 'user', scope: scopeMap[u.warehouse || u.scope] || 'both',
+                    isActive: u.isActive ?? true },
+          create: { name: u.name, username, password: u.password,
+                    role: roleMap[u.role] || 'user', scope: scopeMap[u.warehouse || u.scope] || 'both',
+                    isActive: u.isActive ?? true, createdAt: dt(u.createdAt) },
         });
       } else {
-        await prisma.itemStock.create({
-          data: { itemId: created.id, warehouse: wh, quantity: num(s.quantity), weight: num(s.weight), seasonId },
+        rec = { id: `dry_user_${mongoId}` };
+      }
+      if (mongoId) MAP.users.set(mongoId, rec.id);
+      ok(`${username}  (${u.role})`);
+      inc('users', 'ok');
+    } catch (e) {
+      fail(`مستخدم [${username}]: ${e.message}`);
+      inc('users', 'fail');
+      if (STOP) throw e;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 2 — العملاء
+// ══════════════════════════════════════════════════════════════════════════════
+async function migrateCustomers(seasonId) {
+  head('STEP 2 — العملاء');
+  const data = readJson('ceo.customers.json');
+  console.log(`  ${data.length} عميل في الملف`);
+
+  const BATCH = 100;
+  let done = 0;
+
+  for (const c of data) {
+    const mongoId = oid(c._id);
+    const code    = String(c.code).trim();
+    const type    = c.type === 'cash' ? 'cash' : 'credit';
+
+    try {
+      let rec;
+      if (!DRY_RUN) {
+        rec = await prisma.customer.upsert({
+          where:  { code },
+          update: { name: c.name, phone: c.phone || null, address: c.address || null,
+                    type, isActive: c.isActive ?? true, notes: c.notes || null,
+                    openingBalance: num(c.initialBalance) },
+          create: { code, name: c.name, phone: c.phone || null, address: c.address || null,
+                    type, isActive: c.isActive ?? true, notes: c.notes || null,
+                    openingBalance: num(c.initialBalance), createdAt: dt(c.createdAt) },
+        });
+
+        // رصيد أول المدة في الموسم
+        const openingBal = num(c.initialBalance);
+        if (openingBal !== 0 && seasonId) {
+          await prisma.customerSeasonBalance.upsert({
+            where:  { customerId_seasonId: { customerId: rec.id, seasonId } },
+            update: { openingBalance: openingBal },
+            create: { customerId: rec.id, seasonId, openingBalance: openingBal },
+          });
+          inc('customerBalances', 'ok');
+        }
+      } else {
+        rec = { id: `dry_cust_${mongoId}` };
+      }
+      if (mongoId) MAP.customers.set(mongoId, rec.id);
+      inc('customers', 'ok');
+      done++;
+      if (done % BATCH === 0) process.stdout.write(`\r    → ${done}/${data.length}`);
+    } catch (e) {
+      fail(`عميل [${code}] ${c.name}: ${e.message}`);
+      inc('customers', 'fail');
+      if (STOP) throw e;
+    }
+  }
+  process.stdout.write(`\r    → ${done}/${data.length}\n`);
+  ok(`${done} عميل | ${stat('customerBalances').ok || 0} رصيد ابتدائي`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 3 — الموردون
+// ══════════════════════════════════════════════════════════════════════════════
+async function migrateSuppliers() {
+  head('STEP 3 — الموردون');
+  const data = readJson('ceo.suppliers.json');
+  console.log(`  ${data.length} مورد في الملف`);
+
+  let done = 0;
+  for (const s of data) {
+    const mongoId = oid(s._id);
+    const code    = String(s.code).trim();
+
+    try {
+      let rec;
+      if (!DRY_RUN) {
+        rec = await prisma.supplier.upsert({
+          where:  { code },
+          update: { name: s.name, phone: s.phone || null, address: s.address || null,
+                    isActive: s.isActive ?? true, notes: s.notes || null },
+          create: { code, name: s.name, phone: s.phone || null, address: s.address || null,
+                    isActive: s.isActive ?? true, notes: s.notes || null, createdAt: dt(s.createdAt) },
+        });
+      } else {
+        rec = { id: `dry_sup_${mongoId}` };
+      }
+      if (mongoId) MAP.suppliers.set(mongoId, rec.id);
+      inc('suppliers', 'ok');
+      done++;
+      if (done % 100 === 0) process.stdout.write(`\r    → ${done}/${data.length}`);
+    } catch (e) {
+      fail(`مورد [${code}] ${s.name}: ${e.message}`);
+      inc('suppliers', 'fail');
+      if (STOP) throw e;
+    }
+  }
+  process.stdout.write(`\r    → ${done}/${data.length}\n`);
+  ok(`${done} مورد`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 4 — الأصناف + المخزون
+// ══════════════════════════════════════════════════════════════════════════════
+async function migrateItems(seasonId) {
+  head('STEP 4 — الأصناف + المخزون');
+  const data = readJson('ceo.items.json');
+  console.log(`  ${data.length} صنف في الملف`);
+
+  // بناء الخريطة من DB الموجود للـ idempotency
+  if (!DRY_RUN) {
+    const existing = await prisma.item.findMany({ select: { id: true, code: true, metadata: true } });
+    for (const it of existing) {
+      MAP.itemByCode.set(it.code, it.id);
+      const mid = it.metadata?.mongoId;
+      if (mid) MAP.items.set(mid, it.id);
+    }
+  }
+
+  let done = 0;
+  for (const it of data) {
+    const mongoId = oid(it._id);
+    const code    = String(it.code).trim();
+
+    try {
+      let rec;
+      if (!DRY_RUN) {
+        rec = await prisma.item.upsert({
+          where:  { code },
+          update: { name: it.name, category: it.category || null, subCategory: it.subCategory || null,
+                    unit: it.unit || 'كرتون', defaultWeight: num(it.defaultWeight),
+                    lastPurchasePrice: num(it.lastPurchasePrice), lastSalePrice: num(it.lastSalePrice),
+                    isRawMaterial: it.isRawMaterial ?? false, isActive: it.isActive ?? true,
+                    notes: it.notes || null, metadata: { mongoId } },
+          create: { code, name: it.name, category: it.category || null, subCategory: it.subCategory || null,
+                    unit: it.unit || 'كرتون', defaultWeight: num(it.defaultWeight),
+                    lastPurchasePrice: num(it.lastPurchasePrice), lastSalePrice: num(it.lastSalePrice),
+                    isRawMaterial: it.isRawMaterial ?? false, isActive: it.isActive ?? true,
+                    notes: it.notes || null, createdAt: dt(it.createdAt), metadata: { mongoId } },
+        });
+      } else {
+        rec = { id: MAP.itemByCode.get(code) || `dry_item_${mongoId}` };
+      }
+      MAP.items.set(mongoId, rec.id);
+      MAP.itemByCode.set(code, rec.id);
+      inc('items', 'ok');
+
+      // مخزون لكل مخزن
+      const stock = it.stock || {};
+      for (const wh of ['ramses', 'october']) {
+        const s = stock[wh] || { quantity: 0, weight: 0 };
+        try {
+          if (!DRY_RUN) {
+            await prisma.itemStock.upsert({
+              where:  { itemId_warehouse_seasonId: { itemId: rec.id, warehouse: wh, seasonId: seasonId ?? null } },
+              update: { quantity: num(s.quantity), weight: num(s.weight) },
+              create: { itemId: rec.id, warehouse: wh, quantity: num(s.quantity), weight: num(s.weight), seasonId: seasonId ?? null },
+            });
+          }
+          inc('stocks', 'ok');
+        } catch (e) {
+          fail(`مخزون [${code}/${wh}]: ${e.message}`);
+          inc('stocks', 'fail');
+        }
+      }
+
+      done++;
+      if (done % 50 === 0) process.stdout.write(`\r    → ${done}/${data.length}`);
+    } catch (e) {
+      fail(`صنف [${code}] ${it.name}: ${e.message}`);
+      inc('items', 'fail');
+      if (STOP) throw e;
+    }
+  }
+  process.stdout.write(`\r    → ${done}/${data.length}\n`);
+  ok(`${done} صنف | ${stat('stocks').ok} سجل مخزون`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 5 — قوائم الأسعار
+// ══════════════════════════════════════════════════════════════════════════════
+async function migratePriceLists() {
+  head('STEP 5 — قوائم الأسعار');
+  const data = readJson('ceo.pricelists.json');
+  console.log(`  ${data.length} قائمة في الملف`);
+
+  if (!DRY_RUN) {
+    // امسح القديم الغلط وابدأ من صفر
+    const oldCount = await prisma.priceList.count();
+    if (oldCount > 0) {
+      await prisma.priceListItemLink.deleteMany({});
+      await prisma.priceList.deleteMany({});
+      warn(`حُذف ${oldCount} سجل قديم`);
+    }
+
+    // ارفع كل القوائم دفعات
+    const BATCH = 50;
+    for (let i = 0; i < data.length; i += BATCH) {
+      const batch = data.slice(i, i + BATCH).map(pl => ({
+        priceListName:        pl.priceListName,
+        priceListDescription: pl.priceListDescription || '',
+        displayOrder:         num(pl.displayOrder),
+        displayName:          pl.displayName || '',
+        origin:               pl.origin || '',
+        unit:                 pl.unit || '',
+        notes:                pl.notes || '',
+        prices:               (pl.prices || []).map(p => ({ label: p.label || '', price: num(p.price) })),
+        defaultPrice:         num(pl.defaultPrice),
+        itemDisplayOrder:     num(pl.itemDisplayOrder),
+        isActive:             pl.isActive ?? true,
+        createdAt:            dt(pl.createdAt),
+      }));
+      await prisma.priceList.createMany({ data: batch });
+      inc('priceLists', 'ok'); // بنعد الـ batch مش الأفراد هنا
+      process.stdout.write(`\r    → ${Math.min(i + BATCH, data.length)}/${data.length}`);
+    }
+    process.stdout.write('\n');
+
+    // بناء الروابط
+    const dbPriceLists = await prisma.priceList.findMany({
+      select: { id: true, priceListName: true, itemDisplayOrder: true },
+    });
+    const plMap = new Map(dbPriceLists.map(r => [`${r.priceListName}||${r.itemDisplayOrder}`, r.id]));
+
+    const allLinks = [];
+    for (const pl of data) {
+      const plId = plMap.get(`${pl.priceListName}||${num(pl.itemDisplayOrder)}`);
+      if (!plId) continue;
+      for (const li of (pl.linkedItems || [])) {
+        const mongoItemId  = oid(li.item);
+        const code         = li.itemCode ? String(li.itemCode).trim() : null;
+        const itemPrismaId = MAP.items.get(mongoItemId) || (code ? MAP.itemByCode.get(code) : null);
+        if (!itemPrismaId) { inc('plLinks', 'skip'); continue; }
+        allLinks.push({ priceListId: plId, itemId: itemPrismaId,
+                        itemCode: code || '', itemName: li.itemName || '' });
+      }
+    }
+
+    if (allLinks.length > 0) {
+      const r = await prisma.priceListItemLink.createMany({ data: allLinks, skipDuplicates: true });
+      inc('plLinks', 'ok');
+      ok(`روابط: ${r.count} أُنشئت`);
+    }
+
+    const finalCount = await prisma.priceList.count();
+    ok(`${finalCount} قائمة أسعار${finalCount === data.length ? ' ✅' : ` ⚠️ المفروض ${data.length}`}`);
+  } else {
+    ok(`DRY_RUN — ${data.length} قائمة سيتم رفعها`);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 6 — فواتير المبيعات
+// ══════════════════════════════════════════════════════════════════════════════
+async function migrateSaleInvoices(seasonId, systemUserId) {
+  head('STEP 6 — فواتير المبيعات');
+  const data = readJson('ceo.saleinvoices.json');
+  console.log(`  ${data.length} فاتورة في الملف`);
+
+  let done = 0, skipped = 0;
+
+  for (const inv of data) {
+    const mongoId = oid(inv._id);
+    const invNum  = inv.invoiceNumber;
+
+    try {
+      if (!DRY_RUN) {
+        // skip لو موجودة
+        const existing = await prisma.saleInvoice.findFirst({
+          where: { invoiceNumber: invNum },
+          select: { id: true },
+        });
+        if (existing) { skipped++; inc('saleInv', 'skip'); continue; }
+
+        // resolve IDs
+        const customerId  = MAP.customers.get(oid(inv.customer));
+        const createdById = MAP.users.get(oid(inv.createdBy)) || systemUserId;
+        const approvedById= MAP.users.get(oid(inv.approvedBy)) || null;
+        const invSeasonId = MAP.seasons.get(oid(inv.season)) || seasonId;
+
+        if (!customerId) {
+          warn(`فاتورة [${invNum}] — عميل مش موجود: ${oid(inv.customer)}`);
+          inc('saleInv', 'skip'); skipped++; continue;
+        }
+
+        const totalAmount   = num(inv.totalAmount);
+        const paidAmount    = num(inv.paidAmount);
+        const remainingAmt  = totalAmount - paidAmount;
+        const paymentMethod = inv.paymentMethod || 'credit';
+
+        // بناء الأصناف
+        const itemsData = [];
+        for (const li of (inv.items || [])) {
+          const liMongoId    = oid(li.item);
+          const liCode       = li.itemCode ? String(li.itemCode).trim() : null;
+          const liItemId     = MAP.items.get(liMongoId) || (liCode ? MAP.itemByCode.get(liCode) : null);
+
+          // للأصناف الوهمية (BALANCE-INIT) نتجاهلها أو نضيفها بـ null
+          const itemId = liItemId || null;
+          if (!itemId) {
+            inc('saleItems', 'skip');
+            warn(`  → صنف مش موجود: ${liCode || liMongoId} في ${invNum}`);
+            continue;
+          }
+
+          const qty        = num(li.quantity);
+          const weight     = num(li.weight);
+          const totalWt    = num(li.totalWeight) || (qty * weight);
+          const price      = num(li.price);
+          const total      = num(li.total) || (totalWt * price);
+
+          itemsData.push({
+            itemId, itemCode: liCode || '', itemName: li.itemName || '',
+            quantity: qty, weight, totalWeight: totalWt,
+            price, discount: 0, total,
+          });
+        }
+
+        await prisma.saleInvoice.create({
+          data: {
+            invoiceNumber:  invNum,
+            docNumber:      inv.docNumber || invNum,
+            date:           dt(inv.date),
+            customerId,
+            customerCode:   inv.customerCode || '',
+            customerName:   inv.customerName || '',
+            warehouse:      inv.warehouse || 'ramses',
+            totalAmount,
+            totalWeight:    num(inv.totalWeight),
+            discountAmount: 0,
+            netAmount:      totalAmount,
+            paidAmount,
+            remainingAmount: remainingAmt,
+            cashAmount:     num(inv.cashAmount),
+            instapayAmount: num(inv.instapayAmount),
+            transferAmount: 0,
+            paymentMethod,
+            status:         inv.status || 'pending',
+            allowNegative:  inv.allowNegativeSale ?? false,
+            seasonId:       invSeasonId,
+            notes:          inv.notes || null,
+            createdById,
+            approvedById,
+            approvedAt:     inv.approvedAt ? dt(inv.approvedAt) : null,
+            createdAt:      dt(inv.createdAt),
+            items:          { create: itemsData },
+          },
+        });
+        inc('saleInv', 'ok');
+        inc('saleItems', 'ok');
+      } else {
+        inc('saleInv', 'ok');
+      }
+
+      done++;
+      if (done % 10 === 0) process.stdout.write(`\r    → ${done}/${data.length}`);
+    } catch (e) {
+      fail(`فاتورة مبيعات [${invNum}]: ${e.message}`);
+      inc('saleInv', 'fail');
+      if (STOP) throw e;
+    }
+  }
+  process.stdout.write(`\r    → ${done + skipped}/${data.length}\n`);
+  ok(`${done} أُنشئت | ${skipped} موجودة مسبقاً | ${stat('saleInv').fail} فشلت`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 7 — فواتير المشتريات
+// ══════════════════════════════════════════════════════════════════════════════
+async function migratePurchaseInvoices(seasonId, systemUserId) {
+  head('STEP 7 — فواتير المشتريات');
+  const data = readJson('ceo.purchaseinvoices.json');
+  console.log(`  ${data.length} فاتورة في الملف`);
+
+  let done = 0, skipped = 0;
+
+  for (const inv of data) {
+    const invNum = inv.invoiceNumber;
+
+    try {
+      if (!DRY_RUN) {
+        const existing = await prisma.purchaseInvoice.findFirst({
+          where: { invoiceNumber: invNum }, select: { id: true },
+        });
+        if (existing) { skipped++; inc('purInv', 'skip'); continue; }
+
+        const supplierId  = MAP.suppliers.get(oid(inv.supplier));
+        const createdById = MAP.users.get(oid(inv.createdBy)) || systemUserId;
+        const approvedById= MAP.users.get(oid(inv.approvedBy)) || null;
+        const invSeasonId = MAP.seasons.get(oid(inv.season)) || seasonId;
+
+        if (!supplierId) {
+          warn(`فاتورة شراء [${invNum}] — مورد مش موجود`);
+          inc('purInv', 'skip'); skipped++; continue;
+        }
+
+        const totalAmount  = num(inv.totalAmount);
+        const paidAmount   = num(inv.paidAmount || 0);
+        const remaining    = totalAmount - paidAmount;
+
+        const itemsData = [];
+        for (const li of (inv.items || [])) {
+          const liCode   = li.itemCode ? String(li.itemCode).trim() : null;
+          const liItemId = MAP.items.get(oid(li.item)) || (liCode ? MAP.itemByCode.get(liCode) : null);
+          if (!liItemId) { inc('purItems', 'skip'); continue; }
+
+          const qty     = num(li.quantity);
+          const weight  = num(li.weight);
+          const totalWt = num(li.totalWeight) || (qty * weight);
+          const price   = num(li.price);
+          const total   = num(li.total) || (totalWt * price);
+
+          itemsData.push({
+            itemId: liItemId, itemCode: liCode || '', itemName: li.itemName || '',
+            quantity: qty, weight, totalWeight: totalWt,
+            price, discount: 0, total,
+          });
+        }
+
+        await prisma.purchaseInvoice.create({
+          data: {
+            invoiceNumber:  invNum,
+            docNumber:      inv.docNumber || invNum,
+            date:           dt(inv.date),
+            supplierId,
+            supplierCode:   inv.supplierCode || '',
+            supplierName:   inv.supplierName || '',
+            warehouse:      inv.warehouse || 'ramses',
+            totalAmount,
+            totalWeight:    num(inv.totalWeight),
+            discountAmount: 0,
+            netAmount:      totalAmount,
+            paidAmount,
+            remainingAmount: remaining,
+            status:         inv.status || 'pending',
+            seasonId:       invSeasonId,
+            notes:          inv.notes || null,
+            createdById,
+            approvedById,
+            approvedAt:     inv.approvedAt ? dt(inv.approvedAt) : null,
+            createdAt:      dt(inv.createdAt),
+            items:          { create: itemsData },
+          },
+        });
+        inc('purInv', 'ok');
+        inc('purItems', 'ok');
+      } else {
+        inc('purInv', 'ok');
+      }
+
+      done++;
+    } catch (e) {
+      fail(`فاتورة شراء [${invNum}]: ${e.message}`);
+      inc('purInv', 'fail');
+      if (STOP) throw e;
+    }
+  }
+  ok(`${done} أُنشئت | ${skipped} موجودة | ${stat('purInv').fail} فشلت`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STEP 8 — العدادات
+// ══════════════════════════════════════════════════════════════════════════════
+async function migrateCounters() {
+  head('STEP 8 — العدادات (global_counters)');
+  const data = readJson('ceo.counters.json');
+
+  for (const c of data) {
+    const name  = c.name?.trim();
+    const value = num(c.value);
+    try {
+      if (!DRY_RUN) {
+        await prisma.globalCounter.upsert({
+          where:  { name },
+          update: { value },
+          create: { name, value },
         });
       }
+      ok(`${name} = ${value}`);
+      inc('counters', 'ok');
+    } catch (e) {
+      fail(`عداد [${name}]: ${e.message}`);
+      inc('counters', 'fail');
     }
   }
-  log(`  ✅ ${data.length} صنف مع مخزونهم`);
 }
 
-// ── 6. PRICELISTS + LINKS ─────────────────────────────────────────────────────
-// PriceList مفيهاش unique غير id — نبحث بـ priceListName + displayOrder يدوياً
-async function migratePriceLists() {
-  const data = readDb1('ceo.pricelists.json');
-  log(`PriceLists: ${data.length} records`);
-
-  for (const pl of data) {
-    const prices = (pl.prices || []).map(p => ({ label: p.label || '', price: num(p.price) }));
-
-    // ابحث بـ priceListName + displayOrder
-    const existing = await prisma.priceList.findFirst({
-      where: { priceListName: pl.priceListName, displayOrder: num(pl.displayOrder) },
-    });
-
-    let created;
-    if (existing) {
-      created = existing; // موجود — استخدمه
-    } else {
-      created = await prisma.priceList.create({
-        data: {
-          priceListName:        pl.priceListName,
-          priceListDescription: pl.priceListDescription || '',
-          displayOrder:         num(pl.displayOrder),
-          displayName:          pl.displayName || '',
-          origin:               pl.origin      || '',
-          unit:                 pl.unit        || '',
-          notes:                pl.notes       || '',
-          prices,
-          defaultPrice:         num(pl.defaultPrice),
-          itemDisplayOrder:     num(pl.itemDisplayOrder),
-          isActive:             pl.isActive ?? true,
-          createdAt:            dt(pl.createdAt),
-        },
-      });
-    }
-
-    // إعادة بناء الـ links دايماً (احذف وأعد)
-    await prisma.priceListItemLink.deleteMany({ where: { priceListId: created.id } });
-
-    for (const li of (pl.linkedItems || [])) {
-      const itemPrismaId = ID.item.get(oid(li.item)) || ID.itemByCode.get(li.itemCode);
-      if (!itemPrismaId) {
-        console.warn(`    ⚠️  صنف غير موجود: ${li.itemCode} في قائمة ${pl.priceListName}`);
-        continue;
-      }
-      await prisma.priceListItemLink.create({
-        data: { priceListId: created.id, itemId: itemPrismaId, itemCode: li.itemCode || '', itemName: li.itemName || '' },
-      });
-    }
-  }
-  log(`  ✅ ${data.length} قائمة أسعار`);
-}
-
-// ── 7. CUSTOMER SEASON BALANCES ───────────────────────────────────────────────
-async function migrateCustomerBalances() {
-  const sales     = readDb1('ceo.saleinvoices.json');
-  const customers = readDb1('ceo.customers.json');
-  const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
-  if (!activeSeason) { log('  ⚠️  مفيش موسم نشط — تخطي'); return; }
-
-  const balMap = new Map();
-  for (const inv of sales) {
-    if (!inv.docNumber?.startsWith('INIT')) continue;
-    const custOid = oid(inv.customer);
-    if (!custOid) continue;
-    const item = inv.items?.[0];
-    if (item) balMap.set(custOid, num(item.price) * num(item.quantity));
-  }
-  for (const c of customers) {
-    const mongoId = oid(c._id);
-    if (!balMap.has(mongoId) && c.initialBalance) balMap.set(mongoId, num(c.initialBalance));
-  }
-
-  log(`CustomerSeasonBalances: ${balMap.size} عميل عنده رصيد ابتدائي`);
-  let done = 0;
-  for (const [mongoId, balance] of balMap) {
-    if (!balance) continue;
-    const prismaId = ID.customer.get(mongoId);
-    if (!prismaId) { console.warn(`    ⚠️  عميل مش في الـ map: ${mongoId}`); continue; }
-    await prisma.customerSeasonBalance.upsert({
-      where:  { customerId_seasonId: { customerId: prismaId, seasonId: activeSeason.id } },
-      update: { openingBalance: balance },
-      create: { customerId: prismaId, seasonId: activeSeason.id, openingBalance: balance },
-    });
-    done++;
-  }
-  log(`  ✅ ${done} رصيد ابتدائي للعملاء`);
-}
-
-// ── 8. SUPPLIER SEASON BALANCES ───────────────────────────────────────────────
-async function migrateSupplierBalances() {
-  const purchases = readDb1('ceo.purchaseinvoices.json');
-  const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
-  if (!activeSeason) { log('  ⚠️  مفيش موسم نشط — تخطي'); return; }
-
-  const balMap = new Map();
-  for (const inv of purchases) {
-    if (!inv.docNumber?.startsWith('INIT')) continue;
-    const suppOid = oid(inv.supplier);
-    if (!suppOid) continue;
-    const item = inv.items?.[0];
-    if (item) balMap.set(suppOid, num(item.price) * num(item.quantity));
-  }
-
-  log(`SupplierSeasonBalances: ${balMap.size} مورد عنده رصيد ابتدائي`);
-  let done = 0;
-  for (const [mongoId, balance] of balMap) {
-    if (!balance) continue;
-    const prismaId = ID.supplier.get(mongoId);
-    if (!prismaId) { console.warn(`    ⚠️  مورد مش في الـ map: ${mongoId}`); continue; }
-    await prisma.supplierSeasonBalance.upsert({
-      where:  { supplierId_seasonId: { supplierId: prismaId, seasonId: activeSeason.id } },
-      update: { openingBalance: balance },
-      create: { supplierId: prismaId, seasonId: activeSeason.id, openingBalance: balance },
-    });
-    done++;
-  }
-  log(`  ✅ ${done} رصيد ابتدائي للموردين`);
-}
-
-// ── 9. PURCHASE INVOICES ──────────────────────────────────────────────────────
-async function migratePurchaseInvoices() {
-  const data = readDb1('ceo.purchaseinvoices.json');
-  const real = data.filter(inv => !inv.docNumber?.startsWith('INIT'));
-  log(`PurchaseInvoices: ${real.length} فاتورة حقيقية (تم تخطي ${data.length - real.length} INIT)`);
-
-  const activeSeason  = await prisma.season.findFirst({ where: { isActive: true } });
-  const defaultUserId = [...ID.user.values()][0];
-
-  for (const inv of real) {
-    const exists = await prisma.purchaseInvoice.findFirst({ where: { invoiceNumber: inv.invoiceNumber } });
-    if (exists) { log(`  ⏭️  موجودة: ${inv.invoiceNumber}`); continue; }
-
-    const suppPrismaId = ID.supplier.get(oid(inv.supplier));
-    if (!suppPrismaId) {
-      console.warn(`    ⚠️  مورد غير موجود: ${oid(inv.supplier)} — تخطي ${inv.invoiceNumber}`);
-      continue;
-    }
-
-    const itemRows = [];
-    for (let idx = 0; idx < (inv.items || []).length; idx++) {
-      const i = inv.items[idx];
-      const itemPrismaId = ID.item.get(oid(i.item)) || ID.itemByCode.get(i.itemCode);
-      if (!itemPrismaId) { console.warn(`    ⚠️  صنف مش موجود: كود=${i.itemCode} — تخطي`); continue; }
-      const qty = num(i.quantity), wt = num(i.weight), pr = num(i.price);
-      const tw  = Math.round(qty * wt * 1000) / 1000;
-      itemRows.push({
-        itemId: itemPrismaId, itemCode: i.itemCode || '', itemName: i.itemName || '',
-        quantity: qty, weight: wt, price: pr, discount: num(i.discount),
-        total: Math.round(tw * pr * 100) / 100, sortOrder: idx,
-      });
-    }
-
-    if (!itemRows.length) { console.warn(`    ⚠️  فاتورة ${inv.invoiceNumber} بدون أصناف — تخطي`); continue; }
-
-    const totalWeight = Math.round(itemRows.reduce((s, i) => s + i.quantity * i.weight, 0) * 1000) / 1000;
-    const totalAmount = Math.round(itemRows.reduce((s, i) => s + i.total, 0) * 100) / 100;
-
-    await prisma.purchaseInvoice.create({
-      data: {
-        invoiceNumber: inv.invoiceNumber, docNumber: String(inv.docNumber),
-        date: dt(inv.date), supplierId: suppPrismaId,
-        supplierCode: inv.supplierCode || '', supplierName: inv.supplierName || '',
-        warehouse: inv.warehouse === 'october' ? 'october' : 'ramses',
-        totalAmount, totalWeight,
-        discountAmount:  num(inv.discountAmount),
-        netAmount:       num(inv.netAmount) || totalAmount,
-        paidAmount:      num(inv.paidAmount),
-        remainingAmount: Math.round((totalAmount - num(inv.paidAmount)) * 100) / 100,
-        status:    inv.status === 'approved' ? 'approved' : 'pending',
-        seasonId:  activeSeason?.id || null, notes: inv.notes || null,
-        createdById:  ID.user.get(oid(inv.createdBy))  || defaultUserId,
-        approvedById: ID.user.get(oid(inv.approvedBy)) || null,
-        approvedAt:   inv.approvedAt ? dt(inv.approvedAt) : null,
-        createdAt:    dt(inv.createdAt),
-        items: { create: itemRows },
-      },
-    });
-    log(`  ✅ فاتورة شراء: ${inv.invoiceNumber}`);
-  }
-}
-
-// ── 10. SEASON COUNTERS ───────────────────────────────────────────────────────
-async function migrateCounters() {
-  const data = readDb1('ceo.counters.json');
-  const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
-  if (!activeSeason) { log('  ⚠️  مفيش موسم نشط — تخطي'); return; }
-
-  log(`SeasonCounters: ${data.length} عداد`);
-  for (const c of data) {
-    await prisma.seasonCounter.upsert({
-      where:  { seasonId_prefix: { seasonId: activeSeason.id, prefix: c.name } },
-      update: { value: c.value },
-      create: { seasonId: activeSeason.id, prefix: c.name, value: c.value },
-    });
-    log(`  ✅ عداد ${c.name}: ${c.value}`);
-  }
-  await prisma.seasonCounter.upsert({
-    where:  { seasonId_prefix: { seasonId: activeSeason.id, prefix: 'RET' } },
-    update: {},
-    create: { seasonId: activeSeason.id, prefix: 'RET', value: 0 },
-  });
-}
-
-// ── MAIN ──────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+//  MAIN
+// ══════════════════════════════════════════════════════════════════════════════
 async function main() {
-  console.log('\n════════════════════════════════════════════════');
-  console.log('  Migration: MongoDB db1 → PostgreSQL (Prisma)');
-  console.log('════════════════════════════════════════════════\n');
+  console.clear();
+  const LINE = '═'.repeat(60);
 
-  const steps = [
-    ['Seasons',                   migrateSeasons],
-    ['Users',                     migrateUsers],
-    ['Customers',                 migrateCustomers],
-    ['Suppliers',                 migrateSuppliers],
-    ['Items + Stocks',            migrateItems],
-    ['PriceLists',                migratePriceLists],
-    ['Customer Opening Balances', migrateCustomerBalances],
-    ['Supplier Opening Balances', migrateSupplierBalances],
-    ['Purchase Invoices',         migratePurchaseInvoices],
-    ['Season Counters',           migrateCounters],
+  console.log(`\n${C.bold}${C.blue}${LINE}`);
+  console.log('  Migration: MongoDB JSON → PostgreSQL (Prisma)');
+  if (DRY_RUN) console.log(`  ${C.yellow}⚠️  DRY RUN — قراءة بس، مفيش كتابة${C.blue}`);
+  console.log(`${LINE}${C.reset}\n`);
+
+  console.log('  الملفات:');
+  const files = [
+    ['ceo.seasons.json',         'مواسم'],
+    ['ceo.users.json',           'مستخدمين'],
+    ['ceo.customers.json',       'عملاء'],
+    ['ceo.suppliers.json',       'موردين'],
+    ['ceo.items.json',           'أصناف'],
+    ['ceo.pricelists.json',      'قوائم أسعار'],
+    ['ceo.saleinvoices.json',    'فواتير مبيعات'],
+    ['ceo.purchaseinvoices.json','فواتير مشتريات'],
+    ['ceo.counters.json',        'عدادات'],
   ];
+  for (const [f, label] of files) {
+    const data = readJson(f);
+    console.log(`     ${label.padEnd(20)} ${data.length} سجل`);
+  }
 
-  for (const [name, fn] of steps) {
-    console.log(`\n─── ${name} ${'─'.repeat(Math.max(0, 44 - name.length))}`);
-    try { await fn(); }
-    catch (err) {
-      console.error(`  ❌ خطأ في ${name}:`, err.message);
-      if (process.env.STOP_ON_ERROR === '1') throw err;
+  // ── Steps ──────────────────────────────────────────────────────────────────
+  await migrateSeasons();
+  await migrateUsers();
+
+  // الموسم النشط
+  let activeSeason = null;
+  if (!DRY_RUN) {
+    activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
+    if (!activeSeason) {
+      fail('مفيش موسم نشط! تأكد إن ceo.seasons.json فيه isActive:true');
+      process.exit(1);
+    }
+    console.log(`\n  ${C.cyan}الموسم النشط: ${activeSeason.name} (${activeSeason.id})${C.reset}`);
+  }
+  const seasonId = activeSeason?.id ?? null;
+
+  // أول مستخدم admin كـ fallback لـ createdBy
+  let systemUserId = null;
+  if (!DRY_RUN) {
+    const admin = await prisma.user.findFirst({ where: { role: 'admin' }, select: { id: true } });
+    systemUserId = admin?.id ?? null;
+  }
+
+  await migrateCustomers(seasonId);
+  await migrateSuppliers();
+  await migrateItems(seasonId);
+  await migratePriceLists();
+  await migrateSaleInvoices(seasonId, systemUserId);
+  await migratePurchaseInvoices(seasonId, systemUserId);
+  await migrateCounters();
+
+  // ── التقرير النهائي ────────────────────────────────────────────────────────
+  console.log(`\n${C.bold}${C.green}${LINE}`);
+  console.log('  ✅  Migration اكتملت!');
+  console.log(`${LINE}${C.reset}`);
+
+  if (!DRY_RUN) {
+    const [dbSeasons, dbUsers, dbCustomers, dbSuppliers, dbItems, dbStocks,
+           dbPriceLists, dbLinks, dbSaleInv, dbPurInv, dbCounters] = await Promise.all([
+      prisma.season.count(),
+      prisma.user.count(),
+      prisma.customer.count(),
+      prisma.supplier.count(),
+      prisma.item.count(),
+      prisma.itemStock.count(),
+      prisma.priceList.count(),
+      prisma.priceListItemLink.count(),
+      prisma.saleInvoice.count(),
+      prisma.purchaseInvoice.count(),
+      prisma.globalCounter.count(),
+    ]);
+
+    console.log(`\n  قاعدة البيانات دلوقتي:`);
+    const rows = [
+      ['مواسم',              dbSeasons],
+      ['مستخدمين',           dbUsers],
+      ['عملاء',              dbCustomers],
+      ['موردين',             dbSuppliers],
+      ['أصناف',              dbItems],
+      ['سجلات مخزون',        dbStocks],
+      ['قوائم أسعار',        dbPriceLists],
+      ['روابط قوائم-أصناف',  dbLinks],
+      ['فواتير مبيعات',      dbSaleInv],
+      ['فواتير مشتريات',     dbPurInv],
+      ['عدادات',             dbCounters],
+    ];
+    for (const [label, count] of rows) {
+      console.log(`     ${label.padEnd(22)} ${String(count).padStart(5)}`);
     }
   }
 
-  const [seasons, users, customers, suppliers, items, priceLists,
-         custBal, suppBal, purchInv] = await Promise.all([
-    prisma.season.count(), prisma.user.count(), prisma.customer.count(),
-    prisma.supplier.count(), prisma.item.count(), prisma.priceList.count(),
-    prisma.customerSeasonBalance.count(), prisma.supplierSeasonBalance.count(),
-    prisma.purchaseInvoice.count(),
-  ]);
-
-  console.log('\n════════════════════════════════════════════════');
-  console.log('  ✅ Migration اتكملت!');
-  console.log('════════════════════════════════════════════════');
-  console.log(`     مواسم:                 ${seasons}`);
-  console.log(`     مستخدمين:              ${users}`);
-  console.log(`     عملاء:                 ${customers}`);
-  console.log(`     موردين:                ${suppliers}`);
-  console.log(`     أصناف:                 ${items}`);
-  console.log(`     قوائم أسعار:           ${priceLists}`);
-  console.log(`     أرصدة افتتاحية عملاء:  ${custBal}`);
-  console.log(`     أرصدة افتتاحية موردين: ${suppBal}`);
-  console.log(`     فواتير شراء:           ${purchInv}`);
+  // ملخص الأخطاء
+  const anyFail = Object.values(S).some(s => s.fail > 0);
+  if (anyFail) {
+    console.log(`\n${C.yellow}  ⚠️  في سجلات فشلت:${C.reset}`);
+    for (const [step, s] of Object.entries(S)) {
+      if (s.fail > 0) console.log(`     ${step.padEnd(18)} → فشل: ${s.fail}`);
+    }
+  } else {
+    console.log(`\n  ${C.green}${C.bold}🎉 كل حاجة اتعملت بنجاح!${C.reset}`);
+  }
   console.log('');
 }
 
 main()
-  .catch(err => { console.error('\n❌ Migration فشلت:', err); process.exit(1); })
+  .catch(e => { console.error('\n  ❌ خطأ:', e); process.exit(1); })
   .finally(() => prisma.$disconnect());

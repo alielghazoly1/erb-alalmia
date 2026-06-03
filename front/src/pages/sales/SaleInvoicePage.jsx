@@ -1,17 +1,17 @@
+// ─── SaleInvoicePage.jsx ───────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
-import { useSaleInvoiceForm } from './hooks/useSaleInvoiceForm';
-import InvoiceHeader         from './components/InvoiceHeader';
-import PaymentSection        from './components/PaymentSection';
-import ItemsTable            from './components/ItemsTable';
-import ItemInputRow          from './components/ItemInputRow';
-import InvoiceTotals         from './components/InvoiceTotals';
-import AdminSearchPanel      from './components/AdminSearchPanel';
-import CustomerBalanceCard   from './components/CustomerBalanceCard';
-import InvoicePrintView      from './components/InvoicePrintView';
+import { useSaleInvoiceForm }  from './hooks/useSaleInvoiceForm';
+import InvoiceHeader           from './components/InvoiceHeader';
+import PaymentSection          from './components/PaymentSection';
+import InvoiceTotals           from './components/InvoiceTotals';
+import AdminSearchPanel        from './components/AdminSearchPanel';
+import CustomerBalanceCard     from './components/CustomerBalanceCard';
+import InvoicePrintView        from './components/InvoicePrintView';
+import InvoiceItemsForm        from '../../components/common/InvoiceItemsForm';
 
 const statusLabel = {
   approved:  { text: 'مُوافق',  cls: 'bg-green-100 text-green-700' },
@@ -26,7 +26,6 @@ export default function SaleInvoicePage() {
   const location   = useLocation();
   const isViewMode = !!id;
 
-  // ── قراءة back URL من location.state (لما بنيجي من كشف حساب عميل) ────────
   const backTo    = location.state?.backTo;
   const backLabel = location.state?.backLabel || 'رجوع';
 
@@ -36,7 +35,6 @@ export default function SaleInvoicePage() {
     else navigate('/sales');
   };
 
-  // ── view mode ─────────────────────────────────────────────────────────────
   const [existingInvoice, setExistingInvoice] = useState(null);
   useEffect(() => {
     if (!isViewMode) return;
@@ -47,7 +45,7 @@ export default function SaleInvoicePage() {
 
   const form = useSaleInvoiceForm();
 
-  // ── view mode: عرض الفاتورة في صفحة بـ URL مستقل ──────────────────────────
+  // ── view mode ──────────────────────────────────────────────────────────────
   if (isViewMode) {
     if (!existingInvoice) return (
       <div className="flex flex-col items-center justify-center py-32 text-gray-400 gap-4">
@@ -60,20 +58,13 @@ export default function SaleInvoicePage() {
     );
     return (
       <div>
-        {/* شريط العودة */}
         <div className="flex items-center justify-between mb-4 print:hidden">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors font-medium"
-          >
+          <button onClick={handleBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors font-medium">
             ← {backLabel}
           </button>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 font-mono">{existingInvoice.invoiceNumber}</span>
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
+            <button onClick={() => window.print()} className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
               🖨️ طباعة
             </button>
           </div>
@@ -92,7 +83,7 @@ export default function SaleInvoicePage() {
     );
   }
 
-  // ── print preview ─────────────────────────────────────────────────────────
+  // ── print preview ──────────────────────────────────────────────────────────
   if (form.showPrint && form.savedRows.length > 0) {
     return (
       <InvoicePrintView
@@ -104,12 +95,7 @@ export default function SaleInvoicePage() {
             const qty = Number(r.quantity) || 0;
             const wt  = Number(r.weight)   || 0;
             const tw  = r._totalWeight != null ? Number(r._totalWeight) : Math.round(qty * wt * 1000) / 1000;
-            return {
-              itemCode: r.itemCode, itemName: r.itemName,
-              quantity: qty, weight: wt, price: Number(r.price),
-              totalWeight: tw,
-              total: Math.round(tw * (Number(r.price) || 0) * 100) / 100,
-            };
+            return { itemCode: r.itemCode, itemName: r.itemName, quantity: qty, weight: wt, price: Number(r.price), totalWeight: tw, total: Math.round(tw * (Number(r.price)||0) * 100) / 100 };
           }),
           totalAmount: form.totalAmount,
           paymentMethod: form.paymentMethod,
@@ -121,11 +107,9 @@ export default function SaleInvoicePage() {
     );
   }
 
-  const inputRows = form.rows.filter(r => !r.saved);
-
   return (
     <div className="max-w-6xl mx-auto">
-      {/* ── هيدر الصفحة ──────────────────────────────────────────────────── */}
+      {/* ── هيدر ── */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -142,12 +126,10 @@ export default function SaleInvoicePage() {
             </div>
           )}
         </div>
-
         <div className="flex gap-2 flex-wrap items-center">
           {form.editingInvoice && (
             <button onClick={form.cancelEdit} className="btn-secondary text-sm">× إلغاء</button>
           )}
-
           <button className="btn-secondary" onClick={() => form.setShowPrint(true)}>🖨️ معاينة</button>
           <button
             className={`btn-primary ${form.editingInvoice ? '!bg-amber-600 hover:!bg-amber-700' : ''}`}
@@ -161,8 +143,6 @@ export default function SaleInvoicePage() {
         </div>
       </div>
 
-      {/* ── بطاقة البيع بالسالب ──────────────────────────────────────────── */}
-      {/* تظهر لأي شخص عنده الصلاحية (أدمن أو يوزر) — القيمة الفعلية من الـ permissions */}
       {form.canNegativeSale && (
         <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-orange-50 border border-orange-200 rounded-xl text-sm text-orange-700">
           <span className="text-base">➖</span>
@@ -170,7 +150,6 @@ export default function SaleInvoicePage() {
         </div>
       )}
 
-      {/* ── بحث عن فاتورة للتعديل — للأدمن واليوزر اللي عنده canEditInvoice ── */}
       {form.canEditInvoice && !form.editingInvoice && (
         <AdminSearchPanel
           show={form.showAdminSearch}
@@ -183,7 +162,6 @@ export default function SaleInvoicePage() {
         />
       )}
 
-      {/* ── سبب التعديل ───────────────────────────────────────────────────── */}
       {form.editingInvoice && (
         <div className="card mb-4 border-2 border-amber-200 bg-amber-50">
           <label className="block text-sm font-semibold text-amber-700 mb-1">📝 سبب التعديل (اختياري)</label>
@@ -194,7 +172,6 @@ export default function SaleInvoicePage() {
 
       <div className="flex gap-4">
         <div className="flex-1 min-w-0">
-          {/* ── بطاقة الفاتورة الرئيسية ─────────────────────────────────── */}
           <div className="card mb-4 border-2 border-blue-100">
             <InvoiceHeader
               docNumber={form.docNumber}   docError={form.docError}  docChecking={form.docChecking}
@@ -222,31 +199,27 @@ export default function SaleInvoicePage() {
               onInstapayChange={form.setInstapayAmount}
             />
 
-            <ItemsTable
-              savedRows={form.savedRows}
-              totalAmount={form.totalAmount}
-              totalWeightAll={form.totalWeightAll}
+            {/* ✅ الكومبونانت المشترك */}
+            <InvoiceItemsForm
+              rows={form.rows}
+              totalWeightInput={form.totalWeightInput}
+              showPrice={true}
+              qtyRefs={form.qtyRefs}
+              wtRefs={form.wtRefs}
+              prRefs={form.prRefs}
+              twRefs={form.twRefs}
+              itemRefs={form.itemRefs}
+              onItemSelect={form.handleItemSelect}
+              onUpdateRow={form.updateRow}
+              onQuantityChange={form.handleQuantityChange}
+              onUnitWeightChange={form.handleUnitWeightChange}
+              onTotalWeightChange={form.handleTotalWeightChange}
+              onKeyDown={form.handleKeyDown}
+              onSaveRow={form.handleSaveRow}
               onEditRow={form.handleEditRow}
+              onCancelRow={form.handleCancelRow}
               onDeleteRow={form.handleDeleteRow}
             />
-
-            {inputRows.map(row => (
-              <ItemInputRow
-                key={row.id}
-                row={row}
-                totalWeightInput={form.totalWeightInput}
-                itemRefs={form.itemRefs}
-                qtyRefs={form.qtyRefs}
-                wtRefs={form.wtRefs}
-                prRefs={form.prRefs}
-                onItemSelect={form.handleItemSelect}
-                onUpdateRow={form.updateRow}
-                onTotalWeightChange={form.handleTotalWeightChange}
-                onKeyDown={form.handleKeyDown}
-                onSaveRow={form.handleSaveRow}
-                onCancelRow={form.handleCancelRow}
-              />
-            ))}
           </div>
 
           <InvoiceTotals
@@ -259,7 +232,6 @@ export default function SaleInvoicePage() {
           />
         </div>
 
-        {/* ── كشف حساب العميل الآجل ───────────────────────────────────────── */}
         {!form.isCash && (
           <CustomerBalanceCard customer={form.customer} balance={form.customerBalance} />
         )}

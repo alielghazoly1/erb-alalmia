@@ -1,14 +1,4 @@
 // ─── controllers/itemMovementsController.js ──────────────────────────────────
-// حركات الأصناف — رصيد صحيح 100% مع running balance و pagination احترافي
-//
-// الخوارزمية:
-//   1. نحسب openingBalance  = مجموع الحركات قبل startDate (لو في فلتر)
-//   2. نجيب حركات الفترة    مرتبة ASC مع pagination
-//   3. لكل صفحة > 1 نحسب   مجموع الصفحات السابقة لتصحيح نقطة البداية
-//   4. نحسب running balance  لكل حركة في الصفحة بـ Decimal.js (تجنب 1.11e-16)
-//   5. نرجع إجماليات الفترة الكاملة (مش الصفحة بس)
-//
-// مُحسَّن لـ 100K+ صنف: aggregate SQL بدل findMany للحسابات
 
 const prisma      = require('../config/db');
 const { safeNum } = require('../utils/decimalHelper');

@@ -8,8 +8,8 @@
   "unit": "كرتون",
   "stock": {
     "ramses": {
-      "quantity": -10,
-      "weight": -10
+      "quantity": 0,
+      "weight": 0
     },
     "october": {
       "quantity": 0,
@@ -18,7 +18,7 @@
   },
   "defaultWeight": 1,
   "lastPurchasePrice": 0,
-  "lastSalePrice": 1200,
+  "lastSalePrice": 0,
   "isRawMaterial": false,
   "isActive": true,
   "notes": "",

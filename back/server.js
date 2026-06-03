@@ -6,8 +6,8 @@ const dotenv       = require('dotenv');
 const path         = require('path');
 
 // ── Load .env أول حاجة قبل أي require تاني ───────────────────────────────────
-dotenv.config({ path: path.join(__dirname, '.env') });
-
+// dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config();
 // ✅ SECURITY: Validate JWT_SECRET at startup
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   console.error('[FATAL] JWT_SECRET must be set and at least 32 characters long');

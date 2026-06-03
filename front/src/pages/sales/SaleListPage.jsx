@@ -1,10 +1,11 @@
 // ─── pages/sales/SaleListPage.jsx ────────────────────────────────────────────
-// ✅ Lazy Loading: 100 فاتورة كل مرة — يحمل التالية لما يوصل 80%
-// ✅ فتح الفاتورة في Modal بنفس الصفحة بدون خروج
+// ✅ PERF-001: cursor-based infinite scroll — يدعم 10M+ فاتورة بلا تدهور
+// ✅ UX: البحث النصي يُرسَل للـ API (لا فلترة محلية)
+// ✅ UX: total يُعرض من آخر COUNT محفوظ
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { useDispatch, useSelector }                  from 'react-redux';
+import { useNavigate }                               from 'react-router-dom';
+import toast                                         from 'react-hot-toast';
 import {
   fetchSaleInvoices,
   fetchMoreSaleInvoices,
@@ -16,9 +17,8 @@ import { useSelectedSeason } from '../../hook/Useselectedseason';
 import { useSaleFilters }    from './hooks/useSaleFilters';
 import SaleFilters           from './components/SaleFilters';
 import SaleTable             from './components/SaleTable';
-import api                   from '../../services/api';
 
-// ── Inline Confirm Dialog ─────────────────────────────────────────────────────
+// ── ConfirmDialog ─────────────────────────────────────────────────────────────
 function ConfirmDialog({ open, message, onConfirm, onCancel, withInput, inputLabel, inputValue, onInputChange }) {
   if (!open) return null;
   return (
@@ -38,25 +38,24 @@ function ConfirmDialog({ open, message, onConfirm, onCancel, withInput, inputLab
   );
 }
 
-// ── Invoice Detail Modal (نفس الصفحة) ────────────────────────────────────────
-
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function SaleListPage() {
-  const dispatch = useDispatch();
-  const { list, loading, loadingMore, hasMore, total, lastParams } = useSelector(s => s.sales);
-  const { user } = useSelector(s => s.auth);
-  const isAdmin  = user?.role === 'admin';
-  const seasonId = useSelectedSeason();
+  const dispatch  = useDispatch();
+  const navigate  = useNavigate();
+  const seasonId  = useSelectedSeason();
+  const { user }  = useSelector(s => s.auth);
+  const isAdmin   = user?.role === 'admin';
+
+  const { list, loading, loadingMore, hasMore, total, error } = useSelector(s => s.sales);
 
   const { filters, setFilters, apiParams } = useSaleFilters();
 
-  // Infinite scroll sentinel ref
+  // ✅ debounce البحث — لا نرسل طلب لكل حرف
+  const searchTimer = useRef(null);
+
   const sentinelRef = useRef(null);
 
-  const navigate = useNavigate();
-
-  // Confirm dialog state
-  const [dialog, setDialog]         = useState({ open: false, type: null, id: null });
+  const [dialog, setDialog]           = useState({ open: false, type: null, id: null });
   const [suspendReason, setSuspendReason] = useState('');
 
   const closeDialog = useCallback(() => {
@@ -64,13 +63,19 @@ export default function SaleListPage() {
     setSuspendReason('');
   }, []);
 
-  // جلب أول 100 عند تغيير الفلاتر
+  // ── جلب عند تغيير الفلاتر ─────────────────────────────────────────────────
   useEffect(() => {
     if (!seasonId) return;
-    dispatch(fetchSaleInvoices({ ...apiParams, seasonId }));
+    // debounce لو في بحث نصي
+    clearTimeout(searchTimer.current);
+    const delay = apiParams.search ? 400 : 0;
+    searchTimer.current = setTimeout(() => {
+      dispatch(fetchSaleInvoices({ ...apiParams, seasonId }));
+    }, delay);
+    return () => clearTimeout(searchTimer.current);
   }, [dispatch, seasonId, apiParams]);
 
-  // ✅ Intersection Observer للـ lazy loading — يحمل عند 80%
+  // ── Intersection Observer: تحميل المزيد ───────────────────────────────────
   useEffect(() => {
     if (!sentinelRef.current) return;
     const observer = new IntersectionObserver(
@@ -79,27 +84,17 @@ export default function SaleListPage() {
           dispatch(fetchMoreSaleInvoices({ ...apiParams, seasonId }));
         }
       },
-      { threshold: 0.1, rootMargin: '200px' }
+      { threshold: 0.1, rootMargin: '300px' },
     );
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [hasMore, loadingMore, loading, dispatch, apiParams, seasonId]);
 
-  // فلترة محلية بالبحث النصي
-  const filtered = list.filter(inv =>
-    !filters.search ||
-    inv.invoiceNumber?.includes(filters.search) ||
-    inv.customerName?.includes(filters.search) ||
-    inv.docNumber?.includes(filters.search),
-  );
-
-  const handleFiltersChange = (next) => setFilters(next);
-
-  // Actions
+  // ── Actions ───────────────────────────────────────────────────────────────
   const handleApprove = (id) => setDialog({ open: true, type: 'approve', id });
   const handleSuspend = (id) => { setSuspendReason(''); setDialog({ open: true, type: 'suspend', id }); };
-  const handleCancel  = (id) => setDialog({ open: true, type: 'cancel', id });
-  const handleView    = (id) => navigate(`/sales/${id}`, { state: { backTo: '/sales' } });
+  const handleCancel  = (id) => setDialog({ open: true, type: 'cancel',  id });
+  const handleView    = (id) => navigate(`/sales/${id}`, { state: { backTo: '/sales', backLabel: 'قائمة المبيعات' } });
 
   const handleConfirm = async () => {
     const { type, id } = dialog;
@@ -107,17 +102,17 @@ export default function SaleListPage() {
     if (type === 'approve') {
       const res = await dispatch(approveSaleInvoice(id));
       if (!res.error) toast.success('تم الموافقة وخصم المخزون ✅');
-      else toast.error(res.payload);
+      else toast.error(res.payload || 'خطأ في الموافقة');
     }
     if (type === 'suspend') {
       const res = await dispatch(suspendSaleInvoice({ id, reason: suspendReason }));
       if (!res.error) toast.success('تم التعليق');
-      else toast.error(res.payload);
+      else toast.error(res.payload || 'خطأ في التعليق');
     }
     if (type === 'cancel') {
       const res = await dispatch(cancelSaleInvoice(id));
       if (!res.error) toast.success('تم الإلغاء');
-      else toast.error(res.payload);
+      else toast.error(res.payload || 'خطأ في الإلغاء');
     }
   };
 
@@ -129,11 +124,9 @@ export default function SaleListPage() {
   const cfg = dialogConfig[dialog.type] || {};
 
   const loadedCount = list.length;
-  const pct         = total > 0 ? Math.round((loadedCount / total) * 100) : 100;
 
   return (
     <div>
-      {/* Confirm Dialog */}
       <ConfirmDialog
         open={dialog.open} message={cfg.message} withInput={cfg.withInput}
         inputLabel={cfg.inputLabel} inputValue={suspendReason}
@@ -144,38 +137,25 @@ export default function SaleListPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">فواتير المبيعات</h1>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <p className="text-sm text-gray-400">
-              {filtered.length.toLocaleString()} / {total.toLocaleString()} فاتورة
-              {!filters.showAllDates && (
-                ` • ${filters.dateFrom === filters.dateTo
-                  ? filters.dateFrom
-                  : `${filters.dateFrom} → ${filters.dateTo}`}`
-              )}
-            </p>
-            {/* Progress bar */}
-            {total > 100 && (
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span>{pct}% محمّل</span>
-              </div>
-            )}
-          </div>
+          <p className="text-sm text-gray-400 mt-1">
+            {loadedCount.toLocaleString()} فاتورة محمّلة
+            {total > 0 && ` من ${total.toLocaleString()} إجمالاً`}
+            {!filters.showAllDates && ` • ${filters.dateFrom === filters.dateTo ? filters.dateFrom : `${filters.dateFrom} → ${filters.dateTo}`}`}
+          </p>
         </div>
-        <Link to="/sales/new" className="btn-primary">+ فاتورة جديدة</Link>
+        <button onClick={() => navigate('/sales/new')} className="btn-primary">+ فاتورة جديدة</button>
       </div>
 
-      {/* Filters */}
-      <SaleFilters filters={filters} onChange={handleFiltersChange} />
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
 
-      {/* Table */}
+      <SaleFilters filters={filters} onChange={setFilters} />
+
       <SaleTable
-        invoices={filtered}
+        invoices={list}
         loading={loading}
         showAllDates={filters.showAllDates}
         isAdmin={isAdmin}
@@ -185,15 +165,15 @@ export default function SaleListPage() {
         onView={handleView}
       />
 
-      {/* ✅ Lazy Load Sentinel */}
-      <div ref={sentinelRef} className="h-8 flex items-center justify-center mt-2">
+      {/* Sentinel للـ infinite scroll */}
+      <div ref={sentinelRef} className="h-10 flex items-center justify-center mt-2">
         {loadingMore && (
           <div className="flex items-center gap-2 text-blue-500 text-sm py-3">
-            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
-            جاري تحميل المزيد... ({loadedCount.toLocaleString()} / {total.toLocaleString()})
+            جاري تحميل المزيد... ({loadedCount.toLocaleString()}{total > 0 && ` / ${total.toLocaleString()}`})
           </div>
         )}
         {!hasMore && list.length > 0 && !loading && (

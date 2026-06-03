@@ -1,64 +1,79 @@
+// ─── MfgItemInputRow.jsx ──────────────────────────────────────────────────────
+// ✅ ARCH-001: موحَّد مع InvoiceItemsForm — نفس الترتيب والمنطق
+//
+// Layout محسّن:
+//   سطر 1: [صنف (flex)] [عدد]
+//   سطر 2: [وزن/وحدة readonly] [وزن كلي *] [زر]
+//
+// ✅ نتايج البحث فوق (في ItemSearch)
+// ✅ وزن/وحدة readonly — ثابت من الصنف
+// ✅ وزن كلي تحت سطر الصنف والعدد
+// ✅ Enter ينقل للخانة الجاية
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { memo } from 'react';
 import ItemSearch from '../../../components/common/ItemSearch';
 import { calcTotalWeight, fmtW } from '../hooks/useManufacturingItems';
 
-/**
- * MfgItemInputRow
- * ───────────────
- * نفس بالضبط ItemInputRow في فاتورة المبيعات:
- *  - sticky bottom-0 داخل الـ card
- *  - Enter ينتقل: صنف → كراتين → وزن/كرتون → وزن كلي → إضافة
- *  - الوزن الكلي اليدوي يحسب الكراتين (reverse)
- *  - بدون السعر (مش محتاجينه في التصنيع)
- */
+const fmt4 = (v) => {
+  const n = parseFloat(v);
+  if (isNaN(n) || Math.abs(n) < 1e-10) return '0';
+  return parseFloat(n.toFixed(4)).toString();
+};
+
 const MfgItemInputRow = memo(function MfgItemInputRow({
   row, totalWeightInput, checkStock,
   itemRefs, qtyRefs, wtRefs, twRefs,
-  onItemSelect, onUpdateRow, onTotalWeightChange,
+  onItemSelect,
+  onQuantityChange, onUnitWeightChange, onTotalWeightChange,
+  onUpdateRow,
   onKeyDown, onSaveRow, onCancelRow,
 }) {
-  const tw       = calcTotalWeight(row);
-  const isManual = row.totalWeightManual !== '' && row.totalWeightManual !== undefined;
+  const _onQty = onQuantityChange ?? ((rowId, v) => onUpdateRow?.(rowId, 'quantity', v));
+
+  const twInputVal = totalWeightInput[row.id] || '';
+  const tw         = calcTotalWeight(row, twInputVal || null);
+  const uw         = parseFloat(row.unitWeight) || 0;
+  const hasTw      = parseFloat(twInputVal) > 0;
+
+  const displayQty = uw > 0 && tw > 0 ? fmt4(tw / uw) : '';
+
+  const awt  = row.availableWeight !== undefined ? parseFloat(row.availableWeight) : null;
+  const over = awt !== null && tw > awt && awt >= 0;
 
   return (
     <div className={`
       rounded-xl border-2 p-3
       sticky bottom-0 z-10 bg-white
       shadow-[0_-4px_16px_rgba(0,0,0,0.08)]
-      ${row.editing
-        ? 'border-amber-400 bg-amber-50/95'
-        : 'border-green-200 bg-green-50/95'}
+      ${row.editing ? 'border-amber-400 bg-amber-50/95' :
+        over        ? 'border-orange-300 bg-orange-50/95' :
+                      'border-green-200 bg-green-50/95'}
     `}>
-      {/* صنف محدد */}
-      {row.itemName && (
-        <p className="text-xs text-green-700 font-semibold mb-0.5 truncate">✓ {row.itemName}</p>
-      )}
-
-      {/* تحذير المخزون */}
-      {checkStock && row.availableQty !== undefined && (
-        <p className={`text-xs mb-1 ${
-          row.availableQty <= 0
-            ? 'text-red-500'
-            : row.availableQty <= 5
-              ? 'text-amber-600'
-              : 'text-green-600'
-        }`}>
-          {row.availableQty <= 0 ? '🔴' : row.availableQty <= 5 ? '🟡' : '🟢'}
-          {row.availableQty <= 0
-            ? ` سيُصرف بالسالب (${row.availableQty} كرتون)`
-            : ` متاح: ${row.availableQty} كرتون`}
-        </p>
-      )}
 
       <p className="text-xs font-semibold text-gray-500 mb-2">
         {row.editing ? '✏️ تعديل صنف' : '➕ أضف صنف'}
       </p>
 
-      {/* الحقول الرئيسية */}
-      <div className="grid grid-cols-12 gap-2 items-end">
+      {/* رصيد المخزون */}
+      {checkStock && awt !== null && (
+        <p className={`text-xs mb-2 font-medium ${
+          awt <= 0 ? 'text-red-500' : over ? 'text-orange-600' : 'text-green-600'
+        }`}>
+          {awt <= 0 ? '🔴' : over ? '⚠️' : '🟢'}
+          {awt <= 0
+            ? ` لا يوجد رصيد (${fmtW(awt)} ك)`
+            : over
+              ? ` متاح: ${fmtW(awt)} ك — يتجاوز بـ ${fmtW(tw - awt)} ك`
+              : ` متاح: ${fmtW(awt)} ك (${fmt4(uw > 0 ? awt / uw : 0)} كرتون)`}
+        </p>
+      )}
+
+      {/* ── سطر 1: الصنف + العدد ── */}
+      <div className="flex gap-2 mb-2 items-end">
 
         {/* الصنف */}
-        <div className="col-span-5">
+        <div className="flex-1 min-w-0">
           <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
           <ItemSearch
             onSelect={item => onItemSelect(row.id, item)}
@@ -71,99 +86,93 @@ const MfgItemInputRow = memo(function MfgItemInputRow({
           />
         </div>
 
-        {/* الكراتين */}
-        <div className="col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            الكراتين
-            {row.weight && (
-              <span className="text-blue-400 mr-1">×{parseFloat(row.weight).toFixed(2)}ك</span>
-            )}
-          </label>
+        {/* العدد */}
+        <div className="w-24 shrink-0">
+          <label className="block text-xs font-medium text-gray-500 mb-1">العدد</label>
           <input
             ref={el => (qtyRefs.current[row.id] = el)}
-            type="number" min="0" step="0.001"
-            className="input-field text-center font-bold text-base"
+            type="number" min="0" step="any"
+            className="input-field text-center"
             placeholder="0"
             value={row.quantity}
-            onChange={e => onUpdateRow(row.id, 'quantity', e.target.value)}
+            onChange={e => _onQty(row.id, e.target.value)}
             onKeyDown={e => onKeyDown(e, row.id, 'quantity')}
           />
         </div>
+      </div>
 
-        {/* وزن/كرتون */}
-        <div className="col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            وزن/كرتون
-            {isManual && <span className="text-gray-300 mr-1">(مُعطَّل)</span>}
+      {/* ── سطر 2: وزن/وحدة (readonly) + وزن كلي + زر ── */}
+      <div className="flex gap-2 items-end">
+
+        {/* وزن/وحدة — readonly ثابت */}
+        <div className="w-28 shrink-0">
+          <label className="block text-xs font-medium text-gray-400 mb-1">
+            وزن/وحدة
+            <span className="text-gray-300 mr-1 font-normal text-[10px]">(ثابت)</span>
           </label>
           <input
-            ref={el => (wtRefs.current[row.id] = el)}
-            type="number" min="0" step="0.001"
-            className={`input-field text-center ${isManual ? 'opacity-40' : ''}`}
+            type="number"
+            className="input-field text-center bg-gray-50 text-gray-400 cursor-not-allowed select-none opacity-70"
             placeholder="0.000"
-            value={row.weight}
-            onChange={e => onUpdateRow(row.id, 'weight', e.target.value)}
-            onKeyDown={e => onKeyDown(e, row.id, 'weight')}
+            value={row.unitWeight || ''}
+            disabled
+            tabIndex={-1}
           />
         </div>
 
-        {/* الوزن الكلي المحسوب */}
-        <div className="col-span-2 flex flex-col items-center gap-0.5">
-          <p className="text-xs text-gray-400">الوزن الكلي</p>
-          <p className={`text-sm font-bold leading-tight ${
-            tw > 0
-              ? isManual ? 'text-blue-600' : 'text-green-600'
-              : 'text-gray-300'
-          }`}>
-            {tw > 0 ? `${fmtW(tw)} ك` : '—'}
-          </p>
-          {isManual && (
-            <span className="text-xs text-blue-400 leading-none">يدوي</span>
+        {/* الوزن الكلي */}
+        <div className="flex-1 min-w-0">
+          <label className="block text-xs font-medium text-blue-600 mb-1">
+            الوزن الكلي (ك) *
+          </label>
+          <input
+            ref={el => (twRefs.current[row.id] = el)}
+            type="number" min="0" step="any"
+            className={`input-field text-center font-bold text-base border-2 ${
+              over  ? 'bg-red-50 border-red-300' :
+              hasTw ? 'border-blue-400 bg-blue-50' :
+                      'border-blue-200'
+            }`}
+            placeholder="0.000"
+            value={twInputVal}
+            onChange={e => onTotalWeightChange(row.id, e.target.value)}
+            onKeyDown={e => onKeyDown(e, row.id, 'totalWeight')}
+          />
+          {displayQty && (
+            <p className="text-xs text-gray-500 mt-0.5 text-center">= {displayQty} كرتون</p>
           )}
         </div>
 
         {/* زر الإضافة */}
-        <div className="col-span-1 flex flex-col gap-1">
+        <div className="shrink-0 flex flex-col gap-1">
           <button
             onClick={() => onSaveRow(row.id)}
-            className="btn-primary px-2 py-2 text-sm"
-            disabled={!row.item || !row.quantity || (!row.weight && !row.totalWeightManual)}
+            disabled={!row.item || !row.unitWeight}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+              over ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'btn-primary'
+            }`}
+            title={over ? 'تحذير: يتجاوز الرصيد المتاح' : ''}
           >
-            {row.editing ? '✓' : '✓ أضف'}
+            {row.editing ? '✓ حفظ' : '＋ أضف'}
           </button>
           {row.editing && (
             <button
               onClick={() => onCancelRow(row.id)}
-              className="btn-secondary px-2 py-1 text-xs"
+              className="px-4 py-1 rounded-lg text-xs text-gray-500 hover:bg-gray-100 text-center"
             >
-              ×
+              إلغاء
             </button>
           )}
         </div>
       </div>
 
-      {/* الوزن الكلي اليدوي — يحسب الكراتين تلقائياً (reverse) */}
-      <div className="flex items-center gap-2 mt-2">
-        <div className="flex-1">
-          <input
-            ref={el => (twRefs.current[row.id] = el)}
-            type="number" min="0" step="0.001"
-            className="input-field text-center text-xs bg-blue-50/60 py-1.5"
-            placeholder="أو أدخل الوزن الكلي (يحسب الكراتين تلقائياً)"
-            value={totalWeightInput[row.id] || ''}
-            onChange={e => onTotalWeightChange(row.id, e.target.value)}
-            onKeyDown={e => onKeyDown(e, row.id, 'totalWeight')}
-            title="لو عندك الوزن الكلي مباشرة اكتبه هنا، هيحسب الكراتين تلقائياً"
-          />
+      {/* ملخص */}
+      {tw > 0 && (
+        <div className="mt-2 flex items-center gap-3 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+          <span>📦 وزن كلي: <strong>{fmtW(tw)} ك</strong></span>
+          {uw > 0 && <span>| عدد: <strong>{fmt4(tw / uw)} كرتون</strong></span>}
         </div>
-
-        {/* معلومة الحساب العكسي */}
-        {isManual && row.weight && (
-          <div className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-lg whitespace-nowrap">
-            ≈ {fmtW((parseFloat(totalWeightInput[row.id]) || 0) / (parseFloat(row.weight) || 1), 2)} كرتون
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 });

@@ -2,6 +2,7 @@
 const jwt    = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/db');
+const userCache = require('../utils/userCache');
 
 const TOKEN_EXPIRES_IN = '30d';
 const COOKIE_MAX_AGE   = 30 * 24 * 60 * 60 * 1000;
@@ -207,6 +208,8 @@ const updateUser = async (req, res) => {
       where:   { id: req.params.id },
       include: { permissions: { select: { permission: true, granted: true } } },
     });
+    // ✅ PERF-AUTH-001: امسح الكاش عشان التغييرات تتفعّل فوراً
+    userCache.invalidateUser(req.params.id);
     res.json(serializeUser(updated));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -220,6 +223,8 @@ const deleteUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'المستخدم مش موجود' });
     if (user.role === 'admin') return res.status(400).json({ message: 'مينفعش تحذف أدمن' });
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
+    // ✅ PERF-AUTH-001: امسح الكاش عشان التعطيل يسري فوراً
+    userCache.invalidateUser(req.params.id);
     res.json({ message: 'تم الحذف' });
   } catch (err) {
     res.status(500).json({ message: err.message });

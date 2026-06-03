@@ -5,7 +5,7 @@
 'use strict';
 
 const prisma         = require('../config/db');
-const { safeNum, round2, round3, calcWeight, sumWeights, n } = require('../utils/decimalHelper');
+const { safeNum, round2, round3, calcWeight, sumWeights, n, normalizeInvoiceItems } = require('../utils/decimalHelper');
 const { audit }      = require('../utils/auditHelper');
 const { nextNumber } = require('../utils/counterHelper');
 const { getStockQty, updateStock, createStockMovement } = require('../utils/stockHelper');
@@ -104,10 +104,8 @@ const createTransfer = async (req, res) => {
       return res.status(400).json({ message: `رقم المستند "${docNumber}" موجود بالفعل (${docExists.transferNumber})` });
 
     // حساب الأوزان بـ Decimal.js
-    const recalcItems = items.map(i => ({
-      ...i,
-      totalWeight: calcWeight(i.quantity, i.weight),
-    }));
+    // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
+    const recalcItems   = normalizeInvoiceItems(items, { hasPrice: false });
     const totalWeight   = sumWeights(recalcItems.map(i => i.totalWeight));
     const totalQuantity = recalcItems.reduce((s, i) => s + safeNum(i.quantity), 0);
 
@@ -137,10 +135,15 @@ const createTransfer = async (req, res) => {
 // ── UPDATE ────────────────────────────────────────────────────────────────────
 const updateTransfer = async (req, res) => {
   try {
+    const isAdmin = req.user?.role === 'admin';
     const transfer = await prisma.transfer.findUnique({ where: { id: req.params.id }, include: { items: true } });
-    if (!transfer)                        return res.status(404).json({ message: 'التحويل مش موجود' });
-    if (transfer.status === 'approved')   return res.status(400).json({ message: 'لا يمكن تعديل تحويل معتمد' });
-    if (transfer.status === 'rejected')   return res.status(400).json({ message: 'لا يمكن تعديل تحويل مرفوض' });
+    if (!transfer) return res.status(404).json({ message: 'التحويل مش موجود' });
+
+    // الأدمن يقدر يعدل معتمد — غير الأدمن لأ
+    if (transfer.status === 'approved' && !isAdmin)
+      return res.status(400).json({ message: 'لا يمكن تعديل تحويل معتمد — فقط الأدمن' });
+    if (transfer.status === 'rejected')
+      return res.status(400).json({ message: 'لا يمكن تعديل تحويل مرفوض' });
 
     const { fromWarehouse, toWarehouse, items, notes, date, docNumber } = req.body;
     if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
@@ -161,13 +164,70 @@ const updateTransfer = async (req, res) => {
         return res.status(400).json({ message: `رقم المستند "${newDoc}" موجود بالفعل (${docExists.transferNumber})` });
     }
 
-    const recalcItems = items.map(i => ({
-      ...i,
-      totalWeight: calcWeight(i.quantity, i.weight),
-    }));
+    // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
+    const recalcItems   = normalizeInvoiceItems(items, { hasPrice: false });
     const totalWeight   = sumWeights(recalcItems.map(i => i.totalWeight));
     const totalQuantity = recalcItems.reduce((s, i) => s + safeNum(i.quantity), 0);
 
+    // ── لو معتمد: عكس الحركات القديمة ثم طبّق الجديدة داخل transaction ───────
+    if (transfer.status === 'approved') {
+      const updated = await prisma.$transaction(async (tx) => {
+        // 1️⃣ عكس حركات المخزون القديمة
+        for (const old of transfer.items) {
+          const tw = safeNum(old.totalWeight);
+          // رجّع للمصدر
+          await updateStock(old.itemId, transfer.fromWarehouse, transfer.seasonId, { weight: tw },  tx);
+          // اخصم من الهدف
+          await updateStock(old.itemId, transfer.toWarehouse,   transfer.seasonId, { weight: -tw }, tx);
+        }
+
+        // 2️⃣ طبّق حركات المخزون الجديدة
+        for (const ni of recalcItems) {
+          const tw = safeNum(ni.totalWeight);
+          await updateStock(ni.item, newFrom, transfer.seasonId, { weight: -tw }, tx);
+          await updateStock(ni.item, newTo,   transfer.seasonId, { weight:  tw }, tx);
+
+          await createStockMovement({
+            itemId: ni.item, itemCode: ni.itemCode, itemName: ni.itemName,
+            type: 'transfer_out', quantity: ni.quantity, weight: tw,
+            warehouse: newFrom, reference: transfer.transferNumber,
+            referenceModel: 'Transfer', referenceId: transfer.id,
+            seasonId: transfer.seasonId, createdById: req.user.id, date: date || transfer.date,
+          }, tx);
+          await createStockMovement({
+            itemId: ni.item, itemCode: ni.itemCode, itemName: ni.itemName,
+            type: 'transfer_in', quantity: ni.quantity, weight: tw,
+            warehouse: newTo, reference: transfer.transferNumber,
+            referenceModel: 'Transfer', referenceId: transfer.id,
+            seasonId: transfer.seasonId, createdById: req.user.id, date: date || transfer.date,
+          }, tx);
+        }
+
+        // 3️⃣ حدّث البيانات
+        await tx.transferItem.deleteMany({ where: { transferId: transfer.id } });
+        return tx.transfer.update({
+          where: { id: transfer.id },
+          data: {
+            docNumber: newDoc, direction: newDirection,
+            fromWarehouse: newFrom, toWarehouse: newTo,
+            date: date ? new Date(date) : transfer.date,
+            totalWeight, totalQuantity, notes,
+            items: {
+              create: recalcItems.map(i => ({
+                itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
+                quantity: safeNum(i.quantity), weight: safeNum(i.weight), totalWeight: i.totalWeight,
+              })),
+            },
+          },
+          include: transferIncludes(),
+        });
+      }, { isolationLevel: 'Serializable' });
+
+      await audit(req.user, 'transfer_updated_approved', 'Transfer', updated.id, updated.transferNumber, { note: 'admin edit on approved' });
+      return res.json({ message: 'تم تعديل التحويل المعتمد ✅ (المخزون اتحدّث)', transfer: n(updated) });
+    }
+
+    // ── تحويل pending: تعديل عادي بدون حركات مخزون ───────────────────────────
     await prisma.transferItem.deleteMany({ where: { transferId: transfer.id } });
 
     const updated = await prisma.transfer.update({
@@ -206,16 +266,14 @@ const approveTransfer = async (req, res) => {
         const tw = safeNum(trItem.totalWeight);
 
         // خصم من المخزن المصدر
-        await updateStock(trItem.itemId, transfer.fromWarehouse, transfer.seasonId, {
-          quantity: -safeNum(trItem.quantity),
-          weight:   -tw,
-        }, tx);
+        // ✅ ARCH-001: التحديث بالوزن فقط
+        await updateStock(trItem.itemId, transfer.fromWarehouse, transfer.seasonId, { weight: -tw,
+         }, tx);
 
         // إضافة للمخزن الهدف
-        await updateStock(trItem.itemId, transfer.toWarehouse, transfer.seasonId, {
-          quantity:  safeNum(trItem.quantity),
-          weight:    tw,
-        }, tx);
+        // ✅ ARCH-001: التحديث بالوزن فقط
+        await updateStock(trItem.itemId, transfer.toWarehouse, transfer.seasonId, { weight: tw,
+         }, tx);
 
         // حركة خروج
         await createStockMovement({

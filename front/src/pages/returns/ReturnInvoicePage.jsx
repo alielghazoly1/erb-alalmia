@@ -4,19 +4,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { createReturn } from '../../store/slices/returnSlice';
 import CustomerSearch from '../../components/common/CustomerSearch';
 import SupplierSearch from '../../components/common/SupplierSearch';
-import ItemSearch from '../../components/common/ItemSearch';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import InvoiceItemsForm from '../../components/common/InvoiceItemsForm';
 
 const r2 = (v) => Math.round((parseFloat(v) || 0) * 100) / 100;
 const r3 = (v) => Math.round((parseFloat(v) || 0) * 1000) / 1000;
-// calcTotalWeight: لو اتبعت totalWeight صريح نستخدمه — غير كده qty × unitWeight بتقريب آمن
 const calcTotalWeight = (q, w, tw = null) =>
   tw != null ? r3(parseFloat(tw)) : r3((parseFloat(q) || 0) * (parseFloat(w) || 0));
-// calcTotal: totalWeight × price (مش qty × w × p مباشرة عشان نتجنب floating point تراكمي)
-const calcTotal = (q, w, p, tw = null) =>
-  r2(calcTotalWeight(q, w, tw) * (parseFloat(p) || 0));
-// cleanNum: يعرض صفر بدل -0 أو -0.000 أو أي قيمة وهمية
 const cleanNum = (v, decimals = 3) => {
   const n = parseFloat(v) || 0;
   return (Object.is(n, -0) || Math.abs(n) < 0.0005) ? (0).toFixed(decimals) : n.toFixed(decimals);
@@ -24,280 +19,238 @@ const cleanNum = (v, decimals = 3) => {
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
-  item: null,
-  itemCode: '',
-  itemName: '',
-  unit: '',
-  unitWeight: 0,
-  quantity: '',
-  weight: '',
-  price: '',
-  availableQty: undefined,
-  availableWeight: undefined,
-  saved: false,
-  editing: false,
+  item: null, itemCode: '', itemName: '', unit: '',
+  unitWeight: 0,   // وزن الوحدة الافتراضي (default من الصنف)
+  quantity: '', price: '',
+  availableQty: undefined, availableWeight: undefined,
+  _totalWeight: null,
+  saved: false, editing: false,
 });
 
 export default function ReturnInvoicePage({ type = 'customer_return' }) {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const isEditMode = !!id;
-  const isCustomer = type === 'customer_return';
+  const dispatch    = useDispatch();
+  const navigate    = useNavigate();
+  const { id }      = useParams();
+  const isEditMode  = !!id;
+  const isCustomer  = type === 'customer_return';
 
-  const { user } = useSelector((s) => s.auth);
-  const { activeSeason } = useSelector((s) => s.season);
-  const isAdmin = user?.role === 'admin';
+  const { user }  = useSelector((s) => s.auth);
+  const isAdmin   = user?.role === 'admin';
 
-  // state
-  const [party, setParty] = useState(null);
-  const [partyError, setPartyError] = useState(false);
-  const [docNumber, setDocNumber] = useState('');
-  const [originalInvoice, setOriginalInvoice] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [warehouse, setWarehouse] = useState('ramses');
-  const [notes, setNotes] = useState('');
-  const [rows, setRows] = useState([newRow()]);
-  const [saving, setSaving] = useState(false);
+  const [party,            setParty]            = useState(null);
+  const [partyError,       setPartyError]       = useState(false);
+  const [docNumber,        setDocNumber]        = useState('');
+  const [originalInvoice,  setOriginalInvoice]  = useState('');
+  const [date,             setDate]             = useState(new Date().toISOString().split('T')[0]);
+  const [warehouse,        setWarehouse]        = useState('ramses');
+  const [notes,            setNotes]            = useState('');
+  const [rows,             setRows]             = useState([newRow()]);
+  const [saving,           setSaving]           = useState(false);
   const [totalWeightInput, setTotalWeightInput] = useState({});
-  const [loadingEdit, setLoadingEdit] = useState(isEditMode);
-  const [existingReturn, setExistingReturn] = useState(null);
-  const [refundMethod, setRefundMethod] = useState('none');
+  const [loadingEdit,      setLoadingEdit]      = useState(isEditMode);
+  const [existingReturn,   setExistingReturn]   = useState(null);
+  const [refundMethod,     setRefundMethod]     = useState('none');
   const [refundCashAmount, setRefundCashAmount] = useState('');
   const [refundBankAmount, setRefundBankAmount] = useState('');
 
-  const qtyRefs = useRef({});
-  const wtRefs  = useRef({});
-  const prRefs  = useRef({});
+  const qtyRefs  = useRef({});
+  const wtRefs   = useRef({});
+  const twRefs   = useRef({});
+  const prRefs   = useRef({});
+  const itemRefs = useRef({});
 
-  // تحميل المرتجع للتعديل
+  // ── load for edit ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isEditMode) return;
-    api
-      .get(`/returns/${id}`)
+    api.get(`/returns/${id}`)
       .then(({ data }) => {
-        // مرتجع مرفوض → لا يمكن تعديله أبداً
-        if (data.status === 'rejected') {
-          toast.error('لا يمكن تعديل مرتجع مرفوض');
-          navigate(-1);
-          return;
-        }
-        // مرتجع معتمد → الأدمن فقط
-        if (data.status === 'approved' && !isAdmin) {
-          toast.error('فقط الأدمن يمكنه تعديل مرتجع معتمد');
-          navigate(-1);
-          return;
-        }
+        if (data.status === 'rejected') { toast.error('لا يمكن تعديل مرتجع مرفوض'); navigate(-1); return; }
+        if (data.status === 'approved' && !isAdmin) { toast.error('فقط الأدمن يمكنه تعديل مرتجع معتمد'); navigate(-1); return; }
 
         setExistingReturn(data);
         setDocNumber(data.docNumber || '');
         setOriginalInvoice(data.originalInvoice || '');
-        setDate(
-          data.date
-            ? data.date.split('T')[0]
-            : new Date().toISOString().split('T')[0],
-        );
+        setDate(data.date ? data.date.split('T')[0] : new Date().toISOString().split('T')[0]);
         setWarehouse(data.warehouse || 'ramses');
         setNotes(data.notes || '');
-        // لو refundMethod = 'cash' لكن في refundBankAmount → كان 'mixed' أصلاً
+
         const storedMethod = data.refundMethod || 'none';
-        const detectedMethod = (storedMethod === 'cash' && Number(data.refundBankAmount) > 0)
-          ? 'mixed'
-          : storedMethod;
-        setRefundMethod(detectedMethod);
-        setRefundCashAmount(
-          data.refundCashAmount ? String(data.refundCashAmount) : '',
-        );
-        setRefundBankAmount(
-          data.refundBankAmount ? String(data.refundBankAmount) : '',
-        );
+        setRefundMethod((storedMethod === 'cash' && Number(data.refundBankAmount) > 0) ? 'mixed' : storedMethod);
+        setRefundCashAmount(data.refundCashAmount ? String(data.refundCashAmount) : '');
+        setRefundBankAmount(data.refundBankAmount ? String(data.refundBankAmount) : '');
 
-        if (isCustomer && data.customerCode) {
-          setParty({
-            _id: data.customer?._id || data.customer,
-            code: data.customerCode,
-            name: data.customerName,
-          });
-        } else if (!isCustomer && data.supplierCode) {
-          setParty({
-            _id: data.supplier?._id || data.supplier,
-            code: data.supplierCode,
-            name: data.supplierName,
-          });
-        }
+        if (isCustomer && data.customerCode)
+          setParty({ _id: data.customer?._id || data.customer, code: data.customerCode, name: data.customerName });
+        else if (!isCustomer && data.supplierCode)
+          setParty({ _id: data.supplier?._id || data.supplier, code: data.supplierCode, name: data.supplierName });
 
-        const loaded = data.items.map((item) => {
-          const storedTW = item.totalWeight != null
+        const loaded = data.items.map((item) => ({
+          id: Date.now() + Math.random(),
+          item: item.itemId || item.item?._id || item.item,
+          itemCode: item.itemCode, itemName: item.itemName,
+          unit: item.unit || '',
+          unitWeight: parseFloat(item.weight) || 0,
+          quantity: String(
+            item.totalWeight
+              ? Math.round((parseFloat(item.totalWeight) / (parseFloat(item.weight) || 1)) * 10000) / 10000
+              : (parseFloat(item.quantity) || 0)
+          ),
+          price: String(item.price),
+          _totalWeight: item.totalWeight != null
             ? parseFloat(item.totalWeight)
-            : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
-          return {
-            id: Date.now() + Math.random(),
-            item: item.item?._id || item.item,
-            itemCode: item.itemCode,
-            itemName: item.itemName,
-            unit: item.unit || '',
-            unitWeight: parseFloat(item.weight),
-            quantity: String(item.quantity),
-            weight: String(item.weight),
-            price: String(item.price),
-            _totalWeight: storedTW,
-            saved: true,
-            editing: false,
-          };
-        });
+            : Math.round(parseFloat(item.quantity) * parseFloat(item.weight) * 1000) / 1000,
+          availableQty: undefined, availableWeight: undefined,
+          saved: true, editing: false,
+        }));
         setRows([...loaded, newRow()]);
         setLoadingEdit(false);
       })
-      .catch(() => {
-        toast.error('خطأ في تحميل المرتجع');
-        navigate(-1);
-      });
+      .catch(() => { toast.error('خطأ في تحميل المرتجع'); navigate(-1); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditMode]);
 
-  // item handlers
+  // ── handlers ───────────────────────────────────────────────────────────────
   const handleItemSelect = (rowId, item) => {
     if (!item) return;
-    const unitWeight = item.defaultWeight || 0;
-    // نقرأ الرصيد من item.stock اللي بيييجي مع نتيجة البحث
     const stockQty = item.stock?.[warehouse]?.quantity ?? 0;
     const stockWt  = item.stock?.[warehouse]?.weight   ?? 0;
-    setRows((prev) =>
-      prev.map((r) =>
-        r.id === rowId
-          ? {
-              ...r,
-              item: item._id,
-              itemCode: item.code,
-              itemName: item.name,
-              unit: item.unit,
-              unitWeight,
-              weight: unitWeight ? String(unitWeight) : r.weight,
-              availableQty: stockQty,
-              availableWeight: stockWt,
-            }
-          : r,
-      ),
-    );
+    const unitWeight = parseFloat(item.defaultWeight) || 0;
+    setRows(prev => prev.map(r => r.id !== rowId ? r : {
+      ...r, item: item._id, itemCode: item.code, itemName: item.name, unit: item.unit || '',
+      unitWeight, availableQty: stockQty, availableWeight: stockWt,
+    }));
     setTimeout(() => qtyRefs.current[rowId]?.focus(), 50);
   };
 
   const updateRow = (rowId, field, val) =>
-    setRows((prev) =>
-      prev.map((r) => (r.id === rowId ? { ...r, [field]: val } : r)),
-    );
+    setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: val } : r));
+
+  const handleQuantityChange = (rowId, qtyStr) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const qty = parseFloat(qtyStr) || 0;
+      const uw  = parseFloat(r.unitWeight) || 0;
+      if (qty > 0 && uw > 0) {
+        const newTW = Math.round(qty * uw * 1000) / 1000;
+        setTotalWeightInput(p => ({ ...p, [rowId]: String(newTW) }));
+        return { ...r, quantity: qtyStr, _totalWeight: newTW };
+      }
+      setTotalWeightInput(p => ({ ...p, [rowId]: '' }));
+      return { ...r, quantity: qtyStr, _totalWeight: null };
+    }));
+  };
+
+  const handleUnitWeightChange = (rowId, uwStr) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const uw  = parseFloat(uwStr) || 0;
+      const qty = parseFloat(r.quantity) || 0;
+      if (qty > 0 && uw > 0) {
+        const newTW = Math.round(qty * uw * 1000) / 1000;
+        setTotalWeightInput(p => ({ ...p, [rowId]: String(newTW) }));
+        return { ...r, unitWeight: uw, _totalWeight: newTW };
+      }
+      return { ...r, unitWeight: uw };
+    }));
+  };
 
   const handleTotalWeightChange = (rowId, totalWt) => {
-    setTotalWeightInput((prev) => ({ ...prev, [rowId]: totalWt }));
+    setTotalWeightInput(prev => ({ ...prev, [rowId]: totalWt }));
     const tw = parseFloat(totalWt) || 0;
-    setRows((prev) =>
-      prev.map((r) => {
-        if (r.id !== rowId) return r;
-        const uw = parseFloat(r.weight) || r.unitWeight || 0;
-        if (!uw) return r;
-        const qty = tw / uw;
-        return {
-          ...r,
-          quantity:      qty > 0 ? String(Math.round(qty * 10000) / 10000) : '',
-          _totalWeight:  tw,   // ← نحفظ الوزن الكلي الأصلي للحسابات الدقيقة
-        };
-      }),
-    );
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const uw  = parseFloat(r.unitWeight) || 0;
+      const qty = uw > 0 && tw > 0 ? Math.round((tw / uw) * 10000) / 10000 : 0;
+      return {
+        ...r,
+        _totalWeight: tw > 0 ? tw : null,
+        quantity: qty > 0 ? String(qty) : '',
+      };
+    }));
   };
 
   const handleKeyDown = (e, rowId, field) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if (field === 'quantity') { wtRefs.current[rowId]?.focus(); return; }
-    if (field === 'weight')   { prRefs.current[rowId]?.focus(); return; }
-    if (field === 'price')    { handleSaveRow(rowId); }
+    if (field === 'quantity')    { twRefs.current[rowId]?.focus(); return; }
+    if (field === 'totalWeight') { prRefs.current[rowId]?.focus(); return; }
+    if (field === 'price')       { handleSaveRow(rowId); }
   };
 
   const handleSaveRow = (rowId) => {
-    const row = rows.find((r) => r.id === rowId);
-    if (!row?.item)                              { toast.error('اختار الصنف أولاً'); return; }
-    if (!row.quantity || !row.weight || !row.price) { toast.error('اكمل بيانات الصنف'); return; }
-    setRows((prev) => {
-      const upd = prev.map((r) =>
-        r.id === rowId ? { ...r, saved: true, editing: false } : r,
-      );
-      return [...upd, newRow()];
-    });
-    setTotalWeightInput((prev) => { const n = { ...prev }; delete n[rowId]; return n; });
+    const row = rows.find(r => r.id === rowId);
+    if (!row?.item)      { toast.error('اختار الصنف أولاً');        return; }
+    if (!row.unitWeight) { toast.error('أدخل وزن/وحدة');             return; }
+    const tw = row._totalWeight ?? Math.round((parseFloat(row.quantity)||0) * (parseFloat(row.unitWeight)||0) * 1000) / 1000;
+    if (tw <= 0)         { toast.error('أدخل الوزن الكلي أو العدد'); return; }
+    if (!row.price)      { toast.error('أدخل السعر');                return; }
+    const dup = rows.find(r => r.id !== rowId && r.saved && r.item === row.item);
+    if (dup) { toast.error(`الصنف "${row.itemName}" موجود بالفعل`); return; }
+    if (row.editing) {
+      setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r));
+    } else {
+      const newR = newRow();
+      setRows(prev => [...prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r), newR]);
+      setTotalWeightInput(prev => { const n = { ...prev }; delete n[rowId]; return n; });
+      setTimeout(() => { if (itemRefs.current[newR.id]) itemRefs.current[newR.id](); }, 80);
+    }
   };
 
-  const handleEditRow = (rowId) =>
-    setRows((prev) =>
-      prev.map((r) => (r.id === rowId ? { ...r, saved: false, editing: true } : r)),
-    );
+  const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true  } : r));
+  const handleCancelRow = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true,  editing: false } : r));
+  const handleDeleteRow = (rowId) => setRows(prev => { const f = prev.filter(r => r.id !== rowId); return f.length ? f : [newRow()]; });
 
-  const handleDeleteRow = (rowId) => {
-    setRows((prev) => {
-      const f = prev.filter((r) => r.id !== rowId);
-      return f.length ? f : [newRow()];
-    });
-  };
-
-  const savedRows    = rows.filter((r) => r.saved);
-  const totalAmount  = r2(savedRows.reduce((s, r) => s + calcTotal(r.quantity, r.weight, r.price, r._totalWeight ?? null), 0));
+  const savedRows      = rows.filter(r => r.saved);
+  const totalAmount    = r2(savedRows.reduce((s, r) => {
+    const uw = parseFloat(r.unitWeight) || 0;
+    const tw = r._totalWeight ?? Math.round((parseFloat(r.quantity)||0) * uw * 1000) / 1000;
+    return s + r2(tw * (parseFloat(r.price)||0));
+  }, 0));
   const totalWeightAll = r3(savedRows.reduce((s, r) => {
-    const tw = r._totalWeight != null
-      ? parseFloat(r._totalWeight)
-      : calcTotalWeight(r.quantity, r.weight);
+    const tw = r._totalWeight != null ? parseFloat(r._totalWeight) : calcTotalWeight(r.quantity, r.weight);
     return s + (tw || 0);
   }, 0));
 
+  // ── submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!party) {
-      setPartyError(true);
-      toast.error(isCustomer ? 'اختار العميل' : 'اختار المورد');
-      return;
-    }
-    if (!docNumber.trim()) { toast.error('أدخل رقم المستند'); return; }
+    if (!party)               { setPartyError(true); toast.error(isCustomer ? 'اختار العميل' : 'اختار المورد'); return; }
+    if (!docNumber.trim())    { toast.error('أدخل رقم المستند'); return; }
     if (savedRows.length === 0) { toast.error('أضف صنف واحد على الأقل'); return; }
 
-    // تأكيد إضافي عند تعديل مرتجع معتمد
     if (isEditMode && existingReturn?.status === 'approved') {
-      const ok = window.confirm(
-        '⚠️ هتعدل على مرتجع معتمد!\nده هيعكس أثر المخزن والخزنة القديم ويطبق الجديد تلقائياً.\nمتأكد؟'
-      );
+      const ok = window.confirm('⚠️ هتعدل على مرتجع معتمد!\nده هيعكس أثر المخزن والخزنة القديم ويطبق الجديد تلقائياً.\nمتأكد؟');
       if (!ok) return;
     }
 
     setSaving(true);
-    const itemsPayload = savedRows.map((r) => {
-      const qty = Number(r.quantity) || 0;
-      const wt  = Number(r.weight)   || 0;
-      const pr  = Number(r.price)    || 0;
-      const tw  = r._totalWeight != null
-        ? Math.round(parseFloat(r._totalWeight) * 1000) / 1000
-        : Math.round(qty * wt * 1000) / 1000;
-      return {
-        item:        r.item,
-        itemCode:    r.itemCode,
-        itemName:    r.itemName,
-        quantity:    qty,
-        weight:      wt,
-        price:       pr,
-        totalWeight: tw,   // ← الوزن الكلي الدقيق
-        total:       Math.round(tw * pr * 100) / 100,
-      };
+    const itemsPayload = savedRows.map(r => {
+      const uw  = parseFloat(r.unitWeight) || 0;
+      const pr  = parseFloat(r.price) || 0;
+      const tw  = r._totalWeight ?? Math.round((parseFloat(r.quantity)||0) * uw * 1000) / 1000;
+      const qty = uw > 0 ? tw / uw : (parseFloat(r.quantity) || 0);
+      return { item: r.item, itemId: r.item, itemCode: r.itemCode, itemName: r.itemName,
+               quantity: qty, weight: uw,   // ✅ ARCH-001: weight = unitWeight
+               price: pr, totalWeight: tw,  // ✅ المصدر الحقيقي
+               total: Math.round(tw * pr * 100) / 100 };
     });
-    const partyFields = isCustomer
+
+    const partyFields  = isCustomer
       ? { customerId: party._id, customerCode: party.code, customerName: party.name }
       : { supplierId: party._id, supplierCode: party.code, supplierName: party.name };
     const refundFields = isCustomer
       ? { refundMethod, refundCashAmount: Number(refundCashAmount) || 0, refundBankAmount: Number(refundBankAmount) || 0 }
       : {};
 
-    const payload = {
-      type, docNumber: docNumber.trim(), date, warehouse, notes, originalInvoice,
-      ...partyFields, ...refundFields, items: itemsPayload,
-    };
+    const payload = { type, docNumber: docNumber.trim(), date, warehouse, notes, originalInvoice,
+                      ...partyFields, ...refundFields, items: itemsPayload };
 
     try {
       if (isEditMode) {
-        await api.put(`/returns/${id}`, payload);
+        // ✅ لو معتمد → force-edit (يعكس المخزون والخزنة)، لو معلق → update عادي
+        const endpoint = existingReturn?.status === 'approved'
+          ? `/returns/${id}/force-edit`
+          : `/returns/${id}`;
+        await api.put(endpoint, payload);
         toast.success('تم تعديل المرتجع ✅');
         navigate(-1);
       } else {
@@ -309,13 +262,9 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
           setNotes(''); setRows([newRow()]); setPartyError(false);
           setTotalWeightInput({}); setRefundMethod('none');
           setRefundCashAmount(''); setRefundBankAmount('');
-        } else {
-          toast.error(res.payload || 'خطأ في الحفظ');
-        }
+        } else { toast.error(res.payload || 'خطأ في الحفظ'); }
       }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'خطأ في الحفظ');
-    }
+    } catch (err) { toast.error(err.response?.data?.message || 'خطأ في الحفظ'); }
     setSaving(false);
   };
 
@@ -326,15 +275,13 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* هيدر */}
+      {/* ── هيدر ── */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
             {isEditMode
               ? `✏️ تعديل — ${existingReturn?.invoiceNumber}`
-              : isCustomer
-                ? 'مرتجع عميل جديد'
-                : 'مرتجع مورد جديد'}
+              : isCustomer ? 'مرتجع عميل جديد' : 'مرتجع مورد جديد'}
           </h1>
           <p className={`text-sm px-3 py-1 rounded-full mt-1 inline-block ${
             isApprovedEdit
@@ -343,78 +290,50 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
           }`}>
             {isApprovedEdit
               ? '⚠️ تعديل على مرتجع معتمد — سيُعاد حساب المخزن والخزنة'
-              : isEditMode
-                ? '✏️ تعديل على مرتجع معلق'
-                : '⏳ في انتظار موافقة الأدمن بعد الحفظ'}
+              : isEditMode ? '✏️ تعديل على مرتجع معلق'
+              : '⏳ في انتظار موافقة الأدمن بعد الحفظ'}
           </p>
         </div>
         <div className="flex gap-2">
-          {isEditMode && (
-            <button className="btn-secondary" onClick={() => navigate(-1)}>
-              ← رجوع
-            </button>
-          )}
+          {isEditMode && <button className="btn-secondary" onClick={() => navigate(-1)}>← رجوع</button>}
           <button
-            className={`${isApprovedEdit ? 'btn-danger' : 'btn-primary'}`}
+            className={isApprovedEdit ? 'btn-danger' : 'btn-primary'}
             onClick={handleSubmit}
             disabled={saving || savedRows.length === 0}
           >
-            {saving
-              ? 'جاري الحفظ...'
-              : isEditMode
-                ? `💾 حفظ التعديل (${savedRows.length} صنف)`
-                : `💾 حفظ (${savedRows.length} صنف)`}
+            {saving ? 'جاري الحفظ...'
+              : isEditMode ? `💾 حفظ التعديل (${savedRows.length} صنف)`
+              : `💾 حفظ (${savedRows.length} صنف)`}
           </button>
         </div>
       </div>
 
-      {/* تحذير للمرتجع المعتمد */}
+      {/* تحذير مرتجع معتمد */}
       {isApprovedEdit && (
         <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex gap-2">
           <span className="text-lg">⚠️</span>
           <div>
             <p className="font-semibold mb-1">تنبيه: تعديل مرتجع معتمد</p>
-            <p>عند الحفظ سيتم تلقائياً:</p>
-            <ul className="list-disc list-inside mt-1 space-y-0.5 text-red-600">
-              <li>عكس حركات المخزن القديمة</li>
-              <li>عكس أثر الخزنة القديم</li>
-              <li>تطبيق البيانات الجديدة على المخزن والخزنة</li>
-            </ul>
+            <p>عند الحفظ سيتم تلقائياً: عكس حركات المخزن القديمة، عكس أثر الخزنة القديم، تطبيق البيانات الجديدة.</p>
           </div>
         </div>
       )}
 
       {/* رأس المرتجع */}
       <div className="card mb-5">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-          بيانات المرتجع
-        </h2>
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">بيانات المرتجع</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">رقم المستند *</label>
-            <input
-              className="input-field"
-              value={docNumber}
-              onChange={(e) => setDocNumber(e.target.value)}
-              placeholder="رقم المستند"
-            />
+            <input className="input-field" value={docNumber} onChange={e => setDocNumber(e.target.value)} placeholder="رقم المستند" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">التاريخ</label>
-            <input
-              type="date"
-              className="input-field"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <input type="date" className="input-field" value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">المخزن</label>
-            <select
-              className="input-field"
-              value={warehouse}
-              onChange={(e) => setWarehouse(e.target.value)}
-            >
+            <select className="input-field" value={warehouse} onChange={e => setWarehouse(e.target.value)}>
               <option value="ramses">رمسيس</option>
               <option value="october">أكتوبر</option>
             </select>
@@ -422,46 +341,32 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
               {isCustomer ? 'العميل *' : 'المورد *'}
-              {isEditMode && (
-                <span className="text-xs text-blue-500 mr-1">(يمكن التغيير)</span>
-              )}
+              {isEditMode && <span className="text-xs text-blue-500 mr-1">(يمكن التغيير)</span>}
             </label>
             {isCustomer ? (
               <CustomerSearch
                 key={existingReturn?._id || 'new'}
-                onSelect={(c) => { setParty(c); setPartyError(false); }}
+                onSelect={c => { setParty(c); setPartyError(false); }}
                 error={partyError}
                 defaultValue={party?.name || ''}
               />
             ) : (
               <SupplierSearch
                 key={existingReturn?._id || 'new'}
-                onSelect={(s) => { setParty(s); setPartyError(false); }}
+                onSelect={s => { setParty(s); setPartyError(false); }}
                 error={partyError}
                 defaultValue={party?.name || ''}
               />
             )}
-            {party && (
-              <p className="text-xs text-green-600 mt-0.5 font-medium">✓ {party.name}</p>
-            )}
+            {party && <p className="text-xs text-green-600 mt-0.5 font-medium">✓ {party.name}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">رقم الفاتورة الأصلية</label>
-            <input
-              className="input-field"
-              value={originalInvoice}
-              onChange={(e) => setOriginalInvoice(e.target.value)}
-              placeholder="اختياري"
-            />
+            <input className="input-field" value={originalInvoice} onChange={e => setOriginalInvoice(e.target.value)} placeholder="اختياري" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">ملاحظات</label>
-            <input
-              className="input-field"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="اختياري"
-            />
+            <input className="input-field" value={notes} onChange={e => setNotes(e.target.value)} placeholder="اختياري" />
           </div>
         </div>
 
@@ -472,15 +377,8 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">طريقة رد الأموال</label>
-                <select
-                  className="input-field"
-                  value={refundMethod}
-                  onChange={(e) => {
-                    setRefundMethod(e.target.value);
-                    setRefundCashAmount('');
-                    setRefundBankAmount('');
-                  }}
-                >
+                <select className="input-field" value={refundMethod}
+                  onChange={e => { setRefundMethod(e.target.value); setRefundCashAmount(''); setRefundBankAmount(''); }}>
                   <option value="none">آجل — مش فيه رد نقدي</option>
                   <option value="cash">نقدي — من خزنة الأدمن</option>
                   <option value="bank">بنكي / انستاباي</option>
@@ -490,26 +388,16 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
               {(refundMethod === 'cash' || refundMethod === 'mixed') && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">المبلغ النقدي</label>
-                  <input
-                    type="number" min="0" step="0.01"
-                    className="input-field"
-                    placeholder="0.00 ج.م"
-                    value={refundCashAmount}
-                    onChange={(e) => setRefundCashAmount(e.target.value)}
-                  />
+                  <input type="number" min="0" step="0.01" className="input-field"
+                    placeholder="0.00 ج.م" value={refundCashAmount} onChange={e => setRefundCashAmount(e.target.value)} />
                   <p className="text-xs text-amber-600 mt-1">⚠️ سيُخصم من خزنة الأدمن الذي يوافق</p>
                 </div>
               )}
               {(refundMethod === 'bank' || refundMethod === 'mixed') && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">المبلغ البنكي</label>
-                  <input
-                    type="number" min="0" step="0.01"
-                    className="input-field"
-                    placeholder="0.00 ج.م"
-                    value={refundBankAmount}
-                    onChange={(e) => setRefundBankAmount(e.target.value)}
-                  />
+                  <input type="number" min="0" step="0.01" className="input-field"
+                    placeholder="0.00 ج.م" value={refundBankAmount} onChange={e => setRefundBankAmount(e.target.value)} />
                   <p className="text-xs text-blue-600 mt-1">سيُخصم من خزنة البنك</p>
                 </div>
               )}
@@ -518,213 +406,32 @@ export default function ReturnInvoicePage({ type = 'customer_return' }) {
         )}
       </div>
 
-      {/* الأصناف المحفوظة */}
-      {savedRows.length > 0 && (
-        <div className="card mb-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-            الأصناف ({savedRows.length})
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs">
-                  <th className="text-right px-3 py-2">#</th>
-                  <th className="text-right px-3 py-2">الكود</th>
-                  <th className="text-right px-3 py-2">الصنف</th>
-                  <th className="text-center px-3 py-2">العدد</th>
-                  <th className="text-center px-3 py-2">وزن/وحدة</th>
-                  <th className="text-center px-3 py-2">وزن كلي</th>
-                  <th className="text-center px-3 py-2">السعر/ك</th>
-                  <th className="text-center px-3 py-2">الإجمالي</th>
-                  <th className="w-16"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {savedRows.map((row, idx) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2.5 text-gray-400 text-center text-xs">{idx + 1}</td>
-                    <td className="px-3 py-2.5 font-mono text-blue-600 text-xs">{row.itemCode}</td>
-                    <td className="px-3 py-2.5 font-medium text-gray-800">{row.itemName}</td>
-                    <td className="px-3 py-2.5 text-center">{row.quantity}</td>
-                    <td className="px-3 py-2.5 text-center text-gray-400 text-xs">
-                      {cleanNum(row.weight, 3)}
-                    </td>
-                    <td className="px-3 py-2.5 text-center font-medium">
-                      {cleanNum(calcTotalWeight(row.quantity, row.weight, row._totalWeight ?? null), 3)} ك
-                    </td>
-                    <td className="px-3 py-2.5 text-center">
-                      {cleanNum(row.price, 2)}
-                    </td>
-                    <td className="px-3 py-2.5 text-center font-semibold text-orange-600">
-                      {cleanNum(calcTotal(row.quantity, row.weight, row.price, row._totalWeight ?? null), 2)}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <button
-                        onClick={() => handleEditRow(row.id)}
-                        className="text-blue-500 text-xs p-1 rounded hover:bg-blue-50"
-                      >✏️</button>
-                      <button
-                        onClick={() => handleDeleteRow(row.id)}
-                        className="text-red-400 text-xs p-1 rounded hover:bg-red-50"
-                      >🗑️</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-orange-50 font-semibold text-xs">
-                  <td colSpan={5} className="px-3 py-2 text-right text-gray-600">الإجمالي</td>
-                  <td className="px-3 py-2 text-center text-orange-700">
-                    {cleanNum(totalWeightAll, 3)} ك
-                  </td>
-                  <td></td>
-                  <td className="px-3 py-2 text-center text-orange-700">
-                    {cleanNum(totalAmount, 2)} ج.م
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* صفوف الإدخال — طبق الأصل من فاتورة المبيعات */}
-      {rows
-        .filter((r) => !r.saved)
-        .map((row) => {
-          const twInputVal = totalWeightInput[row.id] || '';
-          const hasTwInput = parseFloat(twInputVal) > 0;
-          const tw = hasTwInput
-            ? parseFloat(twInputVal)
-            : calcTotalWeight(row.quantity, row.weight);
-          const rowTotal = r2(tw * (parseFloat(row.price) || 0));
-
-          return (
-            <div
-              key={row.id}
-              className={`rounded-xl border-2 p-3 sticky bottom-0 z-10 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] ${
-                row.editing ? 'border-amber-400 bg-amber-50/95' : 'border-orange-200 bg-orange-50/95'
-              }`}
-            >
-              {/* item info header */}
-              {row.itemName && (
-                <p className="text-xs text-green-600 mt-0.5 mb-1 font-medium truncate">✓ {row.itemName}</p>
-              )}
-              {row.availableQty !== undefined && (
-                <p className={`text-xs mb-1 ${
-                  row.availableQty <= 0 ? 'text-orange-500' : row.availableQty <= 5 ? 'text-amber-600' : 'text-green-600'
-                }`}>
-                  {row.availableQty <= 0 ? '⚠️' : row.availableQty <= 5 ? '🟡' : '🟢'}{' '}
-                  {row.availableQty <= 0
-                    ? `الرصيد صفر (${row.availableQty} كرتون في المخزن)`
-                    : `رصيد متاح: ${row.availableQty} كرتون`}
-                </p>
-              )}
-              <p className="text-xs font-semibold text-gray-500 mb-2">
-                {row.editing ? '✏️ تعديل صنف' : '➕ أضف صنف'}
-              </p>
-
-              <div className="grid grid-cols-12 gap-2 items-end">
-                {/* الصنف */}
-                <div className="col-span-5">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
-                  <ItemSearch
-                    onSelect={(item) => handleItemSelect(row.id, item)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') { e.preventDefault(); qtyRefs.current[row.id]?.focus(); }
-                    }}
-                    placeholder="ابحث بالكود أو الاسم..."
-                    defaultValue={row.editing ? row.itemName : ''}
-                  />
-                </div>
-
-                {/* العدد */}
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    العدد{row.weight && <span className="text-blue-400 mr-1">×{row.weight}ك</span>}
-                    {hasTwInput && <span className="text-xs text-orange-400 mr-1">(محسوب)</span>}
-                  </label>
-                  <input
-                    ref={(el) => (qtyRefs.current[row.id] = el)}
-                    type="number" min="0" step="0.001"
-                    className={`input-field text-center font-bold text-base ${hasTwInput ? 'bg-orange-50/50 text-orange-600' : ''}`}
-                    placeholder="0"
-                    value={row.quantity}
-                    onChange={(e) => updateRow(row.id, 'quantity', e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, row.id, 'quantity')}
-                  />
-                </div>
-
-                {/* وزن/وحدة */}
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">وزن/وحدة</label>
-                  <input
-                    ref={(el) => (wtRefs.current[row.id] = el)}
-                    type="number" min="0" step="0.001"
-                    className="input-field text-center"
-                    placeholder="22.680"
-                    value={row.weight}
-                    onChange={(e) => updateRow(row.id, 'weight', e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, row.id, 'weight')}
-                  />
-                </div>
-
-                {/* السعر */}
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">السعر/ك</label>
-                  <input
-                    ref={(el) => (prRefs.current[row.id] = el)}
-                    type="number" min="0" step="0.01"
-                    className="input-field text-center"
-                    placeholder="0.00"
-                    value={row.price}
-                    onChange={(e) => updateRow(row.id, 'price', e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, row.id, 'price')}
-                  />
-                </div>
-
-                {/* الإجمالي */}
-                <div className="col-span-1 flex flex-col items-center gap-1">
-                  <p className="text-xs text-gray-400">الإجمالي</p>
-                  <p className="text-sm font-bold text-orange-600 leading-tight">
-                    {rowTotal.toFixed(0)}
-                  </p>
-                </div>
-              </div>
-
-              {/* الوزن الكلي + زر الإضافة */}
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1">
-                  <input
-                    type="number" min="0" step="0.001"
-                    className={`input-field text-center text-xs py-1.5 ${hasTwInput ? 'bg-blue-100 border-blue-400' : 'bg-blue-50/50'}`}
-                    placeholder="أو أدخل الوزن الكلي (يحسب العدد)"
-                    value={twInputVal}
-                    onChange={(e) => handleTotalWeightChange(row.id, e.target.value)}
-                  />
-                  {hasTwInput && (
-                    <p className="text-xs text-blue-500 mt-0.5 text-center">
-                      وزن كلي: {r3(tw).toFixed(3)} ك → إجمالي: {rowTotal.toFixed(2)} ج.م
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleSaveRow(row.id)}
-                  className="btn-primary px-5 py-2 text-sm"
-                  disabled={!row.item || !row.quantity || !row.weight || !row.price}
-                >
-                  {row.editing ? '✓ تحديث' : '✓ إضافة'}
-                </button>
-                {row.editing && (
-                  <button onClick={() => handleDeleteRow(row.id)} className="btn-secondary px-3 py-2 text-sm">
-                    إلغاء
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      {/* ✅ الكومبونانت المشترك */}
+      <div className="card mb-4">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          الأصناف {savedRows.length > 0 && `(${savedRows.length})`}
+        </h2>
+        <InvoiceItemsForm
+          rows={rows}
+          totalWeightInput={totalWeightInput}
+          showPrice={true}
+          qtyRefs={qtyRefs}
+          wtRefs={wtRefs}
+          prRefs={prRefs}
+          twRefs={twRefs}
+          itemRefs={itemRefs}
+          onItemSelect={handleItemSelect}
+          onUpdateRow={updateRow}
+          onQuantityChange={handleQuantityChange}
+          onUnitWeightChange={handleUnitWeightChange}
+          onTotalWeightChange={handleTotalWeightChange}
+          onKeyDown={handleKeyDown}
+          onSaveRow={handleSaveRow}
+          onEditRow={handleEditRow}
+          onCancelRow={handleCancelRow}
+          onDeleteRow={handleDeleteRow}
+        />
+      </div>
 
       {/* الإجمالي */}
       {savedRows.length > 0 && (

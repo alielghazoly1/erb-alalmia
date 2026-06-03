@@ -1,45 +1,25 @@
 // ─── utils/stockHelper.js ─────────────────────────────────────────────────────
-// أدوات المخزون — تحديث الأرصدة وتسجيل الحركات
-//
-// الإصلاحات الجوهرية في هذه النسخة:
-//  ① كل دالة تقبل tx (transaction context) اختيارياً — لو مفيش tx تستخدم prisma
-//  ② updateStock: ATOMIC raw SQL مع normalizeStockValue لمنع -0.001
-//  ③ createStockMovement: تقرأ الرصيد بعد التحديث لضمان دقة الـ snapshot
-//  ④ batchUpdateStock: يحدّث عدة أصناف في تحديث واحد (أداء أفضل)
+// ✅ ARCH-001: الوزن هو مصدر الحقيقة الوحيد
+//   • updateStock: يخصم/يضيف بالوزن فقط — quantity يُحسب تلقائياً من weight ÷ defaultWeight
+//   • _normalizeStockRow: tolerance مُقلَّص إلى 1e-6 لمنع صفرة آخر رصيد حقيقي
+//   • checkStockAvailability: يعتمد على weight فقط
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
 const prisma = require('../config/db');
-const {
-  safeNum, round2, round3,
-  normalizeStockValue,
-} = require('./decimalHelper');
+const { safeNum, round2, round3, normalizeStockValue, toD } = require('./decimalHelper');
 
-// ─── OUT-type movements (خروج من المخزن) ─────────────────────────────────────
 const OUT_TYPES = new Set([
-  'sale_out',
-  'return_out',
-  'transfer_out',
-  'manufacturing_out',
-  'adjustment_sub',
+  'sale_out', 'return_out', 'transfer_out', 'manufacturing_out', 'adjustment_sub',
 ]);
 
-// ── الـ client المناسب: tx (داخل transaction) أو prisma (عادي) ───────────────
 const db = (tx) => tx || prisma;
 
 // ── getStockBalance ───────────────────────────────────────────────────────────
-/**
- * رصيد صنف في مخزن وموسم — يرجع { quantity, weight }
- * يمكن تمرير tx لقراءة الرصيد داخل transaction
- */
 const getStockBalance = async (itemId, warehouse, seasonId, tx = null) => {
   const client = db(tx);
   const stock = await client.itemStock.findFirst({
-    where: {
-      itemId,
-      warehouse,
-      seasonId: seasonId ?? null,
-    },
+    where: { itemId, warehouse, seasonId: seasonId ?? null },
   });
   return {
     quantity: safeNum(stock?.quantity, 0),
@@ -47,33 +27,45 @@ const getStockBalance = async (itemId, warehouse, seasonId, tx = null) => {
   };
 };
 
-/** alias متوافق مع الـ controllers القديمة */
 const getStockQty = (itemId, warehouse, seasonId, tx = null) =>
   getStockBalance(itemId, warehouse, seasonId, tx);
 
 // ── updateStock ───────────────────────────────────────────────────────────────
 /**
- * ✅ ATOMIC: يحدّث رصيد الصنف بـ raw SQL في خطوة واحدة (بدون read-then-write)
- * ✅ NORMALIZE: بعد التحديث، يُصفّر القيم "الوهمية" مثل -0.001
- * ✅ TX-AWARE: يعمل داخل prisma.$transaction لو مررت tx
- *
- * @param {string} itemId
- * @param {string} warehouse
- * @param {string|null} seasonId
- * @param {{ quantity: number, weight: number }} delta - التغيير (موجب = إضافة، سالب = خصم)
- * @param {object|null} tx - Prisma transaction context
+ * ✅ ARCH-001: التحديث يعتمد على weight فقط
+ *   quantity = weight ÷ defaultWeight (محسوبة تلقائياً من الـ DB)
+ *   لو delta.quantity مُمرَّر يُحسب quantity في الـ DB كـ: existing + delta.quantity
+ *   لكن الأصح أن تُمرَّر delta.weight دايماً
  */
 const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
   const client = db(tx);
-  const dQty = round3(safeNum(delta.quantity));
   const dWt  = round3(safeNum(delta.weight));
+
+  // ✅ ARCH-001: quantity تُحسب من weight ÷ defaultWeight تلقائياً
+  // نجيب defaultWeight من جدول items
+  const item = await client.item.findUnique({
+    where: { id: itemId },
+    select: { defaultWeight: true },
+  });
+  const defaultWeight = safeNum(item?.defaultWeight, 0);
+
+  // دلتا الكمية: إما من الـ delta المُمرَّر أو محسوبة من الوزن
+  const dQty = delta.quantity !== undefined
+    ? round3(safeNum(delta.quantity))
+    : (defaultWeight > 0
+        ? parseFloat(toD(dWt).div(toD(defaultWeight)).toDecimalPlaces(10).toString())
+        : 0);
 
   if (seasonId) {
     const updated = await client.$executeRaw`
       UPDATE item_stocks
       SET
-        quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
         weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+        quantity = CASE
+          WHEN ${defaultWeight}::numeric > 0
+          THEN ROUND(CAST((weight + ${dWt}) / ${defaultWeight} AS numeric), 10)
+          ELSE ROUND(CAST(quantity + ${dQty} AS numeric), 10)
+        END,
         "updatedAt" = NOW()
       WHERE "itemId"   = ${itemId}::uuid
         AND warehouse  = ${warehouse}::"Warehouse"
@@ -81,6 +73,10 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
     `;
 
     if (updated === 0) {
+      const initWt  = Math.max(0, dWt);
+      const initQty = defaultWeight > 0
+        ? parseFloat(toD(initWt).div(toD(defaultWeight)).toDecimalPlaces(10).toString())
+        : Math.max(0, dQty);
       await client.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
         VALUES (
@@ -88,14 +84,18 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
           ${itemId}::uuid,
           ${warehouse}::"Warehouse",
           ${seasonId}::uuid,
-          ${dQty},
-          ${dWt},
+          ${initQty},
+          ${initWt},
           NOW()
         )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
           SET
-            quantity = ROUND(item_stocks.quantity + ${dQty}, 3),
             weight   = ROUND(item_stocks.weight   + ${dWt},  3),
+            quantity = CASE
+              WHEN ${defaultWeight}::numeric > 0
+              THEN ROUND(CAST((item_stocks.weight + ${dWt}) / ${defaultWeight} AS numeric), 10)
+              ELSE ROUND(item_stocks.quantity + ${dQty}, 10)
+            END,
             "updatedAt" = NOW()
       `;
     }
@@ -103,8 +103,12 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
     const updated = await client.$executeRaw`
       UPDATE item_stocks
       SET
-        quantity = ROUND(CAST(quantity + ${dQty} AS numeric), 3),
         weight   = ROUND(CAST(weight   + ${dWt}  AS numeric), 3),
+        quantity = CASE
+          WHEN ${defaultWeight}::numeric > 0
+          THEN ROUND(CAST((weight + ${dWt}) / ${defaultWeight} AS numeric), 10)
+          ELSE ROUND(CAST(quantity + ${dQty} AS numeric), 10)
+        END,
         "updatedAt" = NOW()
       WHERE "itemId"  = ${itemId}::uuid
         AND warehouse = ${warehouse}::"Warehouse"
@@ -112,6 +116,10 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
     `;
 
     if (updated === 0) {
+      const initWt  = Math.max(0, dWt);
+      const initQty = defaultWeight > 0
+        ? parseFloat(toD(initWt).div(toD(defaultWeight)).toDecimalPlaces(10).toString())
+        : Math.max(0, dQty);
       await client.$executeRaw`
         INSERT INTO item_stocks (id, "itemId", warehouse, "seasonId", quantity, weight, "updatedAt")
         VALUES (
@@ -119,62 +127,63 @@ const updateStock = async (itemId, warehouse, seasonId, delta, tx = null) => {
           ${itemId}::uuid,
           ${warehouse}::"Warehouse",
           NULL,
-          ${dQty},
-          ${dWt},
+          ${initQty},
+          ${initWt},
           NOW()
         )
         ON CONFLICT ("itemId", warehouse, "seasonId") DO UPDATE
           SET
-            quantity = ROUND(item_stocks.quantity + ${dQty}, 3),
             weight   = ROUND(item_stocks.weight   + ${dWt},  3),
+            quantity = CASE
+              WHEN ${defaultWeight}::numeric > 0
+              THEN ROUND(CAST((item_stocks.weight + ${dWt}) / ${defaultWeight} AS numeric), 10)
+              ELSE ROUND(item_stocks.quantity + ${dQty}, 10)
+            END,
             "updatedAt" = NOW()
       `;
     }
   }
 
-  // تنظيف القيم الوهمية الصغيرة جداً (مثل 0.0001 أو -0.0001 ناتجة عن floating point)
-  // لكن نحافظ على القيم السالبة الحقيقية (مثل -5 كراتين عند البيع بالسالب)
+  // ✅ ARCH-001: tolerance مُقلَّص لـ 1e-6 — لا نُصفِّر رصيد 0.001 كيلو حقيقي
   await _normalizeStockRow(itemId, warehouse, seasonId, client);
 };
 
 // ── _normalizeStockRow (private) ──────────────────────────────────────────────
 /**
- * يصفّر أي قيمة وهمية (<0.0005) في صف المخزون
- * يُستدعى تلقائياً بعد كل updateStock
+ * ✅ ARCH-001: يُصفِّر القيم الوهمية (<1e-6) فقط
+ * المعيار القديم 0.0005 كان يُصفِّر آخر رصيد حقيقي!
+ * المعيار الجديد 1e-6 يمنع فقط أخطاء floating point الحقيقية (مثل -0.000000001)
  */
 const _normalizeStockRow = async (itemId, warehouse, seasonId, client) => {
+  const TOLERANCE = 0.000001; // 1e-6
   if (seasonId) {
     await client.$executeRaw`
       UPDATE item_stocks
       SET
-        quantity = CASE WHEN ABS(quantity) < 0.0005 THEN 0 ELSE quantity END,
-        weight   = CASE WHEN ABS(weight)   < 0.0005 THEN 0 ELSE weight   END,
+        weight   = CASE WHEN ABS(weight)   < ${TOLERANCE}::numeric THEN 0 ELSE weight   END,
+        quantity = CASE WHEN ABS(quantity) < ${TOLERANCE}::numeric THEN 0 ELSE quantity END,
         "updatedAt" = NOW()
       WHERE "itemId"   = ${itemId}::uuid
         AND warehouse  = ${warehouse}::"Warehouse"
         AND "seasonId" = ${seasonId}::uuid
-        AND (ABS(quantity) < 0.0005 OR ABS(weight) < 0.0005)
+        AND (ABS(weight) < ${TOLERANCE}::numeric OR ABS(quantity) < ${TOLERANCE}::numeric)
     `;
   } else {
     await client.$executeRaw`
       UPDATE item_stocks
       SET
-        quantity = CASE WHEN ABS(quantity) < 0.0005 THEN 0 ELSE quantity END,
-        weight   = CASE WHEN ABS(weight)   < 0.0005 THEN 0 ELSE weight   END,
+        weight   = CASE WHEN ABS(weight)   < ${TOLERANCE}::numeric THEN 0 ELSE weight   END,
+        quantity = CASE WHEN ABS(quantity) < ${TOLERANCE}::numeric THEN 0 ELSE quantity END,
         "updatedAt" = NOW()
       WHERE "itemId"  = ${itemId}::uuid
         AND warehouse = ${warehouse}::"Warehouse"
         AND "seasonId" IS NULL
-        AND (ABS(quantity) < 0.0005 OR ABS(weight) < 0.0005)
+        AND (ABS(weight) < ${TOLERANCE}::numeric OR ABS(quantity) < ${TOLERANCE}::numeric)
     `;
   }
 };
 
 // ── createStockMovement ───────────────────────────────────────────────────────
-/**
- * يسجّل حركة مخزونية مع snapshot للرصيد بعد التحديث
- * ✅ TX-AWARE: يعمل داخل prisma.$transaction لو مررت tx
- */
 const createStockMovement = async ({
   itemId, itemCode, itemName, type,
   quantity, weight, price = 0,
@@ -186,7 +195,6 @@ const createStockMovement = async ({
   const wt    = safeNum(weight);
   const isOut = OUT_TYPES.has(type);
 
-  // نقرأ الرصيد الحالي (بعد updateStock) ليظهر في سجل الحركة
   const balance = await getStockBalance(itemId, warehouse, seasonId, client);
 
   return client.stockMovement.create({
@@ -212,8 +220,7 @@ const createStockMovement = async ({
 
 // ── recordStockMovement ───────────────────────────────────────────────────────
 /**
- * All-in-one: يحدّث الرصيد ويسجّل الحركة في خطوة واحدة
- * ✅ TX-AWARE
+ * ✅ ARCH-001: All-in-one — يعتمد على weight فقط
  */
 const recordStockMovement = async ({
   itemId, itemCode, itemName, type,
@@ -223,24 +230,25 @@ const recordStockMovement = async ({
   reference, referenceModel, referenceId,
   seasonId, userId,
 }, tx = null) => {
-  const qIn  = safeNum(quantityIn);
-  const qOut = safeNum(quantityOut);
   const wIn  = safeNum(weightIn);
   const wOut = safeNum(weightOut);
-
-  const netQty    = round3(qIn - qOut);
   const netWeight = round3(wIn - wOut);
 
-  await updateStock(itemId, warehouse, seasonId, { quantity: netQty, weight: netWeight }, tx);
+  // ✅ ARCH-001: نحسب الكمية من الوزن بعد التحديث — لا نعتمد على quantityIn/Out
+  // نمرر delta.weight فقط، والكمية تُحسب تلقائياً في updateStock
+  await updateStock(itemId, warehouse, seasonId, { weight: netWeight }, tx);
 
   const balance = await getStockBalance(itemId, warehouse, seasonId, tx);
   const client  = db(tx);
 
+  const qIn  = safeNum(quantityIn);
+  const qOut = safeNum(quantityOut);
+
   return client.stockMovement.create({
     data: {
       itemId, itemCode, itemName, type,
-      quantityIn: qIn, quantityOut: qOut,
-      weightIn: wIn,   weightOut: wOut,
+      quantityIn: qIn,  quantityOut: qOut,
+      weightIn: wIn,    weightOut: wOut,
       price:    round2(price),
       warehouse,
       balanceQty:    balance.quantity,
@@ -253,7 +261,6 @@ const recordStockMovement = async ({
 };
 
 // ── getItemStockMap ───────────────────────────────────────────────────────────
-/** رصيد صنف في كل المخازن { ramses, october } */
 const getItemStockMap = async (itemId, seasonId, tx = null) => {
   const client = db(tx);
   const stocks = await client.itemStock.findMany({
@@ -274,36 +281,30 @@ const getItemStockMap = async (itemId, seasonId, tx = null) => {
 
 // ── checkStockAvailability ────────────────────────────────────────────────────
 /**
- * يتحقق من توفر المخزون
- * ملاحظة: المقارنة تتم بالكميات (الكراتين) فقط — الوزن يُحسب تلقائياً
+ * ✅ ARCH-001: التحقق يعتمد على weight فقط
  */
-const checkStockAvailability = async (itemId, warehouse, seasonId, requestedQty, tx = null) => {
+const checkStockAvailability = async (itemId, warehouse, seasonId, requestedWeight, tx = null) => {
   const stock = await getStockBalance(itemId, warehouse, seasonId, tx);
-  const qty   = safeNum(requestedQty);
+  const wt    = safeNum(requestedWeight);
   return {
-    available:    stock.quantity >= qty,
-    stockQty:     stock.quantity,
-    stockWeight:  stock.weight,
-    requestedQty: qty,
-    shortfall:    Math.max(0, qty - stock.quantity),
+    available:       stock.weight >= wt,
+    stockWeight:     stock.weight,
+    stockQty:        stock.quantity,
+    requestedWeight: wt,
+    shortfall:       Math.max(0, wt - stock.weight),
   };
 };
 
-// ── reserveStock / releaseStock ───────────────────────────────────────────────
-/** placeholder للتوسع مستقبلاً */
 const reserveStock = async () => ({ reserved: true });
 const releaseStock = async () => ({ released: true });
 
-// ─────────────────────────────────────────────────────────────────────────────
 module.exports = {
-  // core
   recordStockMovement,
   getStockBalance,
   getItemStockMap,
   checkStockAvailability,
   reserveStock,
   releaseStock,
-  // controller-compatible aliases
   getStockQty,
   updateStock,
   createStockMovement,

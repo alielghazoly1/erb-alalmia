@@ -1,5 +1,12 @@
 import { calcTotalWeight, fmtW } from '../hooks/useManufacturingItems';
 
+// أقصى 4 خانات عشرية للعرض
+const fmt4 = (v) => {
+  const n = parseFloat(v);
+  if (isNaN(n) || Math.abs(n) < 1e-10) return '0';
+  return parseFloat(n.toFixed(4)).toString();
+};
+
 export default function MfgItemsTable({ savedRows, totalWeightAll, onEditRow, onDeleteRow }) {
   if (savedRows.length === 0) return null;
 
@@ -13,7 +20,7 @@ export default function MfgItemsTable({ savedRows, totalWeightAll, onEditRow, on
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 text-gray-500 text-xs">
-              {['#', 'الكود', 'الصنف', 'الكراتين', 'وزن/كرتون', 'الوزن الكلي', ''].map((h, i) => (
+              {['#', 'الكود', 'الصنف', 'العدد', 'وزن/وحدة', 'الوزن الكلي (ك)', ''].map((h, i) => (
                 <th
                   key={i}
                   className={`px-2 py-2 ${i > 2 ? 'text-center' : 'text-right'}`}
@@ -26,24 +33,23 @@ export default function MfgItemsTable({ savedRows, totalWeightAll, onEditRow, on
 
           <tbody className="divide-y divide-gray-100">
             {savedRows.map((row, idx) => {
-              const tw       = calcTotalWeight(row);
-              const isManual = row.totalWeightManual !== '' && row.totalWeightManual !== undefined;
+              const uw  = parseFloat(row.unitWeight) || 0;
+              const tw  = calcTotalWeight(row);
+              // ✅ ARCH-001: العدد مشتق — أقصى 4 خانات
+              const qty = uw > 0 && tw > 0 ? fmt4(tw / uw) : (row.quantity || '—');
               return (
                 <tr key={row.id} className="hover:bg-gray-50">
                   <td className="px-2 py-2 text-gray-400 text-center text-xs">{idx + 1}</td>
                   <td className="px-2 py-2 font-mono text-blue-600 text-xs">{row.itemCode}</td>
                   <td className="px-2 py-2 font-medium text-gray-800">{row.itemName}</td>
-                  <td className="px-2 py-2 text-center font-medium">{row.quantity}</td>
+                  <td className="px-2 py-2 text-center text-gray-600 text-xs">{qty}</td>
                   <td className="px-2 py-2 text-center text-gray-400 text-xs">
-                    {fmtW(row.weight)}
+                    {fmtW(uw)}
                   </td>
                   <td className="px-2 py-2 text-center">
-                    <span className={`font-semibold ${isManual ? 'text-blue-700' : 'text-green-700'}`}>
-                      {fmtW(tw)} ك
+                    <span className="font-semibold text-green-700">
+                      {fmtW(tw)}
                     </span>
-                    {isManual && (
-                      <span className="block text-xs text-blue-400 leading-none">يدوي</span>
-                    )}
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1">

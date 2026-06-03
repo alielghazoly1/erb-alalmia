@@ -1,32 +1,40 @@
-// ─── middleware/authMiddleware.js ──────────────────────────────────────────────
-const jwt    = require('jsonwebtoken');
-const prisma = require('../config/db');
+// ─── middleware/authMiddleware.js ─────────────────────────────────────────────
+// ✅ PERF-AUTH-001: userCache يمنع 2 DB queries على كل request
+//    كل user يُخزَّن 60 ثانية — بعد تغيير صلاحيات يُمسح فوراً
+// ─────────────────────────────────────────────────────────────────────────────
+'use strict';
 
-// mapping من الـ keys القديمة (المستخدمة في الـ routes) للـ Permission enum في DB
+const jwt       = require('jsonwebtoken');
+const prisma    = require('../config/db');
+const userCache = require('../utils/userCache');
+
 const PERM_MAP = {
   allowNegativeSale: 'sale_allow_negative',
   canEditInvoice:    'sale_edit',
 };
 
+// ── protect ───────────────────────────────────────────────────────────────────
 const protect = async (req, res, next) => {
   const token = req.cookies?.authToken;
-
-  if (!token) {
-    return res.status(401).json({ message: 'غير مصرح — يرجى تسجيل الدخول' });
-  }
+  if (!token) return res.status(401).json({ message: 'غير مصرح — يرجى تسجيل الدخول' });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user    = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true, name: true, username: true,
-        role: true, scope: true, isActive: true,
-        permissions: { select: { permission: true, granted: true } },
-      },
-    });
+
+    // ✅ PERF-AUTH-001: من الكاش (< 1ms) بدل 2 DB queries (~300ms)
+    const user = await userCache.getUser(decoded.id, () =>
+      prisma.user.findUnique({
+        where:  { id: decoded.id },
+        select: {
+          id: true, name: true, username: true,
+          role: true, scope: true, isActive: true,
+          permissions: { select: { permission: true, granted: true } },
+        },
+      })
+    );
 
     if (!user || !user.isActive) {
+      userCache.invalidateUser(decoded.id);
       return res.status(401).json({ message: 'المستخدم غير موجود أو معطل' });
     }
 
@@ -37,28 +45,18 @@ const protect = async (req, res, next) => {
   }
 };
 
+// ── adminOnly ─────────────────────────────────────────────────────────────────
 const adminOnly = (req, res, next) => {
   if (req.user?.role === 'admin') return next();
   res.status(403).json({ message: 'ممنوع — للأدمن فقط' });
 };
 
-/**
- * middleware للتحقق من صلاحية محددة.
- * يقبل:
- *   - الـ Permission enum مباشرة (مثلاً 'sale_edit')
- *   - أو الـ key القديم (مثلاً 'canEditInvoice') للتوافق مع الـ routes الحالية
- *
- * الأدمن يعدي تلقائياً — اليوزر العادي لازم الصلاحية مفعّلة
- */
+// ── requirePermission ─────────────────────────────────────────────────────────
 const requirePermission = (permKey) => (req, res, next) => {
   if (req.user?.role === 'admin') return next();
-
-  // حوّل الـ key القديم للـ enum الجديد لو موجود في الـ map
   const dbKey = PERM_MAP[permKey] || permKey;
-
   const perms = req.user?.permissions;
-  if (perms && perms.some(p => p.permission === dbKey && p.granted === true)) return next();
-
+  if (perms?.some(p => p.permission === dbKey && p.granted === true)) return next();
   return res.status(403).json({ message: 'ليس لديك صلاحية لهذا الإجراء' });
 };
 

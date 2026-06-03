@@ -1,12 +1,11 @@
 // ─── components/common/ItemSearch.jsx ────────────────────────────────────────
-// البحث عن صنف — حل شامل لكل المشاكل:
-//   ✅ AbortController — إلغاء الـ request القديم فوراً لو المستخدم كتب حاجة جديدة
-//   ✅ Race condition — بنتحقق إن الـ query اللي جه الـ response ليه مطابق للـ query الحالي
-//   ✅ Loading state — spinner أثناء الجلب
-//   ✅ Empty state — رسالة واضحة لو مفيش نتايج
-//   ✅ Error state — رسالة لو الـ API وقع
-//   ✅ Debounce 250ms — بس مش بنتأخر في إلغاء الـ request القديم
-//   ✅ defaultValue — للـ edit mode
+// ✅ نتايج البحث تطلع فوق الإنبوت مش تحته (upward dropdown)
+// ✅ اسم الصنف مش مقطوع — بيظهر كامل في الدروبداون
+// ✅ AbortController — إلغاء الـ request القديم فوراً لو المستخدم كتب حاجة جديدة
+// ✅ Race condition guard
+// ✅ Loading / Empty / Error states
+// ✅ Debounce 250ms
+// ✅ defaultValue — للـ edit mode
 
 import { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
 import api from '../../services/api';
@@ -28,8 +27,8 @@ const ItemSearch = forwardRef(function ItemSearch(
   const [status,         setStatus]         = useState('idle'); // idle | loading | empty | error
 
   const debounceRef  = useRef(null);
-  const abortRef     = useRef(null); // AbortController الحالي
-  const latestQuery  = useRef('');   // آخر query بُعت — للـ race condition guard
+  const abortRef     = useRef(null);
+  const latestQuery  = useRef('');
   const dropdownRef  = useRef(null);
   const inputRef     = useRef(null);
   const listRef      = useRef(null);
@@ -72,7 +71,6 @@ const ItemSearch = forwardRef(function ItemSearch(
 
   // ── دالة الجلب الفعلية ────────────────────────────────────────────────
   const fetchItems = useCallback(async (searchVal) => {
-    // إلغاء الـ request اللي قبله فوراً
     abortRef.current?.abort();
     const controller  = new AbortController();
     abortRef.current  = controller;
@@ -85,7 +83,6 @@ const ItemSearch = forwardRef(function ItemSearch(
         signal: controller.signal,
       });
 
-      // Race condition guard — لو اتغير الـ query بعد ما الـ response وصل نتجاهله
       if (latestQuery.current !== searchVal) return;
 
       const list = Array.isArray(data) ? data : (data.items || []);
@@ -94,10 +91,10 @@ const ItemSearch = forwardRef(function ItemSearch(
       setStatus(list.length === 0 ? 'empty' : 'idle');
       setShowDropdown(true);
     } catch (err) {
-      if (err.name === 'CanceledError' || err.name === 'AbortError') return; // طبيعي
+      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
       if (latestQuery.current !== searchVal) return;
       setStatus('error');
-      setShowDropdown(true); // نفتح عشان نظهر رسالة الخطأ
+      setShowDropdown(true);
     }
   }, []);
 
@@ -116,7 +113,6 @@ const ItemSearch = forwardRef(function ItemSearch(
       return;
     }
 
-    // debounce 250ms — كافي بدون ما يبطئ التجربة
     debounceRef.current = setTimeout(() => fetchItems(val.trim()), 250);
   };
 
@@ -222,9 +218,9 @@ const ItemSearch = forwardRef(function ItemSearch(
         )}
       </div>
 
-      {/* Dropdown */}
+      {/* ✅ Dropdown — يطلع فوق (bottom-full) مش تحت */}
       {showDropdown && (
-        <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-xl mt-1 overflow-hidden min-w-[240px]">
+        <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-xl bottom-full mb-1 overflow-hidden min-w-[280px]">
           {status === 'loading' && results.length === 0 && (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-400">
               <svg className="animate-spin w-4 h-4 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none">
@@ -250,11 +246,11 @@ const ItemSearch = forwardRef(function ItemSearch(
           )}
 
           {results.length > 0 && (
-            <div ref={listRef} className="max-h-52 overflow-y-auto">
+            <div ref={listRef} className="max-h-60 overflow-y-auto">
               {results.map((item, idx) => (
                 <div
                   key={item._id || item.id}
-                  className={`px-4 py-2.5 cursor-pointer text-sm flex items-center gap-3 transition-colors ${
+                  className={`px-4 py-2.5 cursor-pointer text-sm flex items-start gap-3 transition-colors ${
                     idx === highlightIndex
                       ? 'bg-blue-100 text-blue-900'
                       : 'hover:bg-gray-50'
@@ -262,11 +258,15 @@ const ItemSearch = forwardRef(function ItemSearch(
                   onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
                   onMouseEnter={() => setHighlightIndex(idx)}
                 >
-                  <span className="font-mono text-blue-600 font-semibold text-xs shrink-0 bg-blue-50 px-1.5 py-0.5 rounded">
+                  {/* ✅ كود الصنف */}
+                  <span className="font-mono text-blue-600 font-semibold text-xs shrink-0 bg-blue-50 px-1.5 py-0.5 rounded mt-0.5">
                     {item.code}
                   </span>
-                  <span className="text-gray-800 flex-1 truncate">{item.name}</span>
-                  <span className="text-gray-400 text-xs shrink-0">{item.unit}</span>
+                  {/* ✅ اسم الصنف كامل — مش مقطوع (whitespace-normal + break-words) */}
+                  <span className="text-gray-800 flex-1 leading-snug whitespace-normal break-words">
+                    {item.name}
+                  </span>
+                  <span className="text-gray-400 text-xs shrink-0 mt-0.5">{item.unit}</span>
                 </div>
               ))}
             </div>

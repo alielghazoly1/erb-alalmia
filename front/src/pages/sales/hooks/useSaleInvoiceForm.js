@@ -56,7 +56,12 @@ export function useSaleInvoiceForm() {
     ? user.permissions.some(p => p.permission === 'sale_allow_negative' && p.granted === true)
     : false;
   const canNegativeSale     = userHasNegativePerm;
-  const canEditInvoice      = isAdmin;
+  // ✅ canEditInvoice = صلاحية التعديل (المستخدمون ذوو الصلاحية + الأدمن)
+  // forceEdit (للمعتمدة) = أدمن فقط — يُرسَل لـ /force-edit تلقائياً
+  const canEditInvoice = isAdmin ||
+    (Array.isArray(user?.permissions)
+      ? user.permissions.some(p => p.permission === 'sale_edit' && p.granted === true)
+      : Boolean(user?.permissions?.canEditInvoice));
 
   // ── header state ──────────────────────────────────────────────────────────
   const [customer,        setCustomer]        = useState(null);
@@ -92,6 +97,7 @@ export function useSaleInvoiceForm() {
   const itemRefs    = useRef({});
   const qtyRefs     = useRef({});
   const wtRefs      = useRef({});
+  const twRefs      = useRef({});
   const prRefs      = useRef({});
   const docTimer    = useRef(null);
   const srchTimer   = useRef(null);
@@ -100,14 +106,19 @@ export function useSaleInvoiceForm() {
   // ── computed ──────────────────────────────────────────────────────────────
   const savedRows      = rows.filter(r => r.saved);
   const activeRowId    = rows.find(r => !r.saved)?.id;
+  // ✅ حساب الإجماليات بدقة — كل صف يُحسب مستقلاً ثم نجمع المراحل بـ r2/r3
   const totalAmount = r2(savedRows.reduce((s, r) => {
-    // لو المستخدم دخل الوزن الكلي يدوياً، نحسب من الوزن الكلي × السعر مباشرة
-    const tw = r._totalWeight ?? r3((parseFloat(r.quantity) || 0) * (parseFloat(r.weight) || 0));
-    return s + r2((parseFloat(tw) || 0) * (parseFloat(r.price) || 0));
+    const tw = r._totalWeight != null
+      ? r3(parseFloat(r._totalWeight) || 0)
+      : r3((parseFloat(r.quantity) || 0) * (parseFloat(r.weight) || 0));
+    const lineTotal = r2((parseFloat(tw) || 0) * (parseFloat(r.price) || 0));
+    return r2(s + lineTotal);
   }, 0));
   const totalWeightAll = r3(savedRows.reduce((s, r) => {
-    const tw = r._totalWeight ?? r3((parseFloat(r.quantity) || 0) * (parseFloat(r.weight) || 0));
-    return s + r3(parseFloat(tw) || 0);
+    const tw = r._totalWeight != null
+      ? r3(parseFloat(r._totalWeight) || 0)
+      : r3((parseFloat(r.quantity) || 0) * (parseFloat(r.weight) || 0));
+    return r3(s + tw);
   }, 0));
   const isCash         = customer?.type === 'cash';
   const isMixed        = paymentMethod === 'mixed';
@@ -259,18 +270,22 @@ export function useSaleInvoiceForm() {
       const resolvedItemId = item.itemId || item.item?._id || item.item?.id || item.item;
       // totalWeight: نحسبه من total ÷ price لو السعر > 0 (أدق من qty × wt)
       // لأن total مخزّن في DB بدقة عالية بينما qty × wt ممكن يطلع floating point
-      const pr = parseFloat(item.price) || 0;
-      const storedTW = pr > 0
-        ? Math.round((parseFloat(item.total) / pr) * 1000) / 1000
-        : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
+      const uw = parseFloat(item.weight) || 0;
+      // ✅ ARCH-001: totalWeight هو المصدر — نستخدمه مباشرة إن وُجد
+      const storedTW = item.totalWeight != null
+        ? parseFloat(item.totalWeight)
+        : Math.round((parseFloat(item.quantity) || 0) * uw * 1000) / 1000;
+      // العدد مشتق من الوزن
+      const derivedQty = uw > 0 && storedTW > 0 ? storedTW / uw : parseFloat(item.quantity) || 0;
       return {
         id: Date.now() + Math.random(),
         item: resolvedItemId,
         itemCode: item.itemCode, itemName: item.itemName,
-        unit: item.unit || '', unitWeight: parseFloat(item.weight),
-        quantity: String(item.quantity), weight: String(item.weight),
+        unit: item.unit || '', unitWeight: uw,
+        quantity: String(derivedQty),  // مشتق
+        weight: String(uw),
         price: String(item.price),
-        _totalWeight: storedTW,   // ← نحفظه عشان الحسابات تكون صح عند التعديل
+        _totalWeight: storedTW,
         saved: true, editing: false,
       };
     });
@@ -321,7 +336,23 @@ export function useSaleInvoiceForm() {
   };
 
   const updateRow = (rowId, field, value) =>
-    setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r));
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const updated = { ...r, [field]: value };
+      // ✅ ARCH-001: لو غيّر العدد يدوياً → نحسب totalWeight منه
+      if (field === 'quantity') {
+        const qty = parseFloat(value) || 0;
+        const uw  = parseFloat(r.weight) || parseFloat(r.unitWeight) || 0;
+        if (qty > 0 && uw > 0) {
+          const newTW = Math.round(qty * uw * 1000) / 1000;
+          updated._totalWeight = newTW;
+          setTotalWeightInput(prev => ({ ...prev, [rowId]: String(newTW) }));
+        } else {
+          updated._totalWeight = null;
+        }
+      }
+      return updated;
+    }));
 
   const handleTotalWeightChange = (rowId, totalWt) => {
     setTotalWeightInput(prev => ({ ...prev, [rowId]: totalWt }));
@@ -329,13 +360,13 @@ export function useSaleInvoiceForm() {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const uw = parseFloat(r.weight) || parseFloat(r.unitWeight) || 0;
-      if (!uw) return r;
-      // نحسب العدد من الوزن الكلي — نحتفظ بالوزن الكلي للحساب الدقيق
-      const qty = tw / uw;
+      if (!uw) return { ...r, _totalWeight: tw > 0 ? tw : null };
+      // ✅ ARCH-001: العدد مشتق من الوزن بدقة كاملة (لا تقريب)
+      const qty = tw > 0 ? tw / uw : 0;
       return {
         ...r,
-        quantity:    qty > 0 ? String(Math.round(qty * 10000) / 10000) : '',
-        _totalWeight: tw,   // نحفظ الوزن الكلي الأصلي
+        _totalWeight: tw > 0 ? tw : null,
+        quantity: qty > 0 ? String(qty) : '',
       };
     }));
   };
@@ -343,9 +374,9 @@ export function useSaleInvoiceForm() {
   const handleKeyDown = (e, rowId, field) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if (field === 'quantity') { wtRefs.current[rowId]?.focus(); return; }
-    if (field === 'weight')   { prRefs.current[rowId]?.focus(); return; }
-    if (field === 'price')    { handleSaveRow(rowId); }
+    if (field === 'quantity')    { twRefs.current[rowId]?.focus(); return; }
+    if (field === 'totalWeight') { prRefs.current[rowId]?.focus(); return; }
+    if (field === 'price')       { handleSaveRow(rowId); }
   };
 
   const handleSaveRow = (rowId) => {
@@ -422,16 +453,20 @@ export function useSaleInvoiceForm() {
     setSaving(true);
 
     const itemsPayload = savedRows.map(r => {
-      const qty = parseFloat(r.quantity) || 0;
-      const uw  = parseFloat(r.weight)   || 0;
-      const pr  = parseFloat(r.price)    || 0;
-      // الوزن الكلي: نستخدم ما أدخله المستخدم مباشرة إن وُجد، وإلا qty × unitWeight
-      const tw  = r._totalWeight != null ? r3(parseFloat(r._totalWeight)) : r3(qty * uw);
+      const uw  = parseFloat(r.weight) || 0;
+      const pr  = parseFloat(r.price)  || 0;
+      // ✅ ARCH-001: totalWeight هو المصدر الوحيد
+      const tw  = r._totalWeight != null
+        ? Math.round(parseFloat(r._totalWeight) * 1000) / 1000
+        : Math.round((parseFloat(r.quantity) || 0) * uw * 1000) / 1000;
+      const qty = uw > 0 ? tw / uw : (parseFloat(r.quantity) || 0); // مشتق
       return {
         item: r.item, itemCode: r.itemCode, itemName: r.itemName,
-        quantity: qty, weight: uw, price: pr,
-        totalWeight: tw,          // ← مهم: الـ backend يستخدمه بدل qty × wt
-        total: r2(tw * pr),
+        weight: uw,
+        totalWeight: tw,  // ✅ المصدر الحقيقي
+        quantity: qty,    // مشتق — الباك يُعيد حسابه
+        price: pr,
+        total: Math.round(tw * pr * 100) / 100,
       };
     });
 
@@ -505,11 +540,14 @@ export function useSaleInvoiceForm() {
     showAdminSearch, setShowAdminSearch,
     searchQuery, searchResults, searchLoading,
     totalAmount, totalWeightAll, isCash, isMixed, paidAmount, remaining,
-    docRef, customerRef, itemRefs, qtyRefs, wtRefs, prRefs, customerKey,
+    docRef, customerRef, itemRefs, qtyRefs, wtRefs, prRefs, twRefs, customerKey,
     handleDocChange, handleDocKeyDown,
     handleCustomerSelect, focusItemSearch,
     handleSearchChange, loadForEdit, cancelEdit,
-    handleItemSelect, updateRow, handleTotalWeightChange,
+    handleItemSelect, updateRow,
+    handleQuantityChange: (rowId, v) => updateRow(rowId, 'quantity', v),
+    handleUnitWeightChange: (rowId, v) => updateRow(rowId, 'unitWeight', v),
+    handleTotalWeightChange,
     handleKeyDown, handleSaveRow,
     handleEditRow, handleCancelRow, handleDeleteRow,
     handleSubmit,

@@ -7,20 +7,23 @@
 'use strict';
 
 const prisma = require('../config/db');
-const { safeNum, round2, round3, calcWeight, calcTotal, sumWeights, sumAmounts, n } = require('../utils/decimalHelper');
+const { safeNum, round2, round3, calcWeight, calcTotal, sumWeights, sumAmounts, n, normalizeInvoiceItems } = require('../utils/decimalHelper');
 const { updateStock, createStockMovement } = require('../utils/stockHelper');
 const { nextNumber } = require('../utils/counterHelper');
 
 // ── extractTotalWeight ────────────────────────────────────────────────────────
 /**
- * يستخلص الوزن الكلي الدقيق من سطر الفاتورة المخزّن في DB:
- *  - لو السعر > 0 → نحسب total ÷ price (أدق لأن total مخزّن في DB)
- *  - غير ذلك    → نحسب qty × weight بـ Decimal.js
+ * ✅ الأولوية: totalWeight المخزّن صراحةً (الأدق دائماً)
+ *              ثم qty × weight بـ Decimal
+ *              أخيراً total ÷ price (fallback للبيانات القديمة)
  */
 const extractTotalWeight = (item) => {
+  if (item.totalWeight != null) return round3(safeNum(item.totalWeight));
+  const tw = calcWeight(item.quantity, item.weight);
+  if (tw > 0) return tw;
   const pr = safeNum(item.price);
   if (pr > 0) return round3(safeNum(item.total) / pr);
-  return calcWeight(item.quantity, item.weight);
+  return 0;
 };
 
 const PAGE_SIZE = 100;
@@ -119,11 +122,8 @@ const createPurchaseInvoice = async (req, res) => {
     const { docNumber, date, supplierCode, supplierName, supplierId, warehouse, items, notes } = req.body;
     if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
-    // حساب الأوزان بـ Decimal.js
-    const recalcItems = items.map(i => {
-      const tw = calcWeight(i.quantity, i.weight, i.totalWeight ?? null);
-      return { ...i, _tw: tw, total: round2(safeNum(tw) * safeNum(i.price)) };
-    });
+    // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
+    const recalcItems = normalizeInvoiceItems(items, { hasPrice: true });
 
     const [activeSeason, invoiceNumber] = await Promise.all([
       prisma.season.findFirst({ where: { isActive: true } }),
@@ -158,8 +158,10 @@ const createPurchaseInvoice = async (req, res) => {
         createdById:    req.user.id,
         items: {
           create: recalcItems.map(i => ({
-            itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
+            itemId: i.itemId || i.item, itemCode: i.itemCode, itemName: i.itemName,
+            quantity: safeNum(i.quantity), weight: safeNum(i.weight),
+            totalWeight: i._tw,
+            price: safeNum(i.price), total: i.total,
           })),
         },
       },
@@ -183,10 +185,9 @@ const forceEditPurchaseInvoice = async (req, res) => {
     const wasApproved = invoice.status === 'approved';
     const { docNumber, date, items, notes } = req.body;
 
-    const recalcItems = items.map(i => {
-      const tw = calcWeight(i.quantity, i.weight, i.totalWeight ?? null);
-      return { ...i, _tw: tw, total: round2(safeNum(tw) * safeNum(i.price)) };
-    });
+    // ✅ FIX-PUR-EDIT-001: استخدام normalizeInvoiceItems بدل الحساب اليدوي
+    // منسجم مع createPurchaseInvoice ويضمن quantity = totalWeight ÷ unitWeight
+    const recalcItems = normalizeInvoiceItems(items, { hasPrice: true });
     const totalAmount = sumAmounts(recalcItems.map(i => i.total));
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
@@ -196,9 +197,9 @@ const forceEditPurchaseInvoice = async (req, res) => {
       if (wasApproved) {
         for (const item of invoice.items) {
           const tw = extractTotalWeight(item);
+          // ✅ ARCH-001: العكس بالوزن فقط
           await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, {
-            quantity: -safeNum(item.quantity),
-            weight:   -tw,
+            weight: -tw,
           }, tx);
         }
         await tx.stockMovement.deleteMany({ where: { referenceId: invoice.id } });
@@ -222,8 +223,10 @@ const forceEditPurchaseInvoice = async (req, res) => {
           approvedById: null, approvedAt: null,
           items: {
             create: recalcItems.map(i => ({
-              itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-              quantity: safeNum(i.quantity), weight: safeNum(i.weight), price: safeNum(i.price), total: i.total,
+              itemId: i.itemId || i.item, itemCode: i.itemCode, itemName: i.itemName,
+              quantity: safeNum(i.quantity), weight: safeNum(i.weight),
+              totalWeight: i._tw,
+              price: safeNum(i.price), total: i.total,
             })),
           },
         },
@@ -246,12 +249,13 @@ const approvePurchaseInvoice = async (req, res) => {
     // ── Transaction: إضافة المخزون + تسجيل الحركات + اعتماد الفاتورة ─────────
     const approved = await prisma.$transaction(async (tx) => {
       for (const inv of invoice.items) {
-        // حساب الوزن بـ Decimal.js
-        const tw = calcWeight(inv.quantity, inv.weight);
+        // ✅ FIX-PUR-APPROVE-001: extractTotalWeight يُعطي الأولوية لـ totalWeight المخزّن
+        // بدل calcWeight(qty, weight) الذي يتجاهله ويُحدث stock drift
+        const tw = extractTotalWeight(inv);
 
+        // ✅ ARCH-001: الإضافة بالوزن فقط — quantity تُحسب تلقائياً
         await updateStock(inv.itemId, invoice.warehouse, invoice.seasonId, {
-          quantity:  safeNum(inv.quantity),
-          weight:    tw,
+          weight: tw,
         }, tx);
 
         await tx.item.update({

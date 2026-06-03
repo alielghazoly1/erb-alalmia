@@ -315,7 +315,7 @@ export function useSaleInvoiceForm() {
       const qty = tw / uw;
       return {
         ...r,
-        quantity:    qty > 0 ? String(Math.round(qty * 10000) / 10000) : '',
+        quantity:    qty > 0 ? String(qty) : '',
         _totalWeight: tw,   // نحفظ الوزن الكلي الأصلي
       };
     }));

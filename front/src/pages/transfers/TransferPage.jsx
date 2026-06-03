@@ -1,21 +1,18 @@
 // ─── TransferPage.jsx ──────────────────────────────────────────────────────────
-// إذن تحويل — فورم مطابق لفاتورة المبيعات بالضبط
-// ✅ عرض المخزون المتاح عند اختيار الصنف (من الموسم النشط)
-// ✅ تغيير المخزن يحدّث الكميات المتاحة لكل الأصناف
-// ✅ الحفظ + تعديل
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createTransfer, updateTransfer, fetchTransferById } from '../../store/slices/transferSlice';
-import ItemSearch from '../../components/common/ItemSearch';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import InvoiceItemsForm from '../../components/common/InvoiceItemsForm';
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
   item: null, itemCode: '', itemName: '', unit: '',
-  quantity: '', weight: '',
-  availableQty: undefined,
+  unitWeight: 0,
+  quantity: '',
+  availableQty: undefined, availableWeight: undefined,
   _totalWeight: null,
   saved: false, editing: false,
 });
@@ -24,7 +21,6 @@ const r3 = (v) => Math.round((parseFloat(v) || 0) * 1000) / 1000;
 const r2 = (v) => Math.round((parseFloat(v) || 0) * 100) / 100;
 const calcTW = (qty, wt, tw = null) =>
   tw != null ? r3(parseFloat(tw)) : r3((parseFloat(qty) || 0) * (parseFloat(wt) || 0));
-// cleanNum: يعرض صفر بدل -0 أو أي قيمة وهمية
 const cleanNum = (v, decimals = 3) => {
   const n = parseFloat(v) || 0;
   return (Object.is(n, -0) || Math.abs(n) < 0.0005) ? (0).toFixed(decimals) : n.toFixed(decimals);
@@ -36,32 +32,31 @@ export default function TransferPage() {
   const { id }    = useParams();
   const isEdit    = !!id;
 
-  const { user }    = useSelector(s => s.auth);
-  const { current } = useSelector(s => s.transfers);
+  const { user }         = useSelector(s => s.auth);
+  const { current }      = useSelector(s => s.transfers);
   const { activeSeason } = useSelector(s => s.season);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin          = user?.role === 'admin';
 
   const defaultFrom = user?.warehouse === 'october' ? 'october' : 'ramses';
-  const [fromWarehouse, setFromWarehouse] = useState(defaultFrom);
-  const [toWarehouse,   setToWarehouse]   = useState(defaultFrom === 'ramses' ? 'october' : 'ramses');
-  const [date,    setDate]    = useState(new Date().toISOString().split('T')[0]);
-  const [notes,   setNotes]   = useState('');
-  const [rows,    setRows]    = useState([newRow()]);
-  const [saving,      setSaving]      = useState(false);
-  const [loading,     setLoading]     = useState(isEdit);
-  const [existingStatus, setExistingStatus] = useState('pending');
+  const [fromWarehouse,    setFromWarehouse]    = useState(defaultFrom);
+  const [toWarehouse,      setToWarehouse]      = useState(defaultFrom === 'ramses' ? 'october' : 'ramses');
+  const [date,             setDate]             = useState(new Date().toISOString().split('T')[0]);
+  const [notes,            setNotes]            = useState('');
+  const [rows,             setRows]             = useState([newRow()]);
+  const [saving,           setSaving]           = useState(false);
+  const [loading,          setLoading]          = useState(isEdit);
+  const [existingStatus,   setExistingStatus]   = useState('pending');
   const [totalWeightInput, setTotalWeightInput] = useState({});
-
-  const [docNumber,   setDocNumber]   = useState('');
-  const [docError,    setDocError]    = useState('');
-  const [docChecking, setDocChecking] = useState(false);
-  const docTimer = useRef(null);
+  const [docNumber,        setDocNumber]        = useState('');
+  const [docError,         setDocError]         = useState('');
+  const [docChecking,      setDocChecking]      = useState(false);
 
   const qtyRefs  = useRef({});
   const wtRefs   = useRef({});
   const itemRefs = useRef({});
+  const docTimer = useRef(null);
 
-  // ── تحميل بيانات التحويل للتعديل ───────────────────────────────────────
+  // ── تحميل للتعديل ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isEdit) return;
     dispatch(fetchTransferById(id)).then(res => {
@@ -77,26 +72,33 @@ export default function TransferPage() {
       setNotes(data.notes || '');
       setDocNumber(data.docNumber || '');
 
-      const loaded = data.items.map(item => ({
-        id:       Date.now() + Math.random(),
-        item:     item.item?._id || item.item,
-        itemCode: item.itemCode,
-        itemName: item.itemName,
-        unit:     item.unit || '',
-        quantity: String(item.quantity),
-        weight:   String(item.weight),
-        availableQty: undefined,
-        saved: true, editing: false,
-      }));
+      const loaded = data.items.map(item => {
+        const uw = parseFloat(item.weight) || 0;
+        const tw = item.totalWeight != null
+          ? parseFloat(item.totalWeight)
+          : Math.round((parseFloat(item.quantity)||0) * uw * 1000) / 1000;
+        const qty = uw > 0 && tw > 0 ? Math.round((tw/uw)*10000)/10000 : (parseFloat(item.quantity)||0);
+        return {
+          id: Date.now() + Math.random(),
+          item: item.itemId || item.item?._id || item.item,
+          itemCode: item.itemCode, itemName: item.itemName, unit: item.unit || '',
+          unitWeight: uw, quantity: String(qty),
+          _totalWeight: tw,
+          availableQty: undefined, availableWeight: undefined,
+          saved: true, editing: false,
+        };
+      });
+      const twMap = {};
+      loaded.forEach(r => { if (r._totalWeight) twMap[r.id] = String(r._totalWeight); });
       setRows([...loaded, newRow()]);
+      setTotalWeightInput(twMap);
       setLoading(false);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEdit]);
 
-  // ── تحديث stock المتاح لما المخزن يتغير — نعيد قراءة item.stock الموجود ──────
+  // ── تحديث الرصيد عند تغيير المخزن ────────────────────────────────────────
   const refreshStockForWarehouse = useCallback(async (warehouse) => {
-    // نجيب الـ item IDs المحتاجين تحديث
     const savedWithItems = rows.filter(r => r.saved && r.item);
     if (!savedWithItems.length) return;
     try {
@@ -114,7 +116,7 @@ export default function TransferPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, activeSeason]);
 
-  // ── التحقق من رقم المستند ───────────────────────────────────────────────
+  // ── doc check ──────────────────────────────────────────────────────────────
   const checkDocNumber = useCallback(async (val) => {
     if (!val?.trim() || !fromWarehouse) { setDocError(''); return; }
     const direction = fromWarehouse === 'ramses' ? 'R2O' : 'O2R';
@@ -124,34 +126,60 @@ export default function TransferPage() {
       if (activeSeason?._id) params.seasonId = activeSeason._id;
       if (isEdit && id) params.excludeId = id;
       const { data } = await api.get('/transfers/check-doc', { params });
-      setDocError(data.exists
-        ? `⚠️ رقم المستند "${val}" موجود بالفعل (${data.transferNumber})`
-        : '');
+      setDocError(data.exists ? `⚠️ رقم المستند "${val}" موجود بالفعل (${data.transferNumber})` : '');
     } catch { setDocError(''); }
     finally { setDocChecking(false); }
   }, [fromWarehouse, activeSeason, isEdit, id]);
 
   const handleDocChange = (val) => {
-    setDocNumber(val);
-    setDocError('');
+    setDocNumber(val); setDocError('');
     clearTimeout(docTimer.current);
     docTimer.current = setTimeout(() => checkDocNumber(val), 500);
   };
 
-  // ── اختيار صنف ──────────────────────────────────────────────────────────
+  // ── item handlers ──────────────────────────────────────────────────────────
   const handleItemSelect = (rowId, item) => {
     if (!item) return;
-    // نقرأ الرصيد من item.stock اللي بيييجي مع نتيجة البحث
     const availableQty = item.stock?.[fromWarehouse]?.quantity ?? 0;
-
-    setRows(prev => prev.map(r =>
-      r.id === rowId ? {
-        ...r, item: item._id, itemCode: item.code, itemName: item.name, unit: item.unit || '',
-        weight: item.defaultWeight ? String(item.defaultWeight) : r.weight,
-        availableQty,
-      } : r
-    ));
+    const availableWeight = item.stock?.[fromWarehouse]?.weight ?? 0;
+    const unitWeight = parseFloat(item.defaultWeight) || 0;
+    setRows(prev => prev.map(r => r.id !== rowId ? r : {
+      ...r, item: item._id, itemCode: item.code, itemName: item.name, unit: item.unit || '',
+      unitWeight, availableQty, availableWeight,
+    }));
     setTimeout(() => qtyRefs.current[rowId]?.focus(), 50);
+  };
+
+  const updateRow = (rowId, field, val) =>
+    setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: val } : r));
+
+  const handleQuantityChange = (rowId, qtyStr) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const qty = parseFloat(qtyStr) || 0;
+      const uw  = parseFloat(r.unitWeight) || 0;
+      if (qty > 0 && uw > 0) {
+        const newTW = Math.round(qty * uw * 1000) / 1000;
+        setTotalWeightInput(p => ({ ...p, [rowId]: String(newTW) }));
+        return { ...r, quantity: qtyStr, _totalWeight: newTW };
+      }
+      setTotalWeightInput(p => ({ ...p, [rowId]: '' }));
+      return { ...r, quantity: qtyStr, _totalWeight: null };
+    }));
+  };
+
+  const handleUnitWeightChange = (rowId, uwStr) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const uw  = parseFloat(uwStr) || 0;
+      const qty = parseFloat(r.quantity) || 0;
+      if (qty > 0 && uw > 0) {
+        const newTW = Math.round(qty * uw * 1000) / 1000;
+        setTotalWeightInput(p => ({ ...p, [rowId]: String(newTW) }));
+        return { ...r, unitWeight: uw, _totalWeight: newTW };
+      }
+      return { ...r, unitWeight: uw };
+    }));
   };
 
   const handleTotalWeightChange = (rowId, totalWt) => {
@@ -159,19 +187,15 @@ export default function TransferPage() {
     const tw = parseFloat(totalWt) || 0;
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
-      const uw = parseFloat(r.weight) || 0;
-      if (!uw) return { ...r, _totalWeight: tw || null };
-      const qty = tw / uw;
+      const uw  = parseFloat(r.unitWeight) || 0;
+      const qty = uw > 0 && tw > 0 ? Math.round((tw / uw) * 10000) / 10000 : 0;
       return {
         ...r,
-        quantity: qty > 0 ? String(Math.round(qty * 10000) / 10000) : '',
-        _totalWeight: tw || null,
+        _totalWeight: tw > 0 ? tw : null,
+        quantity: qty > 0 ? String(qty) : '',
       };
     }));
   };
-
-  const updateRow = (rowId, field, val) =>
-    setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: val } : r));
 
   const handleKeyDown = (e, rowId, field) => {
     if (e.key !== 'Enter') return;
@@ -182,16 +206,29 @@ export default function TransferPage() {
 
   const handleSaveRow = (rowId) => {
     const row = rows.find(r => r.id === rowId);
-    if (!row?.item)                   { toast.error('اختار الصنف أولاً'); return; }
-    if (!row.quantity || !row.weight) { toast.error('اكمل بيانات الصنف'); return; }
-    setRows(prev => {
-      const upd = prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r);
-      return [...upd, newRow()];
-    });
-    setTotalWeightInput(prev => { const n = { ...prev }; delete n[rowId]; return n; });
+    if (!row?.item)      { toast.error('اختار الصنف أولاً');        return; }
+    if (!row.unitWeight) { toast.error('أدخل وزن/وحدة');             return; }
+    const tw = row._totalWeight ?? Math.round((parseFloat(row.quantity)||0) * (parseFloat(row.unitWeight)||0) * 1000) / 1000;
+    if (tw <= 0)         { toast.error('أدخل الوزن الكلي أو العدد'); return; }
+    // ✅ ARCH-001: تحقق من الرصيد بالوزن
+    if (row.availableWeight !== undefined) {
+      const awt = parseFloat(row.availableWeight) || 0;
+      if (awt < tw) { toast.error(`المخزون مش كافي — متاح: ${awt.toFixed(3)} ك — مطلوب: ${tw.toFixed(3)} ك`); return; }
+    }
+    const dup = rows.find(r => r.id !== rowId && r.saved && r.item === row.item);
+    if (dup) { toast.error(`الصنف "${row.itemName}" موجود بالفعل`); return; }
+    if (row.editing) {
+      setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r));
+    } else {
+      const newR = newRow();
+      setRows(prev => [...prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r), newR]);
+      setTotalWeightInput(prev => { const n = { ...prev }; delete n[rowId]; return n; });
+      setTimeout(() => { if (itemRefs.current[newR.id]) itemRefs.current[newR.id](); }, 80);
+    }
   };
 
-  const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true } : r));
+  const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true  } : r));
+  const handleCancelRow = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true,  editing: false } : r));
   const handleDeleteRow = (rowId) => setRows(prev => { const f = prev.filter(r => r.id !== rowId); return f.length ? f : [newRow()]; });
 
   const handleFromChange = async (val) => {
@@ -201,10 +238,16 @@ export default function TransferPage() {
   };
 
   const savedRows     = rows.filter(r => r.saved);
-  const totalWeight   = r3(savedRows.reduce((s, r) => s + calcTW(r.quantity, r.weight, r._totalWeight ?? null), 0));
+  const r3tw = (v) => Math.round((parseFloat(v)||0)*1000)/1000;
+  const totalWeight   = r3tw(savedRows.reduce((s, r) => {
+    const uw = parseFloat(r.unitWeight) || 0;
+    const tw = r._totalWeight ?? Math.round((parseFloat(r.quantity)||0) * uw * 1000) / 1000;
+    return s + tw;
+  }, 0));
   const totalQuantity = savedRows.reduce((s, r) => s + (parseFloat(r.quantity) || 0), 0);
   const isApprovedEdit = isEdit && existingStatus === 'approved';
 
+  // ── submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!docNumber.trim())             { toast.error('أدخل رقم المستند'); return; }
     if (docError)                      { toast.error(docError); return; }
@@ -220,11 +263,16 @@ export default function TransferPage() {
     const payload = {
       fromWarehouse, toWarehouse, date, notes,
       docNumber: docNumber.trim(),
-      items: savedRows.map(r => ({
-        item: r.item, itemCode: r.itemCode, itemName: r.itemName,
-        quantity: Number(r.quantity), weight: Number(r.weight),
-        totalWeight: calcTW(r.quantity, r.weight, r._totalWeight ?? null),
-      })),
+      items: savedRows.map(r => {
+        const uw  = parseFloat(r.unitWeight) || 0;
+        const tw  = r._totalWeight ?? Math.round((parseFloat(r.quantity)||0) * uw * 1000) / 1000;
+        const qty = uw > 0 ? tw / uw : (parseFloat(r.quantity) || 0);
+        return {
+          item: r.item, itemCode: r.itemCode, itemName: r.itemName,
+          quantity: qty, weight: uw,    // ✅ ARCH-001: weight = unitWeight
+          totalWeight: tw,              // ✅ المصدر الحقيقي
+        };
+      }),
     };
 
     try {
@@ -238,6 +286,7 @@ export default function TransferPage() {
           toast.success(`تم حفظ الإذن ${res.payload.transferNumber} ⏳`);
           setRows([newRow()]); setNotes(''); setDocNumber(''); setDocError('');
           setDate(new Date().toISOString().split('T')[0]);
+          setTotalWeightInput({});
         } else toast.error(res.payload || 'خطأ في الحفظ');
       }
     } catch { toast.error('خطأ غير متوقع'); }
@@ -344,204 +393,42 @@ export default function TransferPage() {
         </div>
       </div>
 
-      {/* ── جدول الأصناف المحفوظة ── */}
-      {savedRows.length > 0 && (
-        <div className="card">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">
-            الأصناف ({savedRows.length})
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs">
-                  <th className="text-right px-3 py-2">#</th>
-                  <th className="text-right px-3 py-2">الكود</th>
-                  <th className="text-right px-3 py-2">الصنف</th>
-                  <th className="text-center px-3 py-2">متاح</th>
-                  <th className="text-center px-3 py-2">العدد</th>
-                  <th className="text-center px-3 py-2">وزن/وحدة</th>
-                  <th className="text-center px-3 py-2">وزن كلي</th>
-                  <th className="w-16"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {savedRows.map((row, idx) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2.5 text-gray-400 text-center text-xs">{idx + 1}</td>
-                    <td className="px-3 py-2.5 font-mono text-blue-600 text-xs">{row.itemCode}</td>
-                    <td className="px-3 py-2.5 font-medium text-gray-800">{row.itemName}</td>
-                    <td className="px-3 py-2.5 text-center">
-                      {row.availableQty !== undefined ? (
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          row.availableQty <= 0 ? 'bg-red-100 text-red-600' :
-                          row.availableQty < 5  ? 'bg-amber-100 text-amber-700' :
-                                                   'bg-green-100 text-green-700'
-                        }`}>
-                          {row.availableQty} ك
-                        </span>
-                      ) : <span className="text-gray-300 text-xs">—</span>}
-                    </td>
-                    <td className="px-3 py-2.5 text-center font-bold">{row.quantity}</td>
-                    <td className="px-3 py-2.5 text-center text-gray-400 text-xs">
-                      {cleanNum(row.weight, 3)} ك
-                    </td>
-                    <td className="px-3 py-2.5 text-center font-semibold text-blue-700">
-                      {cleanNum(calcTW(row.quantity, row.weight, row._totalWeight ?? null), 3)} ك
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <button onClick={() => handleEditRow(row.id)} className="text-blue-500 text-xs p-1 rounded hover:bg-blue-50">✏️</button>
-                      <button onClick={() => handleDeleteRow(row.id)} className="text-red-400 text-xs p-1 rounded hover:bg-red-50">🗑️</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-blue-50 font-semibold text-xs">
-                  <td colSpan={4} className="px-3 py-2 text-right text-gray-600">الإجمالي</td>
-                  <td className="px-3 py-2 text-center text-blue-700">{totalQuantity} كرتونة</td>
-                  <td></td>
-                  <td className="px-3 py-2 text-center text-blue-700">{cleanNum(totalWeight, 3)} ك</td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* ✅ الكومبونانت المشترك — showPrice=false للتحويلات */}
+      <div className="card">
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          الأصناف {savedRows.length > 0 && `(${savedRows.length})`}
+        </h2>
+        <InvoiceItemsForm
+          rows={rows}
+          totalWeightInput={totalWeightInput}
+          showPrice={false}
+          qtyRefs={qtyRefs}
+          wtRefs={wtRefs}
+          prRefs={{ current: {} }}
+          twRefs={{ current: {} }}
+          itemRefs={itemRefs}
+          onItemSelect={handleItemSelect}
+          onUpdateRow={updateRow}
+          onQuantityChange={handleQuantityChange}
+          onUnitWeightChange={handleUnitWeightChange}
+          onTotalWeightChange={handleTotalWeightChange}
+          onKeyDown={handleKeyDown}
+          onSaveRow={handleSaveRow}
+          onEditRow={handleEditRow}
+          onCancelRow={handleCancelRow}
+          onDeleteRow={handleDeleteRow}
+        />
+      </div>
 
-      {/* ── صف إدخال الصنف — طبق الأصل من فاتورة المبيعات ── */}
-      {rows.filter(r => !r.saved).map(row => {
-        const twInputVal = totalWeightInput[row.id] || '';
-        const hasTwInput = parseFloat(twInputVal) > 0;
-        const tw = hasTwInput
-          ? parseFloat(twInputVal)
-          : calcTW(row.quantity, row.weight);
-
-        return (
-          <div
-            key={row.id}
-            className={`rounded-xl border-2 p-3 sticky bottom-0 z-10 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] ${
-              row.editing ? 'border-amber-400 bg-amber-50/95' : 'border-blue-200 bg-blue-50/95'
-            }`}
-          >
-            {/* item info header */}
-            {row.itemName && (
-              <p className="text-xs text-green-600 mt-0.5 mb-1 font-medium truncate">✓ {row.itemName}</p>
-            )}
-            {row.availableQty !== undefined && (
-              <p className={`text-xs mb-1 ${
-                row.availableQty <= 0 ? 'text-red-500' : row.availableQty < 5 ? 'text-amber-600' : 'text-green-600'
-              }`}>
-                {row.availableQty <= 0 ? '⚠️ لا يوجد رصيد كافٍ' : `🟢 متاح في ${warehouseLabel(fromWarehouse)}: ${row.availableQty} كرتون`}
-              </p>
-            )}
-            <p className="text-xs font-semibold text-gray-500 mb-2">
-              {row.editing ? '✏️ تعديل صنف' : '➕ أضف صنف'}
-            </p>
-
-            <div className="grid grid-cols-12 gap-2 items-end">
-              {/* الصنف */}
-              <div className="col-span-5">
-                <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
-                <ItemSearch
-                  onSelect={item => handleItemSelect(row.id, item)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); qtyRefs.current[row.id]?.focus(); } }}
-                  placeholder="ابحث بالكود أو الاسم..."
-                  getFocusTrigger={fn => { itemRefs.current[row.id] = fn; }}
-                  defaultValue={row.editing ? row.itemName : ''}
-                />
-              </div>
-
-              {/* العدد */}
-              <div className="col-span-3">
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  العدد (كراتين)
-                  {row.weight && <span className="text-blue-400 mr-1 text-xs">×{row.weight}ك</span>}
-                  {hasTwInput && <span className="text-xs text-orange-400 mr-1">(محسوب)</span>}
-                </label>
-                <input
-                  ref={el => (qtyRefs.current[row.id] = el)}
-                  type="number" min="0" step="1"
-                  className={`input-field text-center font-bold text-lg ${hasTwInput ? 'bg-orange-50/50 text-orange-600' : ''}`}
-                  placeholder="0"
-                  value={row.quantity}
-                  onChange={e => updateRow(row.id, 'quantity', e.target.value)}
-                  onKeyDown={e => handleKeyDown(e, row.id, 'quantity')}
-                />
-                {row.quantity && row.weight && (
-                  <p className="text-xs text-blue-500 mt-0.5 text-center">
-                    = {cleanNum(calcTW(row.quantity, row.weight, row._totalWeight ?? null), 3)} كيلو
-                  </p>
-                )}
-              </div>
-
-              {/* الوزن */}
-              <div className="col-span-3">
-                <label className="block text-xs font-medium text-gray-500 mb-1">وزن الكرتونة (كيلو)</label>
-                <input
-                  ref={el => (wtRefs.current[row.id] = el)}
-                  type="number" min="0" step="0.001"
-                  className="input-field text-center"
-                  placeholder="0.000"
-                  value={row.weight}
-                  onChange={e => updateRow(row.id, 'weight', e.target.value)}
-                  onKeyDown={e => handleKeyDown(e, row.id, 'weight')}
-                />
-              </div>
-
-              {/* الكلي */}
-              <div className="col-span-1 flex flex-col items-center gap-1">
-                <p className="text-xs text-gray-400">الكلي</p>
-                <p className="text-sm font-bold text-blue-700 leading-tight">
-                  {cleanNum(tw, 2)}
-                </p>
-              </div>
-            </div>
-
-            {/* الوزن الكلي + زر الإضافة */}
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex-1">
-                <input
-                  type="number" min="0" step="0.001"
-                  className={`input-field text-center text-xs py-1.5 ${hasTwInput ? 'bg-blue-100 border-blue-400' : 'bg-blue-50/50'}`}
-                  placeholder="أو أدخل الوزن الكلي (يحسب العدد)"
-                  value={twInputVal}
-                  onChange={e => handleTotalWeightChange(row.id, e.target.value)}
-                />
-                {hasTwInput && (
-                  <p className="text-xs text-blue-500 mt-0.5 text-center">
-                    وزن كلي: {r3(tw).toFixed(3)} ك
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => handleSaveRow(row.id)}
-                className="btn-primary px-6 py-2"
-                disabled={!row.item || !row.quantity || !row.weight}
-              >
-                {row.editing ? '✓ تحديث' : '✓ إضافة'}
-              </button>
-              {row.editing && (
-                <button onClick={() => handleDeleteRow(row.id)} className="btn-secondary px-4 py-2">إلغاء</button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-
-      {/* ── بطاقة الإجمالي ── */}
+      {/* بطاقة الإجمالي */}
       {savedRows.length > 0 && (
         <div className="card bg-blue-50 border border-blue-200">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600 space-y-1">
               <p>عدد الأصناف: <span className="font-bold text-gray-800">{savedRows.length}</span></p>
-              <p>إجمالي الكراتين: <span className="font-bold text-gray-800">{totalQuantity}</span></p>
-              <p className="text-xs text-gray-500">
-                {warehouseLabel(fromWarehouse)} ← {warehouseLabel(toWarehouse)}
-              </p>
-              {activeSeason && (
-                <p className="text-xs text-blue-600">🌿 الموسم: {activeSeason.name}</p>
-              )}
+              <p>إجمالي الكراتين: <span className="font-bold text-gray-800">{cleanNum(totalQuantity, 3)}</span></p>
+              <p className="text-xs text-gray-500">{warehouseLabel(fromWarehouse)} ← {warehouseLabel(toWarehouse)}</p>
+              {activeSeason && <p className="text-xs text-blue-600">🌿 الموسم: {activeSeason.name}</p>}
             </div>
             <div className="text-left">
               <p className="text-sm text-gray-500 mb-1">إجمالي الوزن المحوّل</p>

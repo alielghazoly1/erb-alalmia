@@ -248,11 +248,9 @@ const getCustomerStatement = async (req, res) => {
       date: customer.createdAt, docNumber: 'رصيد ابتدائي',
     }] : [];
 
-    const seasons = await prisma.season.findMany({ orderBy: { startDate: 'desc' } });
-
+    // ✅ PERF-CUST-001: حذف جلب كل المواسم من كشف الحساب — مش محتاجينه هنا
     res.json({
       customer:  { ...n(customer), openingBalance: openingBal },
-      seasons:   seasons.map(n),
       totals:    { totalSales, totalReturns, totalPaid, openingBalance: openingBal, netSales: round2(totalSales - totalReturns), balance: trueBalance },
       counts:    { invoices: invCount, returns: retCount, payments: payCount, total: invCount + retCount + payCount },
       rows:      [...openingRow, ...rows],

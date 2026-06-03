@@ -331,6 +331,11 @@ model SaleInvoice {
   @@index([seasonId, status])
   @@index([seasonId, date(sort: Desc)])
   @@index([seasonId, createdAt(sort: Desc)])
+  // ✅ PERF-001: الـ index الأهم للـ cursor pagination — (deletedAt, seasonId, createdAt DESC)
+  // يُغطي الـ WHERE الأكثر شيوعاً: deletedAt IS NULL + seasonId = X ORDER BY createdAt DESC
+  @@index([deletedAt, seasonId, createdAt(sort: Desc)])
+  // ✅ PERF-002: البحث النصي بـ invoiceNumber — لا يحتاج full-text بس prefix fast
+  @@index([invoiceNumber])
   @@index([warehouse, seasonId, status])
   @@index([status, date(sort: Desc)])
   @@index([date(sort: Desc)])
@@ -339,19 +344,21 @@ model SaleInvoice {
 }
 
 model SaleInvoiceItem {
-  id        String      @id @default(uuid()) @db.Uuid
-  invoiceId String      @db.Uuid
-  itemId    String      @db.Uuid
-  itemCode  String      @db.VarChar(50)
-  itemName  String      @db.VarChar(200)
-  quantity  Decimal     @db.Decimal(12, 3)
-  weight    Decimal     @db.Decimal(12, 3)
-  price     Decimal     @db.Decimal(15, 2)
-  discount  Decimal     @default(0) @db.Decimal(15, 2)
-  total     Decimal     @db.Decimal(15, 2)
-  sortOrder Int         @default(0)
-  invoice   SaleInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  item      Item        @relation(fields: [itemId], references: [id])
+  id          String      @id @default(uuid()) @db.Uuid
+  invoiceId   String      @db.Uuid
+  itemId      String      @db.Uuid
+  itemCode    String      @db.VarChar(50)
+  itemName    String      @db.VarChar(200)
+  quantity    Decimal     @db.Decimal(12, 3)
+  weight      Decimal     @db.Decimal(12, 3)
+  /// ✅ ARCH-001: الوزن الكلي مخزَّن صراحةً — مصدر الحقيقة عند approve/cancel/forceEdit
+  totalWeight Decimal     @default(0) @db.Decimal(12, 3)
+  price       Decimal     @db.Decimal(15, 2)
+  discount    Decimal     @default(0) @db.Decimal(15, 2)
+  total       Decimal     @db.Decimal(15, 2)
+  sortOrder   Int         @default(0)
+  invoice     SaleInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  item        Item        @relation(fields: [itemId], references: [id])
 
   @@index([invoiceId])
   @@index([itemId])
@@ -406,19 +413,20 @@ model PurchaseInvoice {
 }
 
 model PurchaseInvoiceItem {
-  id        String          @id @default(uuid()) @db.Uuid
-  invoiceId String          @db.Uuid
-  itemId    String          @db.Uuid
-  itemCode  String          @db.VarChar(50)
-  itemName  String          @db.VarChar(200)
-  quantity  Decimal         @db.Decimal(12, 3)
-  weight    Decimal         @db.Decimal(12, 3)
-  price     Decimal         @db.Decimal(15, 2)
-  discount  Decimal         @default(0) @db.Decimal(15, 2)
-  total     Decimal         @db.Decimal(15, 2)
-  sortOrder Int             @default(0)
-  invoice   PurchaseInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  item      Item            @relation(fields: [itemId], references: [id])
+  id          String          @id @default(uuid()) @db.Uuid
+  invoiceId   String          @db.Uuid
+  itemId      String          @db.Uuid
+  itemCode    String          @db.VarChar(50)
+  itemName    String          @db.VarChar(200)
+  quantity    Decimal         @db.Decimal(12, 3)
+  weight      Decimal         @db.Decimal(12, 3)
+  totalWeight Decimal?        @db.Decimal(12, 3)
+  price       Decimal         @db.Decimal(15, 2)
+  discount    Decimal         @default(0) @db.Decimal(15, 2)
+  total       Decimal         @db.Decimal(15, 2)
+  sortOrder   Int             @default(0)
+  invoice     PurchaseInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  item        Item            @relation(fields: [itemId], references: [id])
 
   @@index([invoiceId])
   @@index([itemId])
@@ -471,18 +479,19 @@ model ReturnInvoice {
 }
 
 model ReturnInvoiceItem {
-  id        String        @id @default(uuid()) @db.Uuid
-  invoiceId String        @db.Uuid
-  itemId    String        @db.Uuid
-  itemCode  String        @db.VarChar(50)
-  itemName  String        @db.VarChar(200)
-  quantity  Decimal       @db.Decimal(12, 3)
-  weight    Decimal       @db.Decimal(12, 3)
-  price     Decimal       @db.Decimal(15, 2)
-  total     Decimal       @db.Decimal(15, 2)
-  sortOrder Int           @default(0)
-  invoice   ReturnInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  item      Item          @relation(fields: [itemId], references: [id])
+  id          String        @id @default(uuid()) @db.Uuid
+  invoiceId   String        @db.Uuid
+  itemId      String        @db.Uuid
+  itemCode    String        @db.VarChar(50)
+  itemName    String        @db.VarChar(200)
+  quantity    Decimal       @db.Decimal(12, 3)
+  weight      Decimal       @db.Decimal(12, 3)
+  totalWeight Decimal?      @db.Decimal(12, 3)
+  price       Decimal       @db.Decimal(15, 2)
+  total       Decimal       @db.Decimal(15, 2)
+  sortOrder   Int           @default(0)
+  invoice     ReturnInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  item        Item          @relation(fields: [itemId], references: [id])
 
   @@index([invoiceId])
   @@index([itemId])

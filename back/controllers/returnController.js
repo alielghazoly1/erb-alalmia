@@ -5,7 +5,7 @@
 'use strict';
 
 const prisma           = require('../config/db');
-const { safeNum, round2, round3, calcWeight, calcTotal, sumWeights, sumAmounts, n } = require('../utils/decimalHelper');
+const { safeNum, round2, round3, calcWeight, calcTotal, sumWeights, sumAmounts, n, normalizeInvoiceItems } = require('../utils/decimalHelper');
 const { audit }        = require('../utils/auditHelper');
 const { recordReturn, deleteTreasuryEntries } = require('../utils/treasuryHelper');
 const { updateStock, createStockMovement }    = require('../utils/stockHelper');
@@ -14,10 +14,16 @@ const { nextNumber }   = require('../utils/counterHelper');
 const PAGE_SIZE = 100;
 
 // استخلاص الوزن الكلي الدقيق من سطر الفاتورة
+// ✅ الأولوية: totalWeight المخزّن صراحةً (الأدق دائماً)
+//              ثم qty × weight بـ Decimal
+//              أخيراً total ÷ price (fallback قديم)
 const extractTotalWeight = (item) => {
+  if (item.totalWeight != null) return round3(safeNum(item.totalWeight));
+  const tw = calcWeight(item.quantity, item.weight);
+  if (tw > 0) return tw;
   const pr = safeNum(item.price);
   if (pr > 0) return round3(safeNum(item.total) / pr);
-  return calcWeight(item.quantity, item.weight);
+  return 0;
 };
 
 const invoiceIncludes = () => ({
@@ -91,10 +97,8 @@ const createReturn = async (req, res) => {
     if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
     // حساب الأوزان بـ Decimal.js
-    const recalcItems = items.map(i => {
-      const tw = calcWeight(i.quantity, i.weight, i.totalWeight ?? null);
-      return { ...i, _tw: tw, total: calcTotal(i.quantity, i.weight, i.price, tw) };
-    });
+    // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
+    const recalcItems = normalizeInvoiceItems(items, { hasPrice: true });
 
     const activeSeason  = await prisma.season.findFirst({ where: { isActive: true } });
     const invoiceNumber = await nextNumber('RET', 'RET');
@@ -125,10 +129,11 @@ const createReturn = async (req, res) => {
         createdById:      req.user.id,
         items: {
           create: recalcItems.map(i => ({
-            itemId:   normalizeId(i.item) || i.item,
-            itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight),
-            price:    safeNum(i.price),    total:  i.total,
+            itemId:      normalizeId(i.item) || i.item,
+            itemCode:    i.itemCode, itemName: i.itemName,
+            quantity:    safeNum(i.quantity), weight: safeNum(i.weight),
+            totalWeight: i._tw,
+            price:       safeNum(i.price),    total:  i.total,
           })),
         },
       },
@@ -140,20 +145,19 @@ const createReturn = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// ── UPDATE ────────────────────────────────────────────────────────────────────
+// ── UPDATE (pending only) ─────────────────────────────────────────────────────
 const updateReturn = async (req, res) => {
   try {
     const returnInv = await prisma.returnInvoice.findUnique({ where: { id: req.params.id }, include: { items: true } });
     if (!returnInv)                       return res.status(404).json({ message: 'المرتجع مش موجود' });
-    if (returnInv.status === 'approved')  return res.status(400).json({ message: 'المرتجع معتمد — لا يمكن تعديله' });
+    if (returnInv.status === 'approved')  return res.status(400).json({ message: 'المرتجع معتمد — استخدم force-edit' });
+    if (returnInv.status === 'rejected')  return res.status(400).json({ message: 'المرتجع مرفوض — لا يمكن تعديله' });
 
-    const { items, notes, date, refundMethod, refundCashAmount, refundBankAmount } = req.body;
+    const { items, notes, docNumber, date, refundMethod, refundCashAmount, refundBankAmount } = req.body;
     if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
-    const recalcItems = items.map(i => {
-      const tw = calcWeight(i.quantity, i.weight, i.totalWeight ?? null);
-      return { ...i, _tw: tw, total: calcTotal(i.quantity, i.weight, i.price, tw) };
-    });
+    // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
+    const recalcItems = normalizeInvoiceItems(items, { hasPrice: true });
     const totalAmount = sumAmounts(recalcItems.map(i => i.total));
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
@@ -162,17 +166,20 @@ const updateReturn = async (req, res) => {
     const updated = await prisma.returnInvoice.update({
       where: { id: returnInv.id },
       data: {
-        date:            date ? new Date(date) : returnInv.date,
-        totalAmount, totalWeight,
+        docNumber:        docNumber        || returnInv.docNumber,
+        date:             date ? new Date(date) : returnInv.date,
+        totalAmount,      totalWeight,
         notes,
         refundMethod:     refundMethod     ?? returnInv.refundMethod,
         refundCashAmount: safeNum(refundCashAmount ?? returnInv.refundCashAmount),
         refundBankAmount: safeNum(refundBankAmount ?? returnInv.refundBankAmount),
         items: {
           create: recalcItems.map(i => ({
-            itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight),
-            price: safeNum(i.price),       total:  i.total,
+            itemId:      i.itemId || i.item,
+            itemCode:    i.itemCode, itemName: i.itemName,
+            quantity:    safeNum(i.quantity), weight: safeNum(i.weight),
+            totalWeight: i._tw,
+            price:       safeNum(i.price),    total:  i.total,
           })),
         },
       },
@@ -180,6 +187,85 @@ const updateReturn = async (req, res) => {
     });
 
     res.json({ message: 'تم التعديل ✅', returnInv: n(updated) });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// ── FORCE EDIT (approved + pending — admin only) ──────────────────────────────
+// يعكس المخزون والخزنة القديمة ثم يطبق البيانات الجديدة
+const forceEditReturn = async (req, res) => {
+  try {
+    const returnInv = await prisma.returnInvoice.findUnique({ where: { id: req.params.id }, include: { items: true } });
+    if (!returnInv)                       return res.status(404).json({ message: 'المرتجع مش موجود' });
+    if (returnInv.status === 'rejected')  return res.status(400).json({ message: 'المرتجع مرفوض — لا يمكن تعديله' });
+
+    const wasApproved = returnInv.status === 'approved';
+    const {
+      items, notes, docNumber, date,
+      refundMethod = 'none',
+      refundCashAmount = 0,
+      refundBankAmount = 0,
+    } = req.body;
+
+    if (!items?.length) return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
+
+    // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
+    const recalcItems = normalizeInvoiceItems(items, { hasPrice: true });
+    const totalAmount = sumAmounts(recalcItems.map(i => i.total));
+    const totalWeight = sumWeights(recalcItems.map(i => i._tw));
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // ── 1. عكس أثر المخزون + الخزنة القديمة ─────────────────────────────────
+      if (wasApproved) {
+        for (const item of returnInv.items) {
+          const tw     = extractTotalWeight(item);
+          // مرتجع عميل كان زاد المخزون → نعكسه بالطرح
+          // مرتجع مورد كان نقّص المخزون → نعكسه بالجمع
+          const delta = returnInv.type === 'customer_return'
+            ? { quantity: -safeNum(item.quantity), weight: -tw }
+            : { quantity:  safeNum(item.quantity), weight:  tw };
+          await updateStock(item.itemId, returnInv.warehouse, returnInv.seasonId, delta, tx);
+        }
+        await tx.stockMovement.deleteMany({ where: { referenceId: returnInv.id } });
+        await deleteTreasuryEntries(returnInv.id, 'ReturnInvoice', tx);
+      }
+
+      // ── 2. حذف الأصناف القديمة وحفظ الجديدة ──────────────────────────────────
+      await tx.returnInvoiceItem.deleteMany({ where: { invoiceId: returnInv.id } });
+
+      const newData = await tx.returnInvoice.update({
+        where: { id: returnInv.id },
+        data: {
+          docNumber:        docNumber        || returnInv.docNumber,
+          date:             date ? new Date(date) : returnInv.date,
+          totalAmount,      totalWeight,
+          notes,
+          status:           'pending',
+          approvedById:     null,
+          approvedAt:       null,
+          refundMethod:     refundMethod     || returnInv.refundMethod,
+          refundCashAmount: safeNum(refundCashAmount),
+          refundBankAmount: safeNum(refundBankAmount),
+          items: {
+            create: recalcItems.map(i => ({
+              itemId:      i.itemId || i.item,
+              itemCode:    i.itemCode, itemName: i.itemName,
+              quantity:    safeNum(i.quantity), weight: safeNum(i.weight),
+              totalWeight: i._tw,
+              price:       safeNum(i.price),    total:  i.total,
+            })),
+          },
+        },
+        include: invoiceIncludes(),
+      });
+
+      return newData;
+    });
+
+    await audit(req.user, 'return_force_edited', 'ReturnInvoice', updated.id, updated.invoiceNumber, {
+      wasApproved, totalAmount,
+    });
+
+    res.json({ message: `تم تعديل المرتجع ✅${wasApproved ? ' (كان معتمد — أُعيد للمعلق)' : ''}`, returnInv: n(updated) });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
@@ -242,7 +328,7 @@ const rejectReturn = async (req, res) => {
 };
 
 module.exports = {
-  getReturns, createReturn, updateReturn,
+  getReturns, createReturn, updateReturn, forceEditReturn,
   approveReturn, rejectReturn,
   getReturnById,
 };

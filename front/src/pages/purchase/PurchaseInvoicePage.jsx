@@ -3,14 +3,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { createPurchaseInvoice } from '../../store/slices/purchaseSlice';
 import SupplierSearch from '../../components/common/SupplierSearch';
-import ItemSearch from '../../components/common/ItemSearch';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import InvoiceItemsForm from '../../components/common/InvoiceItemsForm';
 
 const newRow = () => ({
   id: Date.now() + Math.random(),
   item: null, itemCode: '', itemName: '', unit: '',
-  quantity: '', weight: '', price: '',
+  unitWeight: 0,    // وزن الوحدة الافتراضي (default من الصنف)
+  quantity: '', price: '',
+  availableQty: undefined, availableWeight: undefined,
+  _totalWeight: null,
   saved: false, editing: false,
 });
 
@@ -30,7 +33,7 @@ const statusLabel = {
 
 const fmt = (n) => Number(n||0).toFixed(2);
 
-// ── View Mode ─────────────────────────────────────────────────────────────────
+// ── View Mode ──────────────────────────────────────────────────────────────────
 function PurchaseViewMode({ invoice, onBack }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,7 +56,6 @@ function PurchaseViewMode({ invoice, onBack }) {
       <div className="flex gap-2 mb-4 no-print">
         <button className="btn-primary" onClick={() => window.print()}>🖨️ طباعة</button>
         <button className="btn-secondary" onClick={handleBack}>← {backLabel}</button>
-        {/* رابط ثانوي لكشف المورد لو موجود في الـ state */}
         {backTo && (
           <Link to={backTo} className="text-sm text-blue-500 hover:underline flex items-center">
             العودة للكشف
@@ -142,7 +144,6 @@ function PurchaseViewMode({ invoice, onBack }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function PurchaseInvoicePage() {
   const dispatch  = useDispatch();
-  
   const { id }    = useParams();
   const isViewMode = !!id;
   const { user }  = useSelector(s => s.auth);
@@ -166,10 +167,13 @@ export default function PurchaseInvoicePage() {
   const [searchQuery,      setSearchQuery]      = useState('');
   const [searchResults,    setSearchResults]    = useState([]);
   const [searchLoading,    setSearchLoading]    = useState(false);
+  const [totalWeightInput, setTotalWeightInput] = useState({});
 
   const qtyRefs  = useRef({});
   const wtRefs   = useRef({});
+  const twRefs   = useRef({});
   const prRefs   = useRef({});
+  const itemRefs = useRef({});
   const docTimer = useRef(null);
   const srchTimer= useRef(null);
 
@@ -226,19 +230,25 @@ export default function PurchaseInvoicePage() {
     const sup = data.supplier || { _id: data.supplierId, code: data.supplierCode, name: data.supplierName };
     setSupplier(sup); setSupplierError(false);
     const loaded = data.items.map(item => {
-      const storedTW = item.totalWeight != null
+      const uw = parseFloat(item.weight) || 0;
+      const tw = item.totalWeight != null
         ? parseFloat(item.totalWeight)
-        : Math.round((parseFloat(item.quantity) * parseFloat(item.weight)) * 1000) / 1000;
+        : Math.round((parseFloat(item.quantity)||0) * uw * 1000) / 1000;
+      const qty = uw > 0 && tw > 0 ? Math.round((tw / uw) * 10000) / 10000 : (parseFloat(item.quantity) || 0);
       return {
         id: Date.now() + Math.random(),
-        item: item.item?._id || item.item,
+        item: item.itemId || item.item?._id || item.item,
         itemCode: item.itemCode, itemName: item.itemName, unit: item.unit || '',
-        quantity: String(item.quantity), weight: String(item.weight), price: String(item.price),
-        _totalWeight: storedTW,
+        unitWeight: uw, quantity: String(qty), price: String(item.price),
+        _totalWeight: tw,
+        availableQty: undefined, availableWeight: undefined,
         saved: true, editing: false,
       };
     });
+    const twMap = {};
+    loaded.forEach(r => { if (r._totalWeight) twMap[r.id] = String(r._totalWeight); });
     setRows([...loaded, newRow()]);
+    setTotalWeightInput(twMap);
     toast.success(`تم تحميل ${data.invoiceNumber} للتعديل`);
   };
 
@@ -247,13 +257,19 @@ export default function PurchaseInvoicePage() {
     setSupplier(null); setDocNumber('');
     setDate(new Date().toISOString().split('T')[0]);
     setNotes(''); setRows([newRow()]); setDocError('');
+    setTotalWeightInput({});
   };
 
+  // ── item handlers ──────────────────────────────────────────────────────────
   const handleItemSelect = (rowId, item) => {
     if (!item) return;
+    const stockQty   = item.stock?.[warehouse]?.quantity ?? undefined;
+    const stockWt    = item.stock?.[warehouse]?.weight   ?? undefined;
+    const unitWeight = parseFloat(item.defaultWeight) || 0;
     setRows(prev => prev.map(r => r.id === rowId ? {
-      ...r, item: item._id, itemCode: item.code, itemName: item.name, unit: item.unit,
-      weight: item.defaultWeight ? String(item.defaultWeight) : r.weight,
+      ...r, item: item._id, itemCode: item.code, itemName: item.name, unit: item.unit || '',
+      unitWeight,
+      availableQty: stockQty, availableWeight: stockWt,
     } : r));
     setTimeout(() => qtyRefs.current[rowId]?.focus(), 50);
   };
@@ -261,22 +277,79 @@ export default function PurchaseInvoicePage() {
   const updateRow = (rowId, field, value) =>
     setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r));
 
+  const handleQuantityChange = (rowId, qtyStr) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const qty = parseFloat(qtyStr) || 0;
+      const uw  = parseFloat(r.unitWeight) || 0;
+      if (qty > 0 && uw > 0) {
+        const newTW = Math.round(qty * uw * 1000) / 1000;
+        setTotalWeightInput(p => ({ ...p, [rowId]: String(newTW) }));
+        return { ...r, quantity: qtyStr, _totalWeight: newTW };
+      }
+      setTotalWeightInput(p => ({ ...p, [rowId]: '' }));
+      return { ...r, quantity: qtyStr, _totalWeight: null };
+    }));
+  };
+
+  const handleUnitWeightChange = (rowId, uwStr) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const uw  = parseFloat(uwStr) || 0;
+      const qty = parseFloat(r.quantity) || 0;
+      if (qty > 0 && uw > 0) {
+        const newTW = Math.round(qty * uw * 1000) / 1000;
+        setTotalWeightInput(p => ({ ...p, [rowId]: String(newTW) }));
+        return { ...r, unitWeight: uw, _totalWeight: newTW };
+      }
+      return { ...r, unitWeight: uw };
+    }));
+  };
+
+  const handleTotalWeightChange = (rowId, totalWt) => {
+    setTotalWeightInput(prev => ({ ...prev, [rowId]: totalWt }));
+    const tw = parseFloat(totalWt) || 0;
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const uw = parseFloat(r.unitWeight) || 0;
+      const qty = uw > 0 && tw > 0 ? Math.round((tw / uw) * 10000) / 10000 : 0;
+      return {
+        ...r,
+        _totalWeight: tw > 0 ? tw : null,
+        quantity: qty > 0 ? String(qty) : '',
+      };
+    }));
+  };
+
   const handleKeyDown = (e, rowId, field) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if (field === 'quantity') { wtRefs.current[rowId]?.focus(); return; }
-    if (field === 'weight')   { prRefs.current[rowId]?.focus(); return; }
-    if (field === 'price')    { handleSaveRow(rowId); }
+    if (field === 'quantity')    { twRefs.current[rowId]?.focus(); return; }
+    if (field === 'totalWeight') { prRefs.current[rowId]?.focus(); return; }
+    if (field === 'price')       { handleSaveRow(rowId); }
   };
 
   const handleSaveRow = (rowId) => {
     const row = rows.find(r => r.id === rowId);
-    if (!row?.item) { toast.error('اختار الصنف أولاً'); return; }
-    if (!row.quantity || !row.weight || !row.price) { toast.error('اكمل بيانات الصنف'); return; }
-    setRows(prev => [...prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r), newRow()]);
+    if (!row?.item)       { toast.error('اختار الصنف أولاً');       return; }
+    if (!row.unitWeight)  { toast.error('أدخل وزن/وحدة');            return; }
+    const tw = row._totalWeight ?? Math.round((parseFloat(row.quantity)||0) * (parseFloat(row.unitWeight)||0) * 1000) / 1000;
+    if (tw <= 0)          { toast.error('أدخل الوزن الكلي أو العدد'); return; }
+    if (!row.price)       { toast.error('أدخل السعر');               return; }
+    const dup = rows.find(r => r.id !== rowId && r.saved && r.item === row.item);
+    if (dup) { toast.error(`الصنف "${row.itemName}" موجود بالفعل`); return; }
+    if (row.editing) {
+      setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r));
+    } else {
+      const newR = newRow();
+      setRows(prev => [...prev.map(r => r.id === rowId ? { ...r, saved: true, editing: false } : r), newR]);
+      setTotalWeightInput(prev => { const n = { ...prev }; delete n[rowId]; return n; });
+      setTimeout(() => { if (itemRefs.current[newR.id]) itemRefs.current[newR.id](); }, 80);
+    }
   };
 
   const handleEditRow   = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: false, editing: true  } : r));
+  const handleCancelRow = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true,  editing: false } : r));
   const handleDeleteRow = (rowId) => {
     setRows(prev => { const f = prev.filter(r => r.id !== rowId); return f.length === 0 ? [newRow()] : f; });
   };
@@ -293,12 +366,15 @@ export default function PurchaseInvoicePage() {
     if (savedRows.length === 0) { toast.error('أضف صنف واحد على الأقل'); return; }
     setSaving(true);
     const itemsPayload = savedRows.map(r => {
-      const tw = calcTotalWeight(r.quantity, r.weight, r._totalWeight);
+      const uw  = parseFloat(r.unitWeight) || 0;
+      const tw  = r._totalWeight ?? Math.round((parseFloat(r.quantity)||0) * uw * 1000) / 1000;
+      const pr  = parseFloat(r.price) || 0;
+      const qty = uw > 0 ? tw / uw : (parseFloat(r.quantity) || 0);
       return {
         item: r.item, itemCode: r.itemCode, itemName: r.itemName,
-        quantity: parseFloat(r.quantity)||0, weight: parseFloat(r.weight)||0,
-        price: parseFloat(r.price)||0, totalWeight: tw,
-        total: r2(tw * (parseFloat(r.price)||0)),
+        quantity: qty, weight: uw,        // ✅ ARCH-001: weight = unitWeight
+        price: pr, totalWeight: tw,       // ✅ المصدر الحقيقي
+        total: Math.round(tw * pr * 100) / 100,
       };
     });
     const base = {
@@ -317,6 +393,7 @@ export default function PurchaseInvoicePage() {
           toast.success(`تم حفظ الفاتورة ${res.payload.invoiceNumber} ✅`);
           setSupplier(null); setDocNumber(''); setDate(new Date().toISOString().split('T')[0]);
           setNotes(''); setRows([newRow()]); setDocError(''); setSupplierError(false);
+          setTotalWeightInput({});
         } else { toast.error(res.payload || 'خطأ في الحفظ'); }
       }
     } catch (err) { toast.error(err.response?.data?.message || 'خطأ'); }
@@ -330,6 +407,7 @@ export default function PurchaseInvoicePage() {
 
   return (
     <div className="max-w-5xl mx-auto">
+      {/* ── هيدر ── */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -368,7 +446,7 @@ export default function PurchaseInvoicePage() {
           {showAdminSearch && (
             <div className="mt-3">
               <input className="input-field"
-                placeholder="ابحث بـ: رقم الفاتورة (PUR-) أو رقم المستند أو اسم المورد..."
+                placeholder="ابحث بـ: رقم الفاتورة أو رقم المستند أو اسم المورد..."
                 value={searchQuery} onChange={e => handleSearchChange(e.target.value)} autoFocus />
               {searchLoading && <p className="text-xs text-gray-400 mt-1">جاري البحث...</p>}
               {searchResults.length > 0 && (
@@ -378,22 +456,17 @@ export default function PurchaseInvoicePage() {
                       className="w-full text-right px-4 py-3 hover:bg-purple-50 border-b border-purple-100 last:border-0 transition-colors">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-blue-600 text-sm font-medium">{inv.invoiceNumber}</span>
+                          <span className="font-mono text-blue-600 text-sm">{inv.invoiceNumber}</span>
                           <span className="font-medium text-gray-800">{inv.supplierName}</span>
                           <span className="text-gray-400 text-xs">{inv.docNumber}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-gray-700">{fmt(inv.totalAmount)} ج.م</span>
+                          <span className="text-sm font-bold">{fmt(inv.totalAmount)} ج.م</span>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${statusLabel[inv.status]?.cls}`}>
                             {statusLabel[inv.status]?.text}
                           </span>
                           <span className="text-xs text-purple-600 font-medium">تعديل ←</span>
                         </div>
-                      </div>
-                      <div className="flex gap-3 mt-0.5 text-xs text-gray-400">
-                        <span>{new Date(inv.date).toLocaleDateString('ar-EG')}</span>
-                        <span>{inv.warehouse === 'ramses' ? 'رمسيس' : 'أكتوبر'}</span>
-                        {inv.season?.name && <span>الموسم: {inv.season.name}</span>}
                       </div>
                     </button>
                   ))}
@@ -440,6 +513,7 @@ export default function PurchaseInvoicePage() {
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">المورد *</label>
             <SupplierSearch onSelect={s => { setSupplier(s); setSupplierError(false); }} error={supplierError} />
+            {supplier && <p className="text-xs text-green-600 mt-0.5 font-medium">✓ {supplier.name}</p>}
           </div>
         </div>
         <div className="mt-3">
@@ -448,109 +522,40 @@ export default function PurchaseInvoicePage() {
         </div>
       </div>
 
-      {/* الأصناف المحفوظة */}
-      {savedRows.length > 0 && (
-        <div className="card mb-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">الأصناف ({savedRows.length})</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs">
-                  {['#','الكود','الصنف','العدد','وزن/وحدة','وزن كلي','السعر/ك','الإجمالي',''].map((h,i) => (
-                    <th key={i} className={`px-3 py-2 ${i>2?'text-center':'text-right'}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {savedRows.map((row, idx) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2.5 text-gray-400 text-center text-xs">{idx+1}</td>
-                    <td className="px-3 py-2.5 font-mono text-blue-600 text-xs">{row.itemCode}</td>
-                    <td className="px-3 py-2.5 font-medium text-gray-800">{row.itemName}</td>
-                    <td className="px-3 py-2.5 text-center">{row.quantity}</td>
-                    <td className="px-3 py-2.5 text-center text-gray-400 text-xs">{parseFloat(row.weight).toFixed(3)}</td>
-                    <td className="px-3 py-2.5 text-center font-medium">{(row._totalWeight != null ? row._totalWeight : (parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0)).toFixed(3)} ك</td>
-                    <td className="px-3 py-2.5 text-center">{parseFloat(row.price).toFixed(2)}</td>
-                    <td className="px-3 py-2.5 text-center font-semibold">{calcTotal(row.quantity,row.weight,row.price,row._totalWeight).toFixed(2)}</td>
-                    <td className="px-3 py-2.5">
-                      <button onClick={() => handleEditRow(row.id)} className="text-blue-500 text-xs p-1 rounded hover:bg-blue-50">✏️</button>
-                      <button onClick={() => handleDeleteRow(row.id)} className="text-red-400 text-xs p-1 rounded hover:bg-red-50">🗑️</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-blue-50 font-semibold text-xs">
-                  <td colSpan={5} className="px-3 py-2 text-right text-gray-600">الإجمالي</td>
-                  <td className="px-3 py-2 text-center text-blue-700">{totalWeight.toFixed(3)} ك</td>
-                  <td></td>
-                  <td className="px-3 py-2 text-center text-blue-700">{totalAmount.toFixed(2)} ج.م</td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* ✅ الكومبونانت المشترك */}
+      <div className="card mb-4">
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          الأصناف {savedRows.length > 0 && `(${savedRows.length})`}
+        </h2>
+        <InvoiceItemsForm
+          rows={rows}
+          totalWeightInput={totalWeightInput}
+          showPrice={true}
+          qtyRefs={qtyRefs}
+          wtRefs={wtRefs}
+          prRefs={prRefs}
+          twRefs={twRefs}
+          itemRefs={itemRefs}
+          onItemSelect={handleItemSelect}
+          onUpdateRow={updateRow}
+          onQuantityChange={handleQuantityChange}
+          onUnitWeightChange={handleUnitWeightChange}
+          onTotalWeightChange={handleTotalWeightChange}
+          onKeyDown={handleKeyDown}
+          onSaveRow={handleSaveRow}
+          onEditRow={handleEditRow}
+          onCancelRow={handleCancelRow}
+          onDeleteRow={handleDeleteRow}
+        />
+      </div>
 
-      {/* صفوف الإدخال */}
-      {rows.filter(r => !r.saved).map(row => (
-        <div key={row.id} className={`card mb-3 border-2 ${row.editing ? 'border-amber-400 bg-amber-50/30' : 'border-blue-200'}`}>
-          <p className="text-sm font-medium text-gray-600 mb-3">{row.editing ? '✏️ تعديل صنف' : '➕ إضافة صنف'}</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-            <div className="md:col-span-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">الصنف *</label>
-              <ItemSearch
-                onSelect={item => handleItemSelect(row.id, item)}
-                onKeyDown={e => { if (e.key==='Enter'){e.preventDefault();qtyRefs.current[row.id]?.focus();} }}
-                placeholder="ابحث بالكود أو الاسم..." />
-              {row.itemName && <p className="text-xs text-green-600 mt-1 font-medium">✓ {row.itemName}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">العدد (كراتين)</label>
-              <input ref={el => qtyRefs.current[row.id]=el} type="number" min="0" step="0.001"
-                className="input-field text-center font-bold text-lg" placeholder="0" value={row.quantity}
-                onChange={e => updateRow(row.id,'quantity',e.target.value)}
-                onKeyDown={e => handleKeyDown(e,row.id,'quantity')} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">وزن الكرتونة (كيلو)</label>
-              <input ref={el => wtRefs.current[row.id]=el} type="number" min="0" step="0.001"
-                className="input-field text-center" placeholder="22.680" value={row.weight}
-                onChange={e => updateRow(row.id,'weight',e.target.value)}
-                onKeyDown={e => handleKeyDown(e,row.id,'weight')} />
-            </div>
-          </div>
-          <div className="flex items-end gap-3">
-            <div className="w-44">
-              <label className="block text-xs font-medium text-gray-500 mb-1">السعر / كيلو</label>
-              <input ref={el => prRefs.current[row.id]=el} type="number" min="0" step="0.01"
-                className="input-field text-center" placeholder="0.00" value={row.price}
-                onChange={e => updateRow(row.id,'price',e.target.value)}
-                onKeyDown={e => handleKeyDown(e,row.id,'price')} />
-            </div>
-            <div className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200">
-              <p className="text-xs text-gray-400 mb-0.5">الإجمالي</p>
-              <p className="text-xl font-bold text-blue-600">{calcTotal(row.quantity,row.weight,row.price,row._totalWeight).toFixed(2)} ج.م</p>
-              {row.quantity && row.weight && (
-                <p className="text-xs text-gray-400">{row.quantity} × {row.weight} ك = {((parseFloat(row.quantity)||0)*(parseFloat(row.weight)||0)).toFixed(3)} ك</p>
-              )}
-            </div>
-            <button onClick={() => handleSaveRow(row.id)} className="btn-primary px-6 py-2.5"
-              disabled={!row.item||!row.quantity||!row.weight||!row.price}>
-              {row.editing ? 'تحديث' : '✓ إضافة'}
-            </button>
-            {row.editing && <button onClick={() => handleDeleteRow(row.id)} className="btn-secondary px-4 py-2.5">إلغاء</button>}
-          </div>
-        </div>
-      ))}
-
+      {/* الإجمالي */}
       {savedRows.length > 0 && (
         <div className="card">
           <div className="flex justify-between items-start">
             <div className="text-sm text-gray-500 space-y-1">
               <p>عدد الأصناف: <span className="font-medium text-gray-700">{savedRows.length}</span></p>
-              <p>إجمالي الكراتين: <span className="font-medium text-gray-700">{totalQty.toFixed(0)}</span></p>
+              <p>إجمالي الكراتين: <span className="font-medium text-gray-700">{totalQty.toFixed(3)}</span></p>
               <p>إجمالي الوزن: <span className="font-medium text-gray-700">{totalWeight.toFixed(3)} كيلو</span></p>
             </div>
             <div className="text-left">
