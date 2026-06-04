@@ -384,7 +384,23 @@ export default function PurchaseInvoicePage() {
     };
     try {
       if (editingInvoice) {
-        const { data } = await api.put(`/purchase/${editingInvoice._id}/force-edit`, { ...base, editNotes });
+        // ✅ FIX-RACE-002: retry تلقائي عند 409 (Serializable conflict في force-edit)
+        let lastErr;
+        let data;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const res = await api.put(`/purchase/${editingInvoice._id}/force-edit`, { ...base, editNotes });
+            data = res.data;
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (err.response?.status === 409 && attempt < 3) {
+              await new Promise(r => setTimeout(r, 150 * attempt));
+              continue;
+            }
+            throw err;
+          }
+        }
         toast.success(`تم تعديل ${data.invoice.invoiceNumber} ✅`);
         cancelEdit();
       } else {

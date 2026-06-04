@@ -74,6 +74,8 @@ export default function CustomerStatementPage() {
   const [payError,      setPayError]      = useState('');
   const [payChecking,   setPayChecking]   = useState(false);
   const [editingPayId,  setEditingPayId]  = useState(null);
+  // ✅ FIX: debounce timer لمنع API call على كل حرف
+  const receiptTimerRef = useRef(null);
 
   const openAddPayment = () => {
     setPayForm({ ...EMPTY_FORM, date: new Date().toISOString().split('T')[0] });
@@ -96,25 +98,46 @@ export default function CustomerStatementPage() {
     setPayError(''); setEditingPayId(payment._id); setPayModalOpen(true);
   }, []);
 
-  const closePayModal = () => { setPayModalOpen(false); setPayError(''); };
-
-  const handleReceiptChange = async (val) => {
-    setPayForm((f) => ({ ...f, receiptNumber: val }));
-    if (!val.trim()) { setPayError(''); return; }
-    setPayChecking(true);
-    try {
-      const { default: api } = await import('../../services/api');
-      const { data } = await api.get('/payments/check-receipt', {
-        params: { receiptNumber: val, excludeId: editingPayId || undefined },
-      });
-      setPayError(data.exists ? 'رقم الوصل موجود بالفعل' : '');
-    } catch { setPayError(''); }
-    finally  { setPayChecking(false); }
+  const closePayModal = () => {
+    clearTimeout(receiptTimerRef.current);
+    setPayModalOpen(false);
+    setPayError('');
+    setPayChecking(false);
   };
+
+  // ✅ FIX: debounce 600ms — مش بيعمل request على كل حرف
+  // ✅ FIX: finally دايماً بيوقف indicator حتى لو فشل الـ request
+  const handleReceiptChange = useCallback((val) => {
+    setPayForm((f) => ({ ...f, receiptNumber: val }));
+    setPayError('');
+    clearTimeout(receiptTimerRef.current);
+
+    if (!val?.trim()) {
+      setPayChecking(false);
+      return;
+    }
+
+    receiptTimerRef.current = setTimeout(async () => {
+      setPayChecking(true);
+      try {
+        const { default: api } = await import('../../services/api');
+        const { data } = await api.get('/payments/check-receipt', {
+          params: { receiptNumber: val.trim(), excludeId: editingPayId || undefined },
+        });
+        setPayError(data.exists ? `⚠️ رقم الوصل "${val.trim()}" موجود بالفعل` : '');
+      } catch {
+        setPayError('');
+      } finally {
+        setPayChecking(false);
+      }
+    }, 600);
+  }, [editingPayId]);
 
   const handlePaySubmit = async () => {
     if (!payForm.amount || Number(payForm.amount) <= 0) return toast.error('أدخل مبلغ صحيح');
-    if (payError) return toast.error('صلح رقم الوصل الأول');
+    // ✅ FIX: منع الإرسال لو التحقق لسه شغال
+    if (payChecking) return toast.error('جاري التحقق من رقم الوصل…');
+    if (payError)    return toast.error('صلح رقم الوصل الأول');
     if (!stmt.customer) return;
     try {
       const { default: api } = await import('../../services/api');

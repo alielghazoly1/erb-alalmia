@@ -8,6 +8,12 @@
 //
 // ✅ FIX-MFG-CREATE-002: extractItemId يُطبَّق قبل فحص المخزون في createOrder
 //                        لتجنب إرسال object بدل UUID string لـ Prisma
+//
+// ✅ CRIT-RC-002: createOrder — فحص المخزون + الإنشاء كلهم داخل Serializable
+//                transaction واحدة لإغلاق نافذة الـ Race Condition تماماً.
+//                الكود القديم كان يفحص المخزون قبل الـ tx، ما يُتيح لطلبين
+//                متزامنين اجتياز الفحص معاً ثم كلاهما يُنشئ الأمر ويستهلك
+//                مخزوناً غير موجود. الإصلاح يجعل الفحص والإنشاء atomic.
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -21,6 +27,17 @@ const MFG_PREFIX = 'MFG';
 
 const generateOrderNumber = async (seasonId, seasonCode) => {
   const counter = await prisma.seasonCounter.upsert({
+    where:  { seasonId_prefix: { seasonId, prefix: MFG_PREFIX } },
+    create: { seasonId, prefix: MFG_PREFIX, value: 1, startFrom: 1 },
+    update: { value: { increment: 1 } },
+  });
+  const num = counter.startFrom + counter.value - 1;
+  return `MFG-${seasonCode}-${String(num).padStart(5, '0')}`;
+};
+
+// ✅ CRIT-RC-002: نسخة تعمل داخل transaction موجودة — نفس المنطق بالظبط
+const generateOrderNumberTx = async (tx, seasonId, seasonCode) => {
+  const counter = await tx.seasonCounter.upsert({
     where:  { seasonId_prefix: { seasonId, prefix: MFG_PREFIX } },
     create: { seasonId, prefix: MFG_PREFIX, value: 1, startFrom: 1 },
     update: { value: { increment: 1 } },
@@ -121,81 +138,121 @@ const getOrderById = async (req, res) => {
 };
 
 // ─── POST /api/manufacturing ──────────────────────────────────────────────────
+// ✅ CRIT-RC-002: فحص المخزون + الإنشاء كلهم داخل Serializable transaction
+//   • يمنع Race Condition: لا يمكن لطلبين متزامنين اجتياز الفحص معاً
+//   • الفحص بالوزن (ARCH-001) — متسق مع باقي الكود
+//   • generateOrderNumber يعمل داخل نفس الـ tx لضمان الأتومية الكاملة
+//   • لو Serializable conflict حصل (P2034) → 409 مع رسالة واضحة للـ client
 
 const createOrder = async (req, res) => {
   try {
     const { warehouse, workerId, rawMaterials, outputProducts, notes, date, docNumber, seasonId } = req.body;
 
+    // ── Validation مبكرة (بدون DB) ──────────────────────────────────────────
     if (!warehouse)              return res.status(400).json({ message: 'حدد العنبر' });
     if (!rawMaterials?.length)   return res.status(400).json({ message: 'أضف خامة واحدة على الأقل' });
     if (!outputProducts?.length) return res.status(400).json({ message: 'أضف منتج واحد على الأقل' });
-
-    const season = seasonId
-      ? await prisma.season.findUnique({ where: { id: seasonId }, select: { id: true, name: true } })
-      : await prisma.season.findFirst({ where: { isActive: true }, select: { id: true, name: true } });
-    if (!season) return res.status(400).json({ message: 'مفيش موسم نشط — فعّل موسم أو حدد موسم' });
 
     // ✅ FIX-MFG-CREATE-002: sanitize items أولاً قبل أي استخدام
     const sanitizedRaw = sanitizeItems(rawMaterials);
     const sanitizedOut = sanitizeItems(outputProducts);
 
-    // تحقق مبكر من وجود ID لكل صنف
+    // تحقق مبكر من وجود ID لكل صنف (بدون DB)
     const nullRaw = sanitizedRaw.find((r) => !r.item);
     const nullOut = sanitizedOut.find((p) => !p.item);
     if (nullRaw) return res.status(400).json({ message: `خامة "${nullRaw.itemName || '؟'}" مش عندها ID — أعد اختيار الصنف` });
     if (nullOut) return res.status(400).json({ message: `منتج "${nullOut.itemName || '؟'}" مش عنده ID — أعد اختيار الصنف` });
 
-    // ✅ FIX-MFG-CREATE-001: فحص المخزون بالوزن (ARCH-001) بدل الكمية
-    for (const raw of sanitizedRaw) {
-      const stockRec    = await prisma.itemStock.findFirst({
-        where: { itemId: raw.item, warehouse, seasonId: season.id },
-      });
-      const availWeight = safeNum(stockRec?.weight, 0);
-      const reqWeight   = safeNum(raw.totalWeight) || safeNum(raw.weight) * safeNum(raw.quantity);
-      if (availWeight < reqWeight) {
-        return res.status(400).json({
-          message: `"${raw.itemName}" مش كافية — متاح: ${availWeight.toFixed(3)} ك، مطلوب: ${reqWeight.toFixed(3)} ك`,
-        });
-      }
-    }
+    // ── تطبيع الأوزان بـ Decimal.js قبل الـ tx (لا يحتاج DB) ───────────────
+    const calcRaw = recalcWeights(sanitizedRaw);
+    const calcOut = recalcWeights(sanitizedOut);
 
-    // sanitize workerId
+    // sanitize workerId (بدون DB)
     const safeWorkerIdCreate = workerId
       ? (typeof workerId === 'object' ? (workerId._id || workerId.id || String(workerId)) : String(workerId))
       : null;
 
-    let workerName = '';
-    if (safeWorkerIdCreate) {
-      const w = await prisma.worker.findUnique({ where: { id: safeWorkerIdCreate }, select: { name: true } });
-      if (!w) return res.status(404).json({ message: 'المعلم مش موجود' });
-      workerName = w.name;
-    }
+    // ── ✅ CRIT-RC-002: كل عمليات DB داخل Serializable transaction ────────────
+    const order = await prisma.$transaction(async (tx) => {
 
-    const seasonCode  = season.name.replace(/\s+/g, '').slice(0, 6);
-    const orderNumber = await generateOrderNumber(season.id, seasonCode);
-    const calcRaw     = recalcWeights(sanitizedRaw);
-    const calcOut     = recalcWeights(sanitizedOut);
+      // 1️⃣ جلب الموسم داخل الـ tx (consistent snapshot)
+      const season = seasonId
+        ? await tx.season.findUnique({ where: { id: seasonId }, select: { id: true, name: true } })
+        : await tx.season.findFirst({ where: { isActive: true }, select: { id: true, name: true } });
+      if (!season)
+        throw Object.assign(
+          new Error('مفيش موسم نشط — فعّل موسم أو حدد موسم'),
+          { statusCode: 400 },
+        );
 
-    const order = await prisma.manufacturingOrder.create({
-      data: {
-        orderNumber,
-        docNumber:      docNumber?.trim() || '',
-        date:           date ? new Date(date) : new Date(),
-        warehouse,
-        workerId:       safeWorkerIdCreate || null,
-        workerName:     workerName || null,
-        notes,
-        status:         'pending',
-        seasonId:       season.id,
-        createdById:    req.user.id,
-        rawMaterials:   { create: calcRaw.map((r) => ({ itemId: r.item, itemCode: r.itemCode, itemName: r.itemName, quantity: safeNum(r.quantity), weight: safeNum(r.weight), totalWeight: r.totalWeight })) },
-        outputProducts: { create: calcOut.map((p) => ({ itemId: p.item, itemCode: p.itemCode, itemName: p.itemName, quantity: safeNum(p.quantity), weight: safeNum(p.weight), totalWeight: p.totalWeight })) },
-      },
-      include: orderIncludes(),
-    });
+      // 2️⃣ التحقق من المعلم داخل الـ tx
+      let workerName = '';
+      if (safeWorkerIdCreate) {
+        const w = await tx.worker.findUnique({ where: { id: safeWorkerIdCreate }, select: { name: true } });
+        if (!w)
+          throw Object.assign(new Error('المعلم مش موجود'), { statusCode: 404 });
+        workerName = w.name;
+      }
+
+      // 3️⃣ ✅ ARCH-001: فحص المخزون بالوزن داخل الـ tx — يمنع الـ Race Condition
+      for (const raw of calcRaw) {
+        const stock = await tx.itemStock.findFirst({
+          where: { itemId: raw.item, warehouse, seasonId: season.id },
+        });
+        const availWeight = safeNum(stock?.weight, 0);
+        const reqWeight   = safeNum(raw.totalWeight);
+        if (availWeight < reqWeight)
+          throw Object.assign(
+            new Error(`"${raw.itemName}" مش كافية — متاح: ${availWeight.toFixed(3)} ك، مطلوب: ${reqWeight.toFixed(3)} ك`),
+            { statusCode: 400, code: 'STOCK_INSUFF' },
+          );
+      }
+
+      // 4️⃣ توليد رقم الأمر داخل الـ tx (atomic مع باقي العمليات)
+      const seasonCode  = season.name.replace(/\s+/g, '').slice(0, 6);
+      const orderNumber = await generateOrderNumberTx(tx, season.id, seasonCode);
+
+      // 5️⃣ إنشاء الأمر
+      return tx.manufacturingOrder.create({
+        data: {
+          orderNumber,
+          docNumber:      docNumber?.trim() || '',
+          date:           date ? new Date(date) : new Date(),
+          warehouse,
+          workerId:       safeWorkerIdCreate || null,
+          workerName:     workerName || null,
+          notes,
+          status:         'pending',
+          seasonId:       season.id,
+          createdById:    req.user.id,
+          rawMaterials:   {
+            create: calcRaw.map((r) => ({
+              itemId: r.item, itemCode: r.itemCode, itemName: r.itemName,
+              quantity: safeNum(r.quantity), weight: safeNum(r.weight), totalWeight: r.totalWeight,
+            })),
+          },
+          outputProducts: {
+            create: calcOut.map((p) => ({
+              itemId: p.item, itemCode: p.itemCode, itemName: p.itemName,
+              quantity: safeNum(p.quantity), weight: safeNum(p.weight), totalWeight: p.totalWeight,
+            })),
+          },
+        },
+        include: orderIncludes(),
+      });
+
+    }, { isolationLevel: 'Serializable' });
+    // ─────────────────────────────────────────────────────────────────────────
 
     return res.status(201).json(n(order));
+
   } catch (err) {
+    // ✅ Serializable conflict → أعد المحاولة من الـ client
+    if (err.code === 'P2034')
+      return res.status(409).json({ message: 'تعارض في العملية، يرجى المحاولة مرة أخرى' });
+    // خطأ فحص المخزون أو بيانات ناقصة
+    if (err.statusCode)
+      return res.status(err.statusCode).json({ message: err.message });
     console.error('[createOrder]', err);
     return res.status(500).json({ message: err.message });
   }

@@ -1,6 +1,10 @@
 // ─── controllers/transferController.js ───────────────────────────────────────
 // ✅ CRIT-NEW-002: approveTransfer داخل prisma.$transaction(Serializable)
-// ✅ FLOAT-FIX: calcWeight من Decimal.js
+// ✅ FLOAT-FIX:    calcWeight من Decimal.js
+// ✅ CRIT-RC-001:  createTransfer — فحص المخزون بالوزن (ARCH-001) داخل
+//                 Serializable transaction لإغلاق نافذة الـ Race Condition
+//                 تماماً. الكود القديم كان يفحص خارج الـ tx، ما يُتيح لطلبين
+//                 متزامنين اجتياز الفحص وكلاهما يُنشئ تحويلاً ويسبب مخزوناً سالباً.
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -76,60 +80,107 @@ const checkDocNumber = async (req, res) => {
 };
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
+// ✅ CRIT-RC-001: فحص المخزون + الإنشاء كلهم داخل Serializable transaction واحدة
+//   • يمنع Race Condition: لا يمكن لطلبين متزامنين اجتياز الفحص معاً
+//   • الفحص بالوزن (ARCH-001) بدل الكمية — متسق مع باقي الكود
+//   • nextNumber يعمل داخل نفس الـ tx لضمان الأتومية الكاملة
+//   • لو Serializable conflict حصل (P2034) → 409 مع رسالة واضحة للـ client
 const createTransfer = async (req, res) => {
   try {
     const { fromWarehouse, toWarehouse, items, notes, date, docNumber } = req.body;
 
-    if (!docNumber?.trim())            return res.status(400).json({ message: 'أدخل رقم المستند' });
-    if (fromWarehouse === toWarehouse)  return res.status(400).json({ message: 'المخزن المصدر والهدف لازم يكونوا مختلفين' });
-    if (!items?.length)                return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
+    // ── Validation مبكرة (قبل الـ DB) ──────────────────────────────────────
+    if (!docNumber?.trim())           return res.status(400).json({ message: 'أدخل رقم المستند' });
+    if (fromWarehouse === toWarehouse) return res.status(400).json({ message: 'المخزن المصدر والهدف لازم يكونوا مختلفين' });
+    if (!items?.length)               return res.status(400).json({ message: 'لازم تضيف صنف واحد على الأقل' });
 
-    const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
-
-    // فحص المخزون — بالكراتين فقط (الكمية)
-    for (const trItem of items) {
-      const { quantity: availQty } = await getStockQty(trItem.item, fromWarehouse, activeSeason?.id);
-      if (availQty < safeNum(trItem.quantity))
-        return res.status(400).json({ message: `العدد مش كافي للصنف "${trItem.itemName}" — متاح: ${availQty} كرتون` });
-    }
-
-    const direction      = getDirection(fromWarehouse, toWarehouse);
-    const transferNumber = await nextNumber(`TRF_${direction}`, `TRF-${direction}`);
-
-    const docExists = await prisma.transfer.findFirst({
-      where: { docNumber: docNumber.trim(), direction, seasonId: activeSeason?.id },
-      select: { transferNumber: true },
-    });
-    if (docExists)
-      return res.status(400).json({ message: `رقم المستند "${docNumber}" موجود بالفعل (${docExists.transferNumber})` });
-
-    // حساب الأوزان بـ Decimal.js
-    // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
+    // ── تطبيع الأوزان بـ Decimal.js قبل الـ tx (لا يحتاج DB) ───────────────
     const recalcItems   = normalizeInvoiceItems(items, { hasPrice: false });
     const totalWeight   = sumWeights(recalcItems.map(i => i.totalWeight));
     const totalQuantity = recalcItems.reduce((s, i) => s + safeNum(i.quantity), 0);
 
-    const transfer = await prisma.transfer.create({
-      data: {
-        transferNumber, direction, docNumber: docNumber.trim(),
-        date: date ? new Date(date) : new Date(),
-        fromWarehouse, toWarehouse, totalWeight, totalQuantity,
-        status: 'pending', notes,
-        seasonId:   activeSeason?.id ?? null,
-        createdById: req.user.id,
-        items: {
-          create: recalcItems.map(i => ({
-            itemId: i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight), totalWeight: i.totalWeight,
-          })),
-        },
-      },
-      include: transferIncludes(),
-    });
+    // ── ✅ CRIT-RC-001: كل عمليات DB داخل Serializable transaction ───────────
+    const transfer = await prisma.$transaction(async (tx) => {
 
-    await audit(req.user, 'transfer_created', 'Transfer', transfer.id, transfer.transferNumber, { direction, totalWeight });
+      // 1️⃣ جلب الموسم النشط داخل الـ tx (consistent snapshot)
+      const activeSeason = await tx.season.findFirst({ where: { isActive: true } });
+
+      // 2️⃣ التحقق من تكرار رقم المستند داخل الـ tx
+      const docExists = await tx.transfer.findFirst({
+        where: {
+          docNumber: docNumber.trim(),
+          direction: getDirection(fromWarehouse, toWarehouse),
+          seasonId:  activeSeason?.id ?? null,
+        },
+        select: { transferNumber: true },
+      });
+      if (docExists)
+        throw Object.assign(
+          new Error(`رقم المستند "${docNumber}" موجود بالفعل (${docExists.transferNumber})`),
+          { statusCode: 400, code: 'DOC_EXISTS' },
+        );
+
+      // 3️⃣ ✅ ARCH-001: فحص المخزون بالوزن داخل الـ tx — يمنع الـ Race Condition
+      for (const trItem of recalcItems) {
+        const stock = await tx.itemStock.findFirst({
+          where: {
+            itemId:    trItem.item,
+            warehouse: fromWarehouse,
+            seasonId:  activeSeason?.id ?? null,
+          },
+        });
+        const availWeight = safeNum(stock?.weight, 0);
+        if (availWeight < trItem._tw)
+          throw Object.assign(
+            new Error(`المخزون مش كافي للصنف "${trItem.itemName}" — متاح: ${availWeight.toFixed(3)} ك، مطلوب: ${trItem._tw.toFixed(3)} ك`),
+            { statusCode: 400, code: 'STOCK_INSUFF' },
+          );
+      }
+
+      // 4️⃣ توليد رقم التحويل داخل الـ tx (atomic مع باقي العمليات)
+      const direction      = getDirection(fromWarehouse, toWarehouse);
+      const transferNumber = await nextNumber(`TRF_${direction}`, `TRF-${direction}`, tx);
+
+      // 5️⃣ إنشاء التحويل
+      return tx.transfer.create({
+        data: {
+          transferNumber, direction, docNumber: docNumber.trim(),
+          date:          date ? new Date(date) : new Date(),
+          fromWarehouse, toWarehouse, totalWeight, totalQuantity,
+          status:        'pending', notes,
+          seasonId:      activeSeason?.id ?? null,
+          createdById:   req.user.id,
+          items: {
+            create: recalcItems.map(i => ({
+              itemId:      i.item,
+              itemCode:    i.itemCode,
+              itemName:    i.itemName,
+              quantity:    safeNum(i.quantity),
+              weight:      safeNum(i.weight),
+              totalWeight: i.totalWeight,
+            })),
+          },
+        },
+        include: transferIncludes(),
+      });
+
+    }, { isolationLevel: 'Serializable' });
+    // ─────────────────────────────────────────────────────────────────────────
+
+    await audit(req.user, 'transfer_created', 'Transfer', transfer.id, transfer.transferNumber, {
+      direction: transfer.direction, totalWeight,
+    });
     res.status(201).json(n(transfer));
-  } catch (err) { res.status(500).json({ message: err.message }); }
+
+  } catch (err) {
+    // ✅ Serializable conflict → أعد المحاولة من الـ client
+    if (err.code === 'P2034')
+      return res.status(409).json({ message: 'تعارض في العملية، يرجى المحاولة مرة أخرى' });
+    // خطأ فحص المخزون أو تكرار المستند
+    if (err.statusCode)
+      return res.status(err.statusCode).json({ message: err.message });
+    res.status(500).json({ message: err.message });
+  }
 };
 
 // ── UPDATE ────────────────────────────────────────────────────────────────────

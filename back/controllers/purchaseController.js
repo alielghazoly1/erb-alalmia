@@ -3,6 +3,11 @@
 // ✅ FLOAT-FIX: calcWeight + sumWeights من Decimal.js
 // ✅ FIX-PURCHASE-002: forceEditPurchaseInvoice يعكس المخزون بـ extractTotalWeight (total÷price من DB)
 //    أدق من calcWeight(qty,weight) عشان total المخزّن هو المصدر الحقيقي
+// ✅ FIX-RACE-001: createPurchaseInvoice — docNumber check داخل Serializable tx
+//    يمنع Race Condition لما جهازان يرسلوا نفس الـ docNumber في نفس اللحظة
+//    + الـ DB @@unique([docNumber, seasonId]) يعمل كـ safety net إضافي (P2002)
+// ✅ FIX-RACE-002: forceEditPurchaseInvoice — docNumber check داخل الـ tx نفسها
+//    يمنع تكرار الـ docNumber عند التعديل المتزامن من جهازين
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
@@ -117,6 +122,21 @@ const checkDocNumber = async (req, res) => {
 };
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
+/**
+ * ✅ FIX-RACE-001: كل عملية الإنشاء داخل Serializable transaction واحدة
+ *
+ * المشكلة القديمة:
+ *   1. findFirst (خارج tx) → جهازان يقرآن "مفيش تكرار"
+ *   2. create    (خارج tx) → كلاهما ينجح → فاتورتان بنفس docNumber
+ *
+ * الحل:
+ *   الـ findFirst والـ create داخل نفس الـ Serializable tx →
+ *   PostgreSQL يحجز قفل على الصفوف المقروءة → الطلب الثاني ينتظر أو يفشل بـ P2034
+ *   + الـ @@unique([docNumber, seasonId]) في DB يعمل safety net أخير (P2002)
+ *
+ * ملاحظة: nextNumber('PUR') تشتغل خارج الـ tx المتسلسلة عشان تكون لها tx Serializable
+ *         خاصة بيها (مُعرَّفة في counterHelper) — لو دمجناها ستتعارض مع الـ tx الخارجية
+ */
 const createPurchaseInvoice = async (req, res) => {
   try {
     const { docNumber, date, supplierCode, supplierName, supplierId, warehouse, items, notes } = req.body;
@@ -125,61 +145,92 @@ const createPurchaseInvoice = async (req, res) => {
     // ✅ تطبيع الأصناف: quantity = totalWeight ÷ unitWeight دائماً
     const recalcItems = normalizeInvoiceItems(items, { hasPrice: true });
 
-    const [activeSeason, invoiceNumber] = await Promise.all([
-      prisma.season.findFirst({ where: { isActive: true } }),
-      nextNumber('PUR', 'PUR'),
-    ]);
-
     const totalAmount = sumAmounts(recalcItems.map(i => i.total));
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
-    if (docNumber) {
-      const docExists = await prisma.purchaseInvoice.findFirst({
-        where: { docNumber, ...(activeSeason ? { seasonId: activeSeason.id } : {}) },
-      });
-      if (docExists)
-        return res.status(400).json({ message: `رقم المستند "${docNumber}" موجود بالفعل (${docExists.invoiceNumber})` });
-    }
+    // ── جلب الموسم ورقم الفاتورة قبل الـ tx (عمليات آمنة للقراءة) ───────────
+    const [activeSeason, invoiceNumber] = await Promise.all([
+      prisma.season.findFirst({ where: { isActive: true } }),
+      nextNumber('PUR', 'PUR'), // ← atomic في Serializable tx خاصة بيها
+    ]);
 
-    const invoice = await prisma.purchaseInvoice.create({
-      data: {
-        invoiceNumber, docNumber: docNumber || null,
-        date:           date ? new Date(date) : new Date(),
-        supplierCode, supplierName, supplierId: supplierId || null,
-        warehouse, totalAmount, totalWeight,
-        // ✅ FIX-PUR-SCHEMA: حقول مطلوبة في schema غير موجودة كانت سبب 500
-        discountAmount:  0,
-        netAmount:       totalAmount,
-        paidAmount:      0,
-        remainingAmount: totalAmount,
-        status:         'pending',
-        seasonId:       activeSeason?.id ?? null,
-        notes,
-        createdById:    req.user.id,
-        items: {
-          create: recalcItems.map(i => ({
-            itemId: i.itemId || i.item, itemCode: i.itemCode, itemName: i.itemName,
-            quantity: safeNum(i.quantity), weight: safeNum(i.weight),
-            totalWeight: i._tw,
-            price: safeNum(i.price), total: i.total,
-          })),
+    const seasonId = activeSeason?.id ?? null;
+
+    // ── ✅ FIX-RACE-001: الإنشاء الكامل داخل Serializable tx ─────────────────
+    const invoice = await prisma.$transaction(async (tx) => {
+
+      // فحص docNumber داخل الـ tx — يمنع Race Condition مع 10 أجهزة
+      if (docNumber?.trim()) {
+        const docExists = await tx.purchaseInvoice.findFirst({
+          where: { docNumber: docNumber.trim(), seasonId },
+          select: { invoiceNumber: true },
+        });
+        if (docExists)
+          throw Object.assign(
+            new Error(`رقم المستند "${docNumber.trim()}" موجود بالفعل (${docExists.invoiceNumber})`),
+            { code: 'DOC_DUP' },
+          );
+      }
+
+      return tx.purchaseInvoice.create({
+        data: {
+          invoiceNumber,
+          docNumber:       docNumber?.trim() || null,
+          date:            date ? new Date(date) : new Date(),
+          supplierCode,
+          supplierName,
+          supplierId:      supplierId || null,
+          warehouse,
+          totalAmount,
+          totalWeight,
+          discountAmount:  0,
+          netAmount:       totalAmount,
+          paidAmount:      0,
+          remainingAmount: totalAmount,
+          status:          'pending',
+          seasonId,
+          notes,
+          createdById:     req.user.id,
+          items: {
+            create: recalcItems.map(i => ({
+              itemId:      i.itemId || i.item,
+              itemCode:    i.itemCode,
+              itemName:    i.itemName,
+              quantity:    safeNum(i.quantity),
+              weight:      safeNum(i.weight),
+              totalWeight: i._tw,
+              price:       safeNum(i.price),
+              total:       i.total,
+            })),
+          },
         },
-      },
-      include: { items: true },
-    });
+        include: { items: true },
+      });
+
+    }, { isolationLevel: 'Serializable' });
 
     res.status(201).json(n(invoice));
   } catch (err) {
-    if (err.code === 'P2002') return res.status(400).json({ message: 'رقم المستند موجود بالفعل' });
+    if (err.code === 'DOC_DUP') return res.status(400).json({ message: err.message });
+    // P2002 = DB unique violation (safety net لو الـ tx فشلت بطريقة غير متوقعة)
+    if (err.code === 'P2002')   return res.status(400).json({ message: 'رقم المستند موجود بالفعل في هذا الموسم' });
+    // P2034 = Serializable conflict — أرجع 409 عشان الفرونت يعيد المحاولة
+    if (err.code === 'P2034')   return res.status(409).json({ message: 'تعارض في العملية، حاول مرة أخرى' });
+    console.error('[createPurchaseInvoice]', err);
     res.status(500).json({ message: err.message });
   }
 };
 
 // ── FORCE EDIT ────────────────────────────────────────────────────────────────
+/**
+ * ✅ FIX-RACE-002: docNumber check داخل الـ tx نفسها
+ *   المشكلة القديمة: الفحص كان خارج الـ tx → Race Condition عند التعديل المتزامن
+ *   الحل: الفحص والتعديل في Serializable tx واحدة
+ */
 const forceEditPurchaseInvoice = async (req, res) => {
   try {
     const invoice = await prisma.purchaseInvoice.findUnique({ where: { id: req.params.id }, include: { items: true } });
-    if (!invoice)                     return res.status(404).json({ message: 'الفاتورة مش موجودة' });
+    if (!invoice)                       return res.status(404).json({ message: 'الفاتورة مش موجودة' });
     if (invoice.status === 'cancelled') return res.status(400).json({ message: 'الفاتورة ملغية' });
 
     const wasApproved = invoice.status === 'approved';
@@ -191,16 +242,34 @@ const forceEditPurchaseInvoice = async (req, res) => {
     const totalAmount = sumAmounts(recalcItems.map(i => i.total));
     const totalWeight = sumWeights(recalcItems.map(i => i._tw));
 
+    const newDocNumber = docNumber?.trim() || invoice.docNumber;
+
     const updated = await prisma.$transaction(async (tx) => {
+
+      // ✅ FIX-RACE-002: فحص docNumber داخل الـ tx — يمنع Race Condition
+      if (newDocNumber && newDocNumber !== invoice.docNumber) {
+        const docExists = await tx.purchaseInvoice.findFirst({
+          where: {
+            docNumber: newDocNumber,
+            seasonId:  invoice.seasonId ?? null,
+            id:        { not: invoice.id },
+          },
+          select: { invoiceNumber: true },
+        });
+        if (docExists)
+          throw Object.assign(
+            new Error(`رقم المستند "${newDocNumber}" موجود بالفعل (${docExists.invoiceNumber})`),
+            { code: 'DOC_DUP' },
+          );
+      }
+
       // ✅ FIX-PURCHASE-001: عكس المخزون باستخدام extractTotalWeight (total÷price من DB)
       // أدق من calcWeight(qty, weight) لأن total المخزّن هو المصدر الحقيقي للوزن
       if (wasApproved) {
         for (const item of invoice.items) {
           const tw = extractTotalWeight(item);
           // ✅ ARCH-001: العكس بالوزن فقط
-          await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, {
-            weight: -tw,
-          }, tx);
+          await updateStock(item.itemId, invoice.warehouse, invoice.seasonId, { weight: -tw }, tx);
         }
         await tx.stockMovement.deleteMany({ where: { referenceId: invoice.id } });
       }
@@ -210,32 +279,44 @@ const forceEditPurchaseInvoice = async (req, res) => {
       return tx.purchaseInvoice.update({
         where: { id: invoice.id },
         data: {
-          docNumber:   docNumber || invoice.docNumber,
-          date:        date ? new Date(date) : invoice.date,
-          totalAmount, totalWeight,
-          // ✅ FIX-PUR-SCHEMA: تحديث الحقول المالية عند التعديل
+          docNumber:       newDocNumber,
+          date:            date ? new Date(date) : invoice.date,
+          totalAmount,
+          totalWeight,
           discountAmount:  0,
           netAmount:       totalAmount,
           paidAmount:      0,
           remainingAmount: totalAmount,
           notes,
-          status:      'pending',
-          approvedById: null, approvedAt: null,
+          status:          'pending',
+          approvedById:    null,
+          approvedAt:      null,
           items: {
             create: recalcItems.map(i => ({
-              itemId: i.itemId || i.item, itemCode: i.itemCode, itemName: i.itemName,
-              quantity: safeNum(i.quantity), weight: safeNum(i.weight),
+              itemId:      i.itemId || i.item,
+              itemCode:    i.itemCode,
+              itemName:    i.itemName,
+              quantity:    safeNum(i.quantity),
+              weight:      safeNum(i.weight),
               totalWeight: i._tw,
-              price: safeNum(i.price), total: i.total,
+              price:       safeNum(i.price),
+              total:       i.total,
             })),
           },
         },
         include: invoiceIncludes(),
       });
-    });
+
+    }, { isolationLevel: 'Serializable' });
 
     res.json({ message: 'تم التعديل ✅', invoice: n(updated) });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    if (err.code === 'DOC_DUP') return res.status(400).json({ message: err.message });
+    if (err.code === 'P2002')   return res.status(400).json({ message: 'رقم المستند موجود بالفعل في هذا الموسم' });
+    if (err.code === 'P2034')   return res.status(409).json({ message: 'تعارض في العملية، حاول مرة أخرى' });
+    console.error('[forceEditPurchaseInvoice]', err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 // ── APPROVE ───────────────────────────────────────────────────────────────────

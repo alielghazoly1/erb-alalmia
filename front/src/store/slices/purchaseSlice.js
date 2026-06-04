@@ -19,11 +19,32 @@ export const fetchPurchaseInvoices = createAsyncThunk(
   }
 );
 
+// ✅ FIX-RACE-001: retry تلقائي عند 409 (Serializable conflict)
+// السيرفر يُعيد 409 لو طلبان تزامنا على نفس الـ Serializable transaction.
+// الـ client يُعيد المحاولة حتى MAX_RETRIES مرات مع delay تصاعدي بسيط.
+const withRetry = async (fn, maxRetries = 3, delayMs = 150) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const is409 = err.response?.status === 409;
+      if (is409 && attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, delayMs * attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+};
+
 export const createPurchaseInvoice = createAsyncThunk(
   'purchase/create',
   async (invoiceData, thunkAPI) => {
     try {
-      const { data } = await api.post('/purchase', invoiceData);
+      const data = await withRetry(async () => {
+        const res = await api.post('/purchase', invoiceData);
+        return res.data;
+      });
       return data;
     } catch (err) {
       return thunkAPI.rejectWithValue(

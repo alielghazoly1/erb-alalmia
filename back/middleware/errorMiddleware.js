@@ -1,4 +1,5 @@
 // ─── middleware/errorMiddleware.js ────────────────────────────────────────────
+'use strict';
 
 const notFound = (req, res, next) => {
   const error = new Error(`المسار غير موجود — ${req.originalUrl}`);
@@ -7,13 +8,10 @@ const notFound = (req, res, next) => {
 };
 
 const errorHandler = (err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-
   // Prisma unique constraint violation
   if (err.code === 'P2002') {
-    return res.status(400).json({
-      message: `القيمة موجودة بالفعل (${err.meta?.target?.join(', ')})`,
-    });
+    const field = err.meta?.target?.join(', ') || 'قيمة';
+    return res.status(409).json({ message: `${field} موجود بالفعل` });
   }
 
   // Prisma record not found
@@ -21,6 +19,12 @@ const errorHandler = (err, req, res, next) => {
     return res.status(404).json({ message: 'السجل غير موجود' });
   }
 
+  // أخطاء business logic بـ statusCode مخصوص (مثل REC_DUP)
+  if (err.statusCode) {
+    return res.status(err.statusCode).json({ message: err.message });
+  }
+
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode).json({
     message: err.message,
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
