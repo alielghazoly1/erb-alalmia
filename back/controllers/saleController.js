@@ -20,6 +20,7 @@ const { recordSaleInvoice, deleteTreasuryEntries } = require('../utils/treasuryH
 const { updateStock, createStockMovement } = require('../utils/stockHelper');
 const { audit }      = require('../utils/auditHelper');
 const { nextNumber } = require('../utils/counterHelper');
+const { invalidateCustomersCache } = require('./customerController'); // ✅ PERF-SALE-001
 
 // ── extractTotalWeight ────────────────────────────────────────────────────────
 /**
@@ -659,6 +660,7 @@ const approveSaleInvoice = async (req, res) => {
     await audit(req.user, 'invoice_approved', 'SaleInvoice', approved.id, approved.invoiceNumber, {
       customerName: approved.customerName, totalAmount: approved.totalAmount,
     });
+    invalidateCustomersCache(); // ✅ PERF-SALE-001
     res.json({ message: 'تم الموافقة ✅', invoice: n(approved) });
   } catch (err) {
     if (err.code === 'P2034') return res.status(409).json({ message: 'تعارض في العملية، حاول مرة أخرى' });
@@ -725,6 +727,7 @@ const cancelSaleInvoice = async (req, res) => {
       customerName: invoice.customerName, docNumber: invoice.docNumber,
       totalAmount: invoice.totalAmount, wasApproved,
     });
+    invalidateCustomersCache(); // ✅ PERF-SALE-001
     res.json({ message: 'تم الإلغاء' });
   } catch (err) {
     if (err.code === 'P2034') return res.status(409).json({ message: 'تعارض في العملية، حاول مرة أخرى' });

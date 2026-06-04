@@ -1,45 +1,52 @@
-// ─── TransferPage.jsx ──────────────────────────────────────────────────────────
+// ─── pages/transfers/TransferPage.jsx ────────────────────────────────────────
+// ✅ LOCK-DIR-001: fromWarehouse و toWarehouse لا يتغيران بعد الإنشاء
+//   - في وضع التعديل: الحقلان readonly مع تلميح واضح للمستخدم
+//   - الـ payload لا يرسل fromWarehouse/toWarehouse في وضع التعديل
+//   - الـ Backend يرفض أي تغيير بـ 400 كطبقة حماية إضافية
+// ─────────────────────────────────────────────────────────────────────────────
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector }                  from 'react-redux';
+import { useParams, useNavigate }                    from 'react-router-dom';
 import { createTransfer, updateTransfer, fetchTransferById } from '../../store/slices/transferSlice';
-import api from '../../services/api';
+import api   from '../../services/api';
 import toast from 'react-hot-toast';
 import InvoiceItemsForm from '../../components/common/InvoiceItemsForm';
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const newRow = () => ({
   id: Date.now() + Math.random(),
   item: null, itemCode: '', itemName: '', unit: '',
-  unitWeight: 0,
-  quantity: '',
+  unitWeight: 0, quantity: '',
   availableQty: undefined, availableWeight: undefined,
   _totalWeight: null,
   saved: false, editing: false,
 });
 
-const r3 = (v) => Math.round((parseFloat(v) || 0) * 1000) / 1000;
-const r2 = (v) => Math.round((parseFloat(v) || 0) * 100) / 100;
-const calcTW = (qty, wt, tw = null) =>
-  tw != null ? r3(parseFloat(tw)) : r3((parseFloat(qty) || 0) * (parseFloat(wt) || 0));
+const r3       = (v) => Math.round((parseFloat(v) || 0) * 1000) / 1000;
 const cleanNum = (v, decimals = 3) => {
   const n = parseFloat(v) || 0;
   return (Object.is(n, -0) || Math.abs(n) < 0.0005) ? (0).toFixed(decimals) : n.toFixed(decimals);
 };
 
+const warehouseLabel = (w) => w === 'ramses' ? '🔵 رمسيس' : '🟣 أكتوبر';
+
+// ─────────────────────────────────────────────────────────────────────────────
 export default function TransferPage() {
-  const dispatch  = useDispatch();
-  const navigate  = useNavigate();
-  const { id }    = useParams();
-  const isEdit    = !!id;
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { id }   = useParams();
+  const isEdit   = !!id;
 
   const { user }         = useSelector(s => s.auth);
   const { current }      = useSelector(s => s.transfers);
   const { activeSeason } = useSelector(s => s.season);
   const isAdmin          = user?.role === 'admin';
 
+  // ── بيانات الإذن ────────────────────────────────────────────────────────────
   const defaultFrom = user?.warehouse === 'october' ? 'october' : 'ramses';
   const [fromWarehouse,    setFromWarehouse]    = useState(defaultFrom);
   const [toWarehouse,      setToWarehouse]      = useState(defaultFrom === 'ramses' ? 'october' : 'ramses');
+  const [warehouseLocked,  setWarehouseLocked]  = useState(false); // true في وضع التعديل
   const [date,             setDate]             = useState(new Date().toISOString().split('T')[0]);
   const [notes,            setNotes]            = useState('');
   const [rows,             setRows]             = useState([newRow()]);
@@ -56,7 +63,7 @@ export default function TransferPage() {
   const itemRefs = useRef({});
   const docTimer = useRef(null);
 
-  // ── تحميل للتعديل ──────────────────────────────────────────────────────────
+  // ── تحميل التعديل ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isEdit) return;
     dispatch(fetchTransferById(id)).then(res => {
@@ -66,8 +73,12 @@ export default function TransferPage() {
       if (data.status === 'approved' && !isAdmin) { toast.error('فقط الأدمن يمكنه تعديل تحويل معتمد'); navigate(-1); return; }
 
       setExistingStatus(data.status);
+
+      // ✅ LOCK-DIR-001: قراءة المخازن من DB وقفلها — لا يتغيران
       setFromWarehouse(data.fromWarehouse);
       setToWarehouse(data.toWarehouse);
+      setWarehouseLocked(true);
+
       setDate(data.date?.split('T')[0] || new Date().toISOString().split('T')[0]);
       setNotes(data.notes || '');
       setDocNumber(data.docNumber || '');
@@ -76,8 +87,8 @@ export default function TransferPage() {
         const uw = parseFloat(item.weight) || 0;
         const tw = item.totalWeight != null
           ? parseFloat(item.totalWeight)
-          : Math.round((parseFloat(item.quantity)||0) * uw * 1000) / 1000;
-        const qty = uw > 0 && tw > 0 ? Math.round((tw/uw)*10000)/10000 : (parseFloat(item.quantity)||0);
+          : Math.round((parseFloat(item.quantity) || 0) * uw * 1000) / 1000;
+        const qty = uw > 0 && tw > 0 ? Math.round((tw / uw) * 10000) / 10000 : (parseFloat(item.quantity) || 0);
         return {
           id: Date.now() + Math.random(),
           item: item.itemId || item.item?._id || item.item,
@@ -88,6 +99,7 @@ export default function TransferPage() {
           saved: true, editing: false,
         };
       });
+
       const twMap = {};
       loaded.forEach(r => { if (r._totalWeight) twMap[r.id] = String(r._totalWeight); });
       setRows([...loaded, newRow()]);
@@ -97,7 +109,7 @@ export default function TransferPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEdit]);
 
-  // ── تحديث الرصيد عند تغيير المخزن ────────────────────────────────────────
+  // ── تحديث الرصيد عند تغيير المخزن ─────────────────────────────────────────
   const refreshStockForWarehouse = useCallback(async (warehouse) => {
     const savedWithItems = rows.filter(r => r.saved && r.item);
     if (!savedWithItems.length) return;
@@ -110,13 +122,13 @@ export default function TransferPage() {
       results.forEach(({ data }, i) => { stockByItem[savedWithItems[i].item] = data.stock; });
       setRows(prev => prev.map(r => {
         if (!r.saved || !r.item || !stockByItem[r.item]) return r;
-        return { ...r, availableQty: stockByItem[r.item]?.[warehouse]?.quantity ?? 0 };
+        return { ...r, availableWeight: stockByItem[r.item]?.[warehouse]?.weight ?? 0 };
       }));
-    } catch {}
+    } catch { /* silent */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, activeSeason]);
 
-  // ── doc check ──────────────────────────────────────────────────────────────
+  // ── doc check ───────────────────────────────────────────────────────────────
   const checkDocNumber = useCallback(async (val) => {
     if (!val?.trim() || !fromWarehouse) { setDocError(''); return; }
     const direction = fromWarehouse === 'ramses' ? 'R2O' : 'O2R';
@@ -137,12 +149,20 @@ export default function TransferPage() {
     docTimer.current = setTimeout(() => checkDocNumber(val), 500);
   };
 
-  // ── item handlers ──────────────────────────────────────────────────────────
+  // ── تغيير المخزن — فقط في وضع الإنشاء ──────────────────────────────────────
+  const handleFromChange = async (val) => {
+    if (warehouseLocked) return; // ✅ LOCK-DIR-001
+    setFromWarehouse(val);
+    setToWarehouse(val === 'ramses' ? 'october' : 'ramses');
+    await refreshStockForWarehouse(val);
+  };
+
+  // ── item handlers ───────────────────────────────────────────────────────────
   const handleItemSelect = (rowId, item) => {
     if (!item) return;
-    const availableQty = item.stock?.[fromWarehouse]?.quantity ?? 0;
-    const availableWeight = item.stock?.[fromWarehouse]?.weight ?? 0;
-    const unitWeight = parseFloat(item.defaultWeight) || 0;
+    const availableWeight = item.stock?.[fromWarehouse]?.weight   ?? 0;
+    const availableQty    = item.stock?.[fromWarehouse]?.quantity ?? 0;
+    const unitWeight      = parseFloat(item.defaultWeight) || 0;
     setRows(prev => prev.map(r => r.id !== rowId ? r : {
       ...r, item: item._id, itemCode: item.code, itemName: item.name, unit: item.unit || '',
       unitWeight, availableQty, availableWeight,
@@ -189,11 +209,7 @@ export default function TransferPage() {
       if (r.id !== rowId) return r;
       const uw  = parseFloat(r.unitWeight) || 0;
       const qty = uw > 0 && tw > 0 ? Math.round((tw / uw) * 10000) / 10000 : 0;
-      return {
-        ...r,
-        _totalWeight: tw > 0 ? tw : null,
-        quantity: qty > 0 ? String(qty) : '',
-      };
+      return { ...r, _totalWeight: tw > 0 ? tw : null, quantity: qty > 0 ? String(qty) : '' };
     }));
   };
 
@@ -208,9 +224,8 @@ export default function TransferPage() {
     const row = rows.find(r => r.id === rowId);
     if (!row?.item)      { toast.error('اختار الصنف أولاً');        return; }
     if (!row.unitWeight) { toast.error('أدخل وزن/وحدة');             return; }
-    const tw = row._totalWeight ?? Math.round((parseFloat(row.quantity)||0) * (parseFloat(row.unitWeight)||0) * 1000) / 1000;
+    const tw = row._totalWeight ?? Math.round((parseFloat(row.quantity) || 0) * (parseFloat(row.unitWeight) || 0) * 1000) / 1000;
     if (tw <= 0)         { toast.error('أدخل الوزن الكلي أو العدد'); return; }
-    // ✅ ARCH-001: تحقق من الرصيد بالوزن
     if (row.availableWeight !== undefined) {
       const awt = parseFloat(row.availableWeight) || 0;
       if (awt < tw) { toast.error(`المخزون مش كافي — متاح: ${awt.toFixed(3)} ك — مطلوب: ${tw.toFixed(3)} ك`); return; }
@@ -231,27 +246,21 @@ export default function TransferPage() {
   const handleCancelRow = (rowId) => setRows(prev => prev.map(r => r.id === rowId ? { ...r, saved: true,  editing: false } : r));
   const handleDeleteRow = (rowId) => setRows(prev => { const f = prev.filter(r => r.id !== rowId); return f.length ? f : [newRow()]; });
 
-  const handleFromChange = async (val) => {
-    setFromWarehouse(val);
-    setToWarehouse(val === 'ramses' ? 'october' : 'ramses');
-    await refreshStockForWarehouse(val);
-  };
-
-  const savedRows     = rows.filter(r => r.saved);
-  const r3tw = (v) => Math.round((parseFloat(v)||0)*1000)/1000;
-  const totalWeight   = r3tw(savedRows.reduce((s, r) => {
+  // ── الإجماليات ──────────────────────────────────────────────────────────────
+  const savedRows = rows.filter(r => r.saved);
+  const totalWeight = r3(savedRows.reduce((s, r) => {
     const uw = parseFloat(r.unitWeight) || 0;
-    const tw = r._totalWeight ?? Math.round((parseFloat(r.quantity)||0) * uw * 1000) / 1000;
+    const tw = r._totalWeight ?? Math.round((parseFloat(r.quantity) || 0) * uw * 1000) / 1000;
     return s + tw;
   }, 0));
   const totalQuantity = savedRows.reduce((s, r) => s + (parseFloat(r.quantity) || 0), 0);
   const isApprovedEdit = isEdit && existingStatus === 'approved';
 
-  // ── submit ─────────────────────────────────────────────────────────────────
+  // ── submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!docNumber.trim())             { toast.error('أدخل رقم المستند'); return; }
     if (docError)                      { toast.error(docError); return; }
-    if (fromWarehouse === toWarehouse) { toast.error('المخزن المصدر والهدف لازم يكونوا مختلفين'); return; }
+    if (!isEdit && fromWarehouse === toWarehouse) { toast.error('المخزن المصدر والهدف لازم يكونوا مختلفين'); return; }
     if (savedRows.length === 0)        { toast.error('أضف صنف واحد على الأقل'); return; }
 
     if (isApprovedEdit) {
@@ -260,42 +269,43 @@ export default function TransferPage() {
     }
 
     setSaving(true);
-    const payload = {
-      fromWarehouse, toWarehouse, date, notes,
-      docNumber: docNumber.trim(),
-      items: savedRows.map(r => {
+    try {
+      const itemsPayload = savedRows.map(r => {
         const uw  = parseFloat(r.unitWeight) || 0;
-        const tw  = r._totalWeight ?? Math.round((parseFloat(r.quantity)||0) * uw * 1000) / 1000;
+        const tw  = r._totalWeight ?? Math.round((parseFloat(r.quantity) || 0) * uw * 1000) / 1000;
         const qty = uw > 0 ? tw / uw : (parseFloat(r.quantity) || 0);
         return {
           item: r.item, itemCode: r.itemCode, itemName: r.itemName,
-          quantity: qty, weight: uw,    // ✅ ARCH-001: weight = unitWeight
-          totalWeight: tw,              // ✅ المصدر الحقيقي
+          quantity: qty, weight: uw, totalWeight: tw,
         };
-      }),
-    };
+      });
 
-    try {
       if (isEdit) {
+        // ✅ LOCK-DIR-001: لا نرسل fromWarehouse/toWarehouse في وضع التعديل
+        const payload = { date, notes, docNumber: docNumber.trim(), items: itemsPayload };
         const res = await dispatch(updateTransfer({ id, ...payload }));
         if (!res.error) { toast.success('تم تعديل الإذن ✅'); navigate(-1); }
-        else toast.error(res.payload || 'خطأ في التعديل');
+        else            toast.error(res.payload || 'خطأ في التعديل');
       } else {
+        const payload = {
+          fromWarehouse, toWarehouse, date, notes,
+          docNumber: docNumber.trim(), items: itemsPayload,
+        };
         const res = await dispatch(createTransfer(payload));
         if (!res.error) {
           toast.success(`تم حفظ الإذن ${res.payload.transferNumber} ⏳`);
           setRows([newRow()]); setNotes(''); setDocNumber(''); setDocError('');
           setDate(new Date().toISOString().split('T')[0]);
           setTotalWeightInput({});
-        } else toast.error(res.payload || 'خطأ في الحفظ');
+        } else {
+          toast.error(res.payload || 'خطأ في الحفظ');
+        }
       }
     } catch { toast.error('خطأ غير متوقع'); }
     setSaving(false);
   };
 
   if (loading) return <div className="text-center py-24 text-gray-400">جاري تحميل الإذن...</div>;
-
-  const warehouseLabel = (w) => w === 'ramses' ? '🔵 رمسيس' : '🟣 أكتوبر';
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 pb-8">
@@ -345,13 +355,27 @@ export default function TransferPage() {
       <div className="card">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">بيانات الإذن</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+
+          {/* من مخزن */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">من مخزن</label>
-            <select className="input-field" value={fromWarehouse} onChange={e => handleFromChange(e.target.value)}>
-              <option value="ramses">🔵 رمسيس</option>
-              <option value="october">🟣 أكتوبر</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              من مخزن
+              {warehouseLocked && <span className="mr-1 text-xs text-gray-400">(ثابت 🔒)</span>}
+            </label>
+            {warehouseLocked ? (
+              // ✅ LOCK-DIR-001: readonly في وضع التعديل
+              <div className="input-field bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+                {warehouseLabel(fromWarehouse)}
+              </div>
+            ) : (
+              <select className="input-field" value={fromWarehouse} onChange={e => handleFromChange(e.target.value)}>
+                <option value="ramses">🔵 رمسيس</option>
+                <option value="october">🟣 أكتوبر</option>
+              </select>
+            )}
           </div>
+
+          {/* سهم الاتجاه */}
           <div className="flex justify-center items-end pb-2">
             <div className="flex items-center gap-2 text-blue-500 font-bold text-base">
               <span className="text-xs text-gray-600">{warehouseLabel(fromWarehouse)}</span>
@@ -359,18 +383,44 @@ export default function TransferPage() {
               <span className="text-xs text-gray-600">{warehouseLabel(toWarehouse)}</span>
             </div>
           </div>
+
+          {/* إلى مخزن */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">إلى مخزن</label>
-            <select className="input-field" value={toWarehouse} onChange={e => setToWarehouse(e.target.value)}>
-              <option value="ramses">🔵 رمسيس</option>
-              <option value="october">🟣 أكتوبر</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              إلى مخزن
+              {warehouseLocked && <span className="mr-1 text-xs text-gray-400">(ثابت 🔒)</span>}
+            </label>
+            {warehouseLocked ? (
+              <div className="input-field bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+                {warehouseLabel(toWarehouse)}
+              </div>
+            ) : (
+              <select className="input-field" value={toWarehouse} onChange={e => setToWarehouse(e.target.value)}>
+                <option value="ramses">🔵 رمسيس</option>
+                <option value="october">🟣 أكتوبر</option>
+              </select>
+            )}
           </div>
+
+          {/* التاريخ */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">التاريخ</label>
             <input type="date" className="input-field" value={date} onChange={e => setDate(e.target.value)} />
           </div>
         </div>
+
+        {/* تحذير القفل */}
+        {warehouseLocked && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex gap-2">
+            <span>🔒</span>
+            <span>
+              اتجاه التحويل ثابت: <strong>{warehouseLabel(fromWarehouse)} ← {warehouseLabel(toWarehouse)}</strong>
+              — لا يمكن تغييره بعد الإنشاء لضمان سلامة بيانات المخزون.
+              يمكنك تعديل الأصناف والكميات ورقم المستند والتاريخ فقط.
+            </span>
+          </div>
+        )}
+
         <div className="mt-3 grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">رقم المستند *</label>
@@ -393,7 +443,7 @@ export default function TransferPage() {
         </div>
       </div>
 
-      {/* ✅ الكومبونانت المشترك — showPrice=false للتحويلات */}
+      {/* الأصناف */}
       <div className="card">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">
           الأصناف {savedRows.length > 0 && `(${savedRows.length})`}

@@ -1,10 +1,12 @@
 // ─── controllers/paymentController.js ────────────────────────────────────────
+// ✅ PERF-PAY-001: invalidateCustomersCache بعد كل write — يُبطل كاش getCustomers
 'use strict';
 
 const prisma = require('../config/db');
 const { safeNum, n } = require('../utils/decimalHelper');
 const { audit }      = require('../utils/auditHelper');
 const { recordPayment, deleteTreasuryEntries } = require('../utils/treasuryHelper');
+const { invalidateCustomersCache } = require('./customerController');
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -143,7 +145,7 @@ const createPayment = async (req, res) => {
 
     // الـ audit خارج الـ transaction عشان فشله ميرجعش الـ payment
     await audit(req.user, 'payment_created', 'Payment', payment.id, payment.receiptNumber || payment.id);
-
+    invalidateCustomersCache(); // ✅ PERF-PAY-001
     res.status(201).json(n(payment));
   } catch (err) {
     // race condition أو unique constraint — أي منهما يعطي 409
@@ -205,7 +207,7 @@ const updatePayment = async (req, res) => {
     }, { isolationLevel: 'Serializable' });
 
     await audit(req.user, 'payment_updated', 'Payment', payment.id, payment.receiptNumber);
-
+    invalidateCustomersCache(); // ✅ PERF-PAY-001
     res.json(n(payment));
   } catch (err) {
     if (err.statusCode === 404) return res.status(404).json({ message: err.message });
@@ -235,7 +237,7 @@ const deletePayment = async (req, res) => {
     });
 
     await audit(req.user, 'payment_deleted', 'Payment', payment.id, payment.receiptNumber);
-
+    invalidateCustomersCache(); // ✅ PERF-PAY-001
     res.json({ message: 'تم الحذف' });
   } catch (err) {
     if (err.statusCode === 404) return res.status(404).json({ message: err.message });
